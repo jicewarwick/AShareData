@@ -113,11 +113,17 @@ class Tushare2MySQL(object):
     FUTURE_EXCHANGES = ['CFFEX', 'DCE', 'CZCE', 'SHFE', 'INE']
     ALL_EXCHANGES = STOCK_EXCHANGES + FUTURE_EXCHANGES
 
-    def __init__(self, tushare_token: str, para_json: str = None) -> None:
+    def __init__(self, tushare_token: str, param_json: str = None) -> None:
+        """
+        Tushare to MySQL. 将tushare下载的数据写入MySQL中
+
+        :param tushare_token: tushare token
+        :param param_json: tushare 返回df的列名信息
+        """
         self._tushare_token = tushare_token
         self._pro = ts.pro_api(self._tushare_token)
 
-        with open(para_json, 'r', encoding='utf-8') as f:
+        with open(param_json, 'r', encoding='utf-8') as f:
             self._parameters = json.load(f)
 
         self._all_stocks = None
@@ -125,17 +131,25 @@ class Tushare2MySQL(object):
 
         self.mysql_writer = None
 
-    def add_mysql_db(self, ip: str, port: int, username: str, password: str, db_name='tushare_db'):
+    def add_mysql_db(self, ip: str, port: int, username: str, password: str, db_name='tushare_db') -> None:
         """添加MySQLWriter"""
         self.mysql_writer = DataFrameMySQLWriter(ip, port, username, password, db_name)
 
     # get data
     # ------------------------------------------
-    def update_routine(self):
+    def update_routine(self) -> None:
+        # date = dt.date.today()
+        # self.get_daily_hq(date)
         self.get_company_info()
         self.get_ipo_info()
 
     def get_company_info(self) -> pd.DataFrame:
+        """
+        获取上市公司基本信息
+
+        ref: https://tushare.pro/document/2?doc_id=112
+        :return: 上市公司基础信息df
+        """
         data_category = '上市公司基本信息'
         table_name = '输出参数'
         column_desc = self._parameters[data_category][table_name]
@@ -196,7 +210,9 @@ class Tushare2MySQL(object):
                 pbar.update(1)
 
     def get_past_names(self, ticker: str = None, start_date: DateType = None) -> pd.DataFrame:
-        """获取曾用名"""
+        """获取曾用名
+        ref: https://tushare.pro/document/2?doc_id=100
+        """
         data_category = '股票曾用名'
         table_name = '输出参数'
         column_desc = self._parameters[data_category][table_name]
@@ -207,6 +223,7 @@ class Tushare2MySQL(object):
         return df
 
     def get_all_past_names(self):
+        """获取所有股票的曾用名"""
         if not self._all_stocks:
             self.get_all_stocks()
         with tqdm(self._all_stocks) as pbar:
@@ -217,7 +234,13 @@ class Tushare2MySQL(object):
                 # df = df[['证券名称']]
                 self.mysql_writer.update_df(df, '股票名称')
 
-    def get_ipo_info(self):
+    def get_ipo_info(self) -> pd.DataFrame:
+        """
+        IPO新股列表
+
+        ref: https://tushare.pro/document/2?doc_id=123
+        :return: IPO新股列表df
+        """
         data_category = 'IPO新股列表'
         table_name = '输出参数'
         column_desc = self._parameters[data_category][table_name]
@@ -225,6 +248,7 @@ class Tushare2MySQL(object):
         df = self._pro.new_share()
         df = self._standardize_df(df, column_desc, index=['ts_code'])
         self.mysql_writer.update_df(df, data_category)
+        return df
 
     # todo:
     def get_balance_sheet(self, ticker: str, period: str):

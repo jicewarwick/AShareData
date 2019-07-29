@@ -1,0 +1,7 @@
+{
+	"tushare_token": "**********",
+	"ip": "localhost",
+	"port": 3306,
+	"username": "******",
+	"password": "******"
+}
