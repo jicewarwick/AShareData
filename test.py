@@ -13,8 +13,10 @@ if __name__ == '__main__':
     tushare_parameters_db = 'param.json'
     downloader = Tushare2MySQL(tushare_token, param_json=tushare_parameters_db)
     downloader.add_mysql_db(ip, port, username, password)
-    downloader.get_daily_hq(trade_date='20180508')
+    # downloader.get_daily_hq(start_date='20080103', end_date='20181231')
+    # downloader.update_index_daily()
     # downloader.get_all_stocks()
     # downloader.get_calendar()
     # downloader.get_all_past_names()
     # downloader.get_company_info()
+

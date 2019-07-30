@@ -11,6 +11,8 @@ from sqlalchemy import Column, String, Float, DateTime, Text
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import func
 from tqdm import tqdm
 
 DateType = Union[str, dt.datetime, dt.date]
@@ -98,6 +100,15 @@ class DataFrameMySQLWriter(object):
             statement = insert_statement.on_duplicate_key_update(**row.to_dict())
             self.engine.execute(statement)
 
+    def get_latest_update_time(self, table_name: str) -> dt.datetime:
+        metadata = sa.MetaData(self.engine, reflect=True)
+        assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        table = metadata.tables[table_name]
+        assert 'DateTime' in table.columns.keys(), f'{table_name} 表中无时间列'
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        return session.query(func.max(table.c.DateTime)).one()[0]
+
 
 def guess_type(input_series: pd.Series) -> Tuple[Any, str]:
     if input_series.dtype == np.float64:
@@ -112,6 +123,8 @@ class Tushare2MySQL(object):
     STOCK_EXCHANGES = ['SSE', 'SZSE']
     FUTURE_EXCHANGES = ['CFFEX', 'DCE', 'CZCE', 'SHFE', 'INE']
     ALL_EXCHANGES = STOCK_EXCHANGES + FUTURE_EXCHANGES
+    STOCK_INDEXES = {'上证指数': '000001.SH', '深证成指': '399001.SZ','中小板指': '399005.SZ', '创业板指': '399006.SZ',
+                     '上证50': '000016.SH', '沪深300': '000300.SH', '中证500': '000905.SH'}
 
     def __init__(self, tushare_token: str, param_json: str = None) -> None:
         """
@@ -138,8 +151,11 @@ class Tushare2MySQL(object):
     # get data
     # ------------------------------------------
     def update_routine(self) -> None:
-        # date = dt.date.today()
-        # self.get_daily_hq(date)
+        # get latest update date
+        latest = self.mysql_writer.get_latest_update_time('股票日行情')
+        date = dt.date.today()
+        self.get_daily_hq(latest, date)
+        self.update_index_daily()
         self.get_company_info()
         self.get_ipo_info()
 
@@ -198,12 +214,12 @@ class Tushare2MySQL(object):
                 self.mysql_writer.update_df(df, '股票日行情')
 
                 # adj_factor data
-                df = self._pro.query('adj_factor', trade_date=date)
+                df = self._pro.query('adj_factor', trade_date=current_date_str)
                 df = self._standardize_df(df, adj_factor_desc)
                 self.mysql_writer.update_df(df, '股票日行情')
 
                 # indicator data
-                df = self._pro.query('daily_basic', trade_date=date)
+                df = self._pro.query('daily_basic', trade_date=current_date_str)
                 df = self._standardize_df(df, indicator_desc)
                 self.mysql_writer.update_df(df, '股票日行情')
 
@@ -234,7 +250,7 @@ class Tushare2MySQL(object):
                 # df = df[['证券名称']]
                 self.mysql_writer.update_df(df, '股票名称')
 
-    def get_ipo_info(self) -> pd.DataFrame:
+    def get_ipo_info(self, end_date: str = None) -> pd.DataFrame:
         """
         IPO新股列表
 
@@ -245,10 +261,51 @@ class Tushare2MySQL(object):
         table_name = '输出参数'
         column_desc = self._parameters[data_category][table_name]
 
-        df = self._pro.new_share()
+        df = self._pro.new_share(end_date=end_date)
         df = self._standardize_df(df, column_desc, index=['ts_code'])
         self.mysql_writer.update_df(df, data_category)
         return df
+
+    def update_index_daily(self, indexes: Union[Sequence[str], str] = None, start_date: DateType = None) -> None:
+        """
+        更新指数行情信息. 包括开高低收, 量额, 换手率, 市盈, 市净, 市销, 股本, 市值
+        默认指数为沪指, 深指, 中小盘, 创业板, 50, 300, 500
+        注:300不包含市盈等指标
+
+        :param indexes: 需要获取的指数
+        :param start_date: 开始时间
+        :return: 指数行情信息
+        """
+        category = '指数日线行情'
+        basic_category = '大盘指数每日指标'
+        table_name = '输出参数'
+        desc = self._parameters[category][table_name]
+        basic_desc = self._parameters[basic_category][table_name]
+
+        if isinstance(indexes, str):
+            indexes = [indexes]
+        if not indexes:
+            indexes = list(self.STOCK_INDEXES.values())
+        if not start_date:
+            try:
+                latest = self.mysql_writer.get_latest_update_time(category)
+            except AssertionError:
+                latest = dt.date(2008, 1, 1)
+            start_date = self._datetime2str(latest)
+
+        storage = []
+        for index in indexes:
+            storage.append(self._pro.index_daily(ts_code=index, start_date=start_date))
+        df = pd.concat(storage)
+        df = self._standardize_df(df, desc)
+        self.mysql_writer.update_df(df, category)
+
+        storage = []
+        for index in indexes:
+            storage.append(self._pro.index_dailybasic(ts_code=index, start_date=start_date))
+        df = pd.concat(storage)
+        df = self._standardize_df(df, basic_desc)
+        self.mysql_writer.update_df(df, category)
 
     # todo:
     def get_balance_sheet(self, ticker: str, period: str):
@@ -267,7 +324,7 @@ class Tushare2MySQL(object):
             return dt.datetime.strptime(date, '%Y%m%d')
 
     @staticmethod
-    def _datetime2str(date: dt.datetime) -> str:
+    def _datetime2str(date: Union[dt.datetime, dt.date]) -> str:
         return date.strftime('%Y%m%d')
 
     def _standardize_df(self, df: pd.DataFrame, parameter_info: Dict,
