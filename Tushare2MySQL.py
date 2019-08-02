@@ -1,6 +1,7 @@
 import datetime as dt
 import json
-from typing import Tuple, Any, Union, Sequence, Dict, List, Optional
+from typing import Tuple, Any, Union, Sequence, Dict, List, Optional, Callable
+from time import sleep
 
 import numpy as np
 import pandas as pd
@@ -105,8 +106,8 @@ class DataFrameMySQLWriter(object):
         assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = metadata.tables[table_name]
         assert 'DateTime' in table.columns.keys(), f'{table_name} 表中无时间列'
-        Session = sessionmaker(bind=self.engine)
-        session = Session()
+        session_maker = sessionmaker(bind=self.engine)
+        session = session_maker()
         return session.query(func.max(table.c.DateTime)).one()[0]
 
 
@@ -123,7 +124,7 @@ class Tushare2MySQL(object):
     STOCK_EXCHANGES = ['SSE', 'SZSE']
     FUTURE_EXCHANGES = ['CFFEX', 'DCE', 'CZCE', 'SHFE', 'INE']
     ALL_EXCHANGES = STOCK_EXCHANGES + FUTURE_EXCHANGES
-    STOCK_INDEXES = {'上证指数': '000001.SH', '深证成指': '399001.SZ','中小板指': '399005.SZ', '创业板指': '399006.SZ',
+    STOCK_INDEXES = {'上证指数': '000001.SH', '深证成指': '399001.SZ', '中小板指': '399005.SZ', '创业板指': '399006.SZ',
                      '上证50': '000016.SH', '沪深300': '000300.SH', '中证500': '000905.SH'}
 
     def __init__(self, tushare_token: str, param_json: str = None) -> None:
@@ -307,14 +308,53 @@ class Tushare2MySQL(object):
         df = self._standardize_df(df, basic_desc)
         self.mysql_writer.update_df(df, category)
 
-    # todo:
-    def get_balance_sheet(self, ticker: str, period: str):
-        df = self._pro.balancesheet(ts_code=ticker, period=period)
-        return df
+    def get_financial(self) -> None:
+        """
+        获取所有公司公布的 资产负债表, 现金流量表 和 利润表, 并写入数据库
 
-    # todo:
-    def batch_download_balance_sheet(self, ticker: list, report_type: str, period: str):
-        pass
+        注:
+        - 现阶段由mysql_writer自动判断数据类型, 所以空数据列会被以TEXT的形式写入数据库. 需手工修改.
+        - 由于接口限流, 这个函数通过循环股票完成, 需要很长很长时间才能完成(1天半?)
+        """
+        request_interval = 60.0 / 80.0 / 2.5
+        balance_sheet = '资产负债表'
+        income = '利润表'
+        cashflow = '现金流量表'
+        output_desc = '输出参数'
+        report_type_info = '主要报表类型说明'
+        company_type_info = '公司类型'
+
+        balance_sheet_desc = self._parameters[balance_sheet][output_desc]
+        report_type_desc = self._parameters[balance_sheet][report_type_info]
+        company_type_desc = self._parameters[balance_sheet][company_type_info]
+        income_desc = self._parameters[income][output_desc]
+        cashflow_desc = self._parameters[cashflow][output_desc]
+
+        def download_data(api_func: Callable, report_type_list: Sequence[str],
+                          column_name_dict: Dict[str, str], table_name: str) -> None:
+            storage = []
+            for i in report_type_list:
+                storage.append(api_func(ts_code=ticker, start_date='19900101', report_type=i))
+                sleep(request_interval)
+            df = pd.concat(storage)
+            df.replace({'report_type': report_type_desc, 'comp_type': company_type_desc}, inplace=True)
+            df = self._standardize_df(df, column_name_dict, index=['f_ann_date', 'ts_code'])
+            self.mysql_writer.update_df(df, table_name)
+
+        # 分 合并/母公司, 单季/年
+        self.get_all_stocks()
+        with tqdm(self._all_stocks) as pbar:
+            loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cashflow_desc, cashflow)]
+            for ticker in self._all_stocks:
+                pbar.set_description('下载财报: ' + ticker)
+                download_data(self._pro.balancesheet, ['1', '4', '5', '11'], balance_sheet_desc, '合并' + balance_sheet)
+                download_data(self._pro.balancesheet, ['6', '9', '10', '12'], balance_sheet_desc, '母公司' + balance_sheet)
+                for f, desc, table in loop_vars:
+                    download_data(f, ['7', '8'], desc, '母公司单季度' + table)
+                    download_data(f, ['6', '9', '10'], desc, '母公司' + table)
+                    download_data(f, ['2', '3'], desc, '合并单季度' + table)
+                    download_data(f, ['1', '4', '5'], desc, '合并' + table)
+                pbar.update(1)
 
     # utilities
     # ------------------------------------------

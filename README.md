@@ -8,6 +8,7 @@ Manual:
     - get_ipo_info(IPO新股列表)
     - get_all_stocks(股票列表)
     - get_calendar(交易日历)
+    - get_financial(公司财报)
     - update_index_daily(指数日行情, 列类似于股票日行情)
 
 Dependencies:
