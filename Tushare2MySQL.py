@@ -110,6 +110,14 @@ class DataFrameMySQLWriter(object):
         session = session_maker()
         return session.query(func.max(table.c.DateTime)).one()[0]
 
+    def db_maintenance(self) -> None:
+        """清理股票日行情中的无用复权因子"""
+        table_name = '股票日行情'
+        metadata = sa.MetaData(self.engine, reflect=True)
+        table = metadata.tables[table_name]
+        d = table.delete().where(table.c.开盘价 == None)
+        d.execute()
+
 
 def guess_type(input_series: pd.Series) -> Tuple[Any, str]:
     if input_series.dtype == np.float64:
@@ -215,16 +223,20 @@ class Tushare2MySQL(object):
                 self.mysql_writer.update_df(df, '股票日行情')
 
                 # adj_factor data
-                df = self._pro.query('adj_factor', trade_date=current_date_str)
+                df = self._pro.adj_factor(trade_date=current_date_str)
                 df = self._standardize_df(df, adj_factor_desc)
                 self.mysql_writer.update_df(df, '股票日行情')
 
                 # indicator data
                 df = self._pro.query('daily_basic', trade_date=current_date_str)
+                # 重复收盘价
+                df.drop('close', axis=1, inplace=True)
                 df = self._standardize_df(df, indicator_desc)
                 self.mysql_writer.update_df(df, '股票日行情')
 
                 pbar.update(1)
+
+        self.mysql_writer.db_maintenance()
 
     def get_past_names(self, ticker: str = None, start_date: DateType = None) -> pd.DataFrame:
         """获取曾用名
