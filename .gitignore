@@ -2,3 +2,4 @@ config.json
 param_raw.json
 *.xls
 .idea/
+__pycache__/

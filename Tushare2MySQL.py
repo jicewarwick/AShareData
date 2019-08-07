@@ -9,7 +9,7 @@ import pymysql
 import sqlalchemy as sa
 import tushare as ts
 from sqlalchemy import Column, String, Float, DateTime, Text
-from sqlalchemy.dialects.mysql import insert
+from sqlalchemy.dialects.mysql import insert, DOUBLE
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -44,12 +44,15 @@ class DataFrameMySQLWriter(object):
         url = URL(drivername=driver, username=username, password=password, host=ip, port=port, database=db_name)
         self.engine = sa.create_engine(url)
 
-    def update_df(self, df: pd.DataFrame, table_name: str, index: bool = True) -> None:
+    def update_df(self, df: pd.DataFrame, table_name: str, index: bool = True,
+                  default_type: Any = None, type_hint: Dict[str, Any] = None) -> None:
         """ Write DataFrame to database
 
         :param df: DataFrame
         :param table_name: table name
         :param index: if True, set df.index to be the database table index
+        :param default_type: default data type
+        :param type_hint: dict of column names and types
         :return:
         """
         # if table exists
@@ -79,6 +82,7 @@ class DataFrameMySQLWriter(object):
                 sql_str = 'ALTER TABLE ' + table_name + ' ADD COLUMN ('
                 storage = []
                 for it in missing_columns:
+                    # col_type =
                     storage.append(' '.join([it, guess_type(df[it])[1]]))
                 query = sql_str + ', '.join(storage) + ')'
                 self.engine.execute(query)
@@ -118,14 +122,19 @@ class DataFrameMySQLWriter(object):
         d = table.delete().where(table.c.开盘价 == None)
         d.execute()
 
+    def _get_column_type(self, input_series: pd.Series, default_type=None, type_hint=None):
+        if type_hint is not None:
+            if input_series.name in type_hint.keys():
+                return type_hint[input_series.name]
+            else:
+                return default_type
 
-def guess_type(input_series: pd.Series) -> Tuple[Any, str]:
-    if input_series.dtype == np.float64:
-        return Float, 'Float'
-    if input_series.dtype == type(object):
-        return Text, 'Text'
-    if input_series.dtype in [dt.datetime, dt.date, '<M8[ns]']:
-        return DateTime, 'DATETIME'
+        if input_series.dtype == np.float64:
+            return Float, 'Float'
+        if input_series.dtype == type(object):
+            return Text, 'Text'
+        if input_series.dtype in [dt.datetime, dt.date, '<M8[ns]']:
+            return DateTime, 'DATETIME'
 
 
 class Tushare2MySQL(object):
@@ -342,6 +351,13 @@ class Tushare2MySQL(object):
         income_desc = self._parameters[income][output_desc]
         cashflow_desc = self._parameters[cashflow][output_desc]
 
+        type_hints = {
+            "公告日期": DateTime,
+            "报告期": DateTime,
+            "报告类型": String,
+            "comp_type": String
+        }
+
         def download_data(api_func: Callable, report_type_list: Sequence[str],
                           column_name_dict: Dict[str, str], table_name: str) -> None:
             storage = []
@@ -351,7 +367,7 @@ class Tushare2MySQL(object):
             df = pd.concat(storage)
             df.replace({'report_type': report_type_desc, 'comp_type': company_type_desc}, inplace=True)
             df = self._standardize_df(df, column_name_dict, index=['f_ann_date', 'ts_code'])
-            self.mysql_writer.update_df(df, table_name)
+            self.mysql_writer.update_df(df, table_name, default_type=DOUBLE, type_hint=type_hints)
 
         # 分 合并/母公司, 单季/年
         self.get_all_stocks()
