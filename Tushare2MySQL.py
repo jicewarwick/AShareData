@@ -1,14 +1,14 @@
 import datetime as dt
 import json
-from typing import Tuple, Any, Union, Sequence, Dict, List, Optional, Callable
 from time import sleep
+from typing import Union, Sequence, Dict, List, Optional, Callable
+import logging
 
 import numpy as np
 import pandas as pd
-import pymysql
 import sqlalchemy as sa
 import tushare as ts
-from sqlalchemy import Column, String, Float, DateTime, Text
+from sqlalchemy import Column, Float, DateTime, Text, Table, Integer, VARCHAR
 from sqlalchemy.dialects.mysql import insert, DOUBLE
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base
@@ -22,6 +22,15 @@ Base = declarative_base()
 
 
 class DataFrameMySQLWriter(object):
+    type_mapper = {
+        'datetime': DateTime,
+        'float': Float,
+        'double': DOUBLE,
+        'str': Text,
+        'int': Integer,
+        'varchar': VARCHAR(20)
+    }
+
     def __init__(self, ip: str, port: int, username: str, password: str, db_name: str,
                  driver: str = 'mysql+pymysql') -> None:
         """ DataFrame to MySQL Database Writer
@@ -44,57 +53,35 @@ class DataFrameMySQLWriter(object):
         url = URL(drivername=driver, username=username, password=password, host=ip, port=port, database=db_name)
         self.engine = sa.create_engine(url)
 
-    def update_df(self, df: pd.DataFrame, table_name: str, index: bool = True,
-                  default_type: Any = None, type_hint: Dict[str, Any] = None) -> None:
+    def create_table(self, table_name, table_info: Dict[str, str]) -> None:
+        meta = sa.MetaData(bind=self.engine, reflect=True)
+        col_names = list(table_info.keys())
+        col_types = [self.type_mapper[it] for it in table_info.values()]
+        primary_keys = list({'DateTime', 'ID'} & set(col_names))
+        if table_name.lower() in meta.tables:
+            logging.info(table_name + ' already exists!!!')
+            return
+
+        new_table = Table(table_name, meta,
+                          *(Column(col_name, col_type) for col_name, col_type in zip(col_names, col_types)),
+                          sa.PrimaryKeyConstraint(*primary_keys))
+        new_table.create()
+        logging.info('Table ' + table_name + ' created')
+
+    def update_df(self, df: pd.DataFrame, table_name: str) -> None:
         """ Write DataFrame to database
 
         :param df: DataFrame
         :param table_name: table name
-        :param index: if True, set df.index to be the database table index
-        :param default_type: default data type
-        :param type_hint: dict of column names and types
         :return:
         """
-        # if table exists
-        inspector = sa.inspect(self.engine)
-        existing_tables = inspector.get_table_names()
-        if table_name not in existing_tables:
-            attr_dict = {'__tablename__': table_name}
-            if index:
-                for i, it in enumerate(df.index.names):
-                    if isinstance(df.index.get_level_values(i)[0], pd.Timestamp):
-                        attr_dict[it] = Column(DateTime)
-                    else:
-                        attr_dict[it] = Column(String(20))
-                attr_dict['__table_args__'] = (sa.PrimaryKeyConstraint(*df.index.names), sa.Index(*df.index.names))
-            for it in df.columns:
-                attr_dict[it] = Column(guess_type(df[it])[0])
-
-            input_table_class = type('InputTableClass', (Base,), attr_dict)
-            input_table_class().__table__.create(bind=self.engine)
-
-        # if all columns exists
-        else:
-            metadata = sa.MetaData(self.engine, reflect=True)
-            table = metadata.tables[table_name]
-            missing_columns = list(set(df.columns.tolist()) - set(table.columns.keys()))
-            if missing_columns:
-                sql_str = 'ALTER TABLE ' + table_name + ' ADD COLUMN ('
-                storage = []
-                for it in missing_columns:
-                    # col_type =
-                    storage.append(' '.join([it, guess_type(df[it])[1]]))
-                query = sql_str + ', '.join(storage) + ')'
-                self.engine.execute(query)
-
-        # upsert data
         metadata = sa.MetaData(self.engine, reflect=True)
-        table = metadata.tables[table_name]
+        table = metadata.tables[table_name.lower()]
         flat_df = df.reset_index()
 
         date_cols = flat_df.select_dtypes(np.datetime64).columns.values.tolist()
         for col in date_cols:
-            flat_df[col] = flat_df[col].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+            flat_df[col] = flat_df[col].apply(self.date2str)
 
         # replace nan to None so that insert will not error out
         # it seems that this operation changes dtypes. so do it last
@@ -122,19 +109,10 @@ class DataFrameMySQLWriter(object):
         d = table.delete().where(table.c.开盘价 == None)
         d.execute()
 
-    def _get_column_type(self, input_series: pd.Series, default_type=None, type_hint=None):
-        if type_hint is not None:
-            if input_series.name in type_hint.keys():
-                return type_hint[input_series.name]
-            else:
-                return default_type
-
-        if input_series.dtype == np.float64:
-            return Float, 'Float'
-        if input_series.dtype == type(object):
-            return Text, 'Text'
-        if input_series.dtype in [dt.datetime, dt.date, '<M8[ns]']:
-            return DateTime, 'DATETIME'
+    @staticmethod
+    def date2str(date) -> Optional[str]:
+        if isinstance(date, pd.Timestamp):
+            return date.strftime('%Y-%m-%d %H:%M:%S')
 
 
 class Tushare2MySQL(object):
@@ -155,12 +133,19 @@ class Tushare2MySQL(object):
         self._pro = ts.pro_api(self._tushare_token)
 
         with open(param_json, 'r', encoding='utf-8') as f:
-            self._parameters = json.load(f)
+            parameters = json.load(f)
+
+        self._factor_param = parameters['参数描述']
+        self._db_parameters = parameters['数据库参数']
 
         self._all_stocks = None
         self._calendar = None
 
         self.mysql_writer = None
+
+    def initialize_db_table(self):
+        for table_name, type_info in self._db_parameters.items():
+            self.mysql_writer.create_table(table_name, type_info)
 
     def add_mysql_db(self, ip: str, port: int, username: str, password: str, db_name='tushare_db') -> None:
         """添加MySQLWriter"""
@@ -186,8 +171,8 @@ class Tushare2MySQL(object):
         """
         data_category = '上市公司基本信息'
         table_name = '输出参数'
-        column_desc = self._parameters[data_category][table_name]
-        fields = ','.join(column_desc['名称'].values.tolist())
+        column_desc = self._factor_param[data_category][table_name]
+        fields = ','.join(list(column_desc.keys()))
 
         storage = []
         for exchange in self.STOCK_EXCHANGES:
@@ -198,7 +183,7 @@ class Tushare2MySQL(object):
         return df
 
     def get_daily_hq(self, trade_date: DateType = None,
-                     start_date: DateType = None, end_date: DateType = None) -> None:
+                     start_date: DateType = None, end_date: DateType = dt.date.today()) -> None:
         """获取每日行情
 
         行情信息包括: 开高低收, 量额, 复权因子, 换手率, 市盈, 市净, 市销, 股本, 市值
@@ -208,6 +193,8 @@ class Tushare2MySQL(object):
         交易日期查询一天, 开始结束日期查询区间. 二选一
         :return: None
         """
+        if (not trade_date) & (not start_date):
+            raise ValueError('trade_date 和 start_date 必填一个!')
         dates = [trade_date] if trade_date else self.select_dates(start_date, end_date)
 
         price_category = '日线行情'
@@ -215,9 +202,9 @@ class Tushare2MySQL(object):
         indicator_category = '每日指标'
         table_name = '输出参数'
 
-        price_desc = self._parameters[price_category][table_name]
-        adj_factor_desc = self._parameters[adj_factor_category][table_name]
-        indicator_desc = self._parameters[indicator_category][table_name]
+        price_desc = self._factor_param[price_category][table_name]
+        adj_factor_desc = self._factor_param[adj_factor_category][table_name]
+        indicator_desc = self._factor_param[indicator_category][table_name]
 
         with tqdm(dates) as pbar:
             for date in dates:
@@ -228,6 +215,7 @@ class Tushare2MySQL(object):
                 df = self._pro.daily(trade_date=current_date_str)
                 # 涨跌幅未复权, 没有意义
                 df.drop('pct_chg', axis=1, inplace=True)
+                df['amount'] = df['amount'] * 1000
                 df = self._standardize_df(df, price_desc)
                 self.mysql_writer.update_df(df, '股票日行情')
 
@@ -240,6 +228,8 @@ class Tushare2MySQL(object):
                 df = self._pro.query('daily_basic', trade_date=current_date_str)
                 # 重复收盘价
                 df.drop('close', axis=1, inplace=True)
+                df[['total_share', 'float_share', 'free_share', 'total_mv', 'circ_mv']] = \
+                    df[['total_share', 'float_share', 'free_share', 'total_mv', 'circ_mv']] * 10000
                 df = self._standardize_df(df, indicator_desc)
                 self.mysql_writer.update_df(df, '股票日行情')
 
@@ -253,7 +243,7 @@ class Tushare2MySQL(object):
         """
         data_category = '股票曾用名'
         table_name = '输出参数'
-        column_desc = self._parameters[data_category][table_name]
+        column_desc = self._factor_param[data_category][table_name]
         fields = 'ts_code, name, start_date'
 
         df = self._pro.namechange(ts_code=ticker, start_date=start_date, fields=fields)
@@ -267,10 +257,9 @@ class Tushare2MySQL(object):
         with tqdm(self._all_stocks) as pbar:
             for stock in self._all_stocks:
                 pbar.set_description('下载股票名称: ' + stock)
-                pbar.update(1)
                 df = self.get_past_names(stock)
-                # df = df[['证券名称']]
-                self.mysql_writer.update_df(df, '股票名称')
+                self.mysql_writer.update_df(df, '股票曾用名')
+                pbar.update(1)
 
     def get_ipo_info(self, end_date: str = None) -> pd.DataFrame:
         """
@@ -281,33 +270,32 @@ class Tushare2MySQL(object):
         """
         data_category = 'IPO新股列表'
         table_name = '输出参数'
-        column_desc = self._parameters[data_category][table_name]
+        column_desc = self._factor_param[data_category][table_name]
 
         df = self._pro.new_share(end_date=end_date)
+        df[['amount', 'market_amount', 'limit_amount']] = df[['amount', 'market_amount', 'limit_amount']] * 10000
+        df['funds'] = df['funds'] * 100000000
         df = self._standardize_df(df, column_desc, index=['ts_code'])
         self.mysql_writer.update_df(df, data_category)
         return df
 
-    def update_index_daily(self, indexes: Union[Sequence[str], str] = None, start_date: DateType = None) -> None:
+    def update_index_daily(self, start_date: DateType = None) -> None:
         """
         更新指数行情信息. 包括开高低收, 量额, 换手率, 市盈, 市净, 市销, 股本, 市值
         默认指数为沪指, 深指, 中小盘, 创业板, 50, 300, 500
         注:300不包含市盈等指标
 
-        :param indexes: 需要获取的指数
         :param start_date: 开始时间
         :return: 指数行情信息
         """
         category = '指数日线行情'
+        db_table_name = '指数日行情'
         basic_category = '大盘指数每日指标'
         table_name = '输出参数'
-        desc = self._parameters[category][table_name]
-        basic_desc = self._parameters[basic_category][table_name]
+        desc = self._factor_param[category][table_name]
+        basic_desc = self._factor_param[basic_category][table_name]
 
-        if isinstance(indexes, str):
-            indexes = [indexes]
-        if not indexes:
-            indexes = list(self.STOCK_INDEXES.values())
+        indexes = list(self.STOCK_INDEXES.values())
         if not start_date:
             try:
                 latest = self.mysql_writer.get_latest_update_time(category)
@@ -320,22 +308,21 @@ class Tushare2MySQL(object):
             storage.append(self._pro.index_daily(ts_code=index, start_date=start_date))
         df = pd.concat(storage)
         df = self._standardize_df(df, desc)
-        self.mysql_writer.update_df(df, category)
+        self.mysql_writer.update_df(df, db_table_name)
 
         storage = []
         for index in indexes:
             storage.append(self._pro.index_dailybasic(ts_code=index, start_date=start_date))
         df = pd.concat(storage)
         df = self._standardize_df(df, basic_desc)
-        self.mysql_writer.update_df(df, category)
+        self.mysql_writer.update_df(df, db_table_name)
 
-    def get_financial(self) -> None:
+    def get_financial(self, stock_list: Sequence[str] = None) -> None:
         """
         获取所有公司公布的 资产负债表, 现金流量表 和 利润表, 并写入数据库
 
         注:
-        - 现阶段由mysql_writer自动判断数据类型, 所以空数据列会被以TEXT的形式写入数据库. 需手工修改.
-        - 由于接口限流, 这个函数通过循环股票完成, 需要很长很长时间才能完成(1天半?)
+        - 由于接口限流严重, 这个函数通过循环股票完成, 需要很长很长时间才能完成(1天半?)
         """
         request_interval = 60.0 / 80.0 / 2.5
         balance_sheet = '资产负债表'
@@ -345,18 +332,11 @@ class Tushare2MySQL(object):
         report_type_info = '主要报表类型说明'
         company_type_info = '公司类型'
 
-        balance_sheet_desc = self._parameters[balance_sheet][output_desc]
-        report_type_desc = self._parameters[balance_sheet][report_type_info]
-        company_type_desc = self._parameters[balance_sheet][company_type_info]
-        income_desc = self._parameters[income][output_desc]
-        cashflow_desc = self._parameters[cashflow][output_desc]
-
-        type_hints = {
-            "公告日期": DateTime,
-            "报告期": DateTime,
-            "报告类型": String,
-            "comp_type": String
-        }
+        balance_sheet_desc = self._factor_param[balance_sheet][output_desc]
+        report_type_desc = self._factor_param[balance_sheet][report_type_info]
+        company_type_desc = self._factor_param[balance_sheet][company_type_info]
+        income_desc = self._factor_param[income][output_desc]
+        cashflow_desc = self._factor_param[cashflow][output_desc]
 
         def download_data(api_func: Callable, report_type_list: Sequence[str],
                           column_name_dict: Dict[str, str], table_name: str) -> None:
@@ -365,15 +345,20 @@ class Tushare2MySQL(object):
                 storage.append(api_func(ts_code=ticker, start_date='19900101', report_type=i))
                 sleep(request_interval)
             df = pd.concat(storage)
-            df.replace({'report_type': report_type_desc, 'comp_type': company_type_desc}, inplace=True)
             df = self._standardize_df(df, column_name_dict, index=['f_ann_date', 'ts_code'])
-            self.mysql_writer.update_df(df, table_name, default_type=DOUBLE, type_hint=type_hints)
+            df = df.reset_index()
+            df['DateTime'] = df['DateTime'] - df['报表类型'].map(lambda x: pd.DateOffset(seconds=int(x)))
+            df.replace({'报表类型': report_type_desc, '公司类型': company_type_desc}, inplace=True)
+            df.set_index(['DateTime', 'ID'], drop=True, inplace=True)
+            self.mysql_writer.update_df(df, table_name)
 
         # 分 合并/母公司, 单季/年
-        self.get_all_stocks()
-        with tqdm(self._all_stocks) as pbar:
+        if not stock_list:
+            self.get_all_stocks()
+            stock_list = self._all_stocks
+        with tqdm(stock_list) as pbar:
             loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cashflow_desc, cashflow)]
-            for ticker in self._all_stocks:
+            for ticker in stock_list:
                 pbar.set_description('下载财报: ' + ticker)
                 download_data(self._pro.balancesheet, ['1', '4', '5', '11'], balance_sheet_desc, '合并' + balance_sheet)
                 download_data(self._pro.balancesheet, ['6', '9', '10', '12'], balance_sheet_desc, '母公司' + balance_sheet)
@@ -388,7 +373,7 @@ class Tushare2MySQL(object):
     # ------------------------------------------
     @staticmethod
     def _str2datetime(date: str) -> Optional[dt.datetime]:
-        if date:
+        if date not in ['', 'nan']:
             return dt.datetime.strptime(date, '%Y%m%d')
 
     @staticmethod
@@ -452,4 +437,4 @@ class Tushare2MySQL(object):
         if isinstance(end, str):
             end = self._str2datetime(end)
 
-        return [it for it in self._calendar if start <= it <= end]
+        return [it for it in self._calendar if (start <= it <= end)]

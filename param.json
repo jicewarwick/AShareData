@@ -1,2189 +1,3190 @@
 {
-    "股票曾用名": {
-        "输入参数": {
-            "ts_code": "TS代码",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "name": "证券名称",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "ann_date": "公告日期",
-            "change_reason": "变更原因"
-        }
-    },
-    "分红送股": {
-        "输入参数": {
-            "ts_code": "TS代码",
-            "ann_date": "公告日",
-            "record_date": "股权登记日期",
-            "ex_date": "除权除息日",
-            "imp_ann_date": "实施公告日"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "end_date": "分红年度",
-            "ann_date": "预案公告日",
-            "div_proc": "实施进度",
-            "stk_div": "每股送转",
-            "stk_bo_rate": "每股送股比例",
-            "stk_co_rate": "每股转增比例",
-            "cash_div": "税后每股分红",
-            "cash_div_tax": "税前每股分红",
-            "record_date": "股权登记日",
-            "ex_date": "除权除息日",
-            "pay_date": "派息日",
-            "div_listdate": "红股上市日",
-            "imp_ann_date": "实施公告日",
-            "base_date": "基准日",
-            "base_share": "基准股本（万）"
-        }
-    },
-    "沪深股通成份股": {
-        "输入参数": {
-            "hs_type": "类型SH沪股通SZ深股通",
-            "is_new": "是否最新1是0否(默认1)"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "hs_type": "沪深港通类型SH沪SZ深",
-            "in_date": "纳入日期",
-            "out_date": "剔除日期",
-            "is_new": "是否最新1是0否"
-        }
-    },
-    "龙虎榜每日明细": {
-        "输入参数": {
-            "trade_date": "交易日期",
-            "ts_code": "股票代码"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "ts_code": "TS代码",
-            "name": "名称",
-            "close": "收盘价",
-            "pct_change": "涨跌幅",
-            "turnover_rate": "换手率",
-            "amount": "总成交额",
-            "l_sell": "龙虎榜卖出额",
-            "l_buy": "龙虎榜买入额",
-            "l_amount": "龙虎榜成交额",
-            "net_amount": "龙虎榜净买入额",
-            "net_rate": "龙虎榜净买额占比",
-            "amount_rate": "龙虎榜成交额占比",
-            "float_values": "当日流通市值",
-            "reason": "上榜理由"
-        }
-    },
-    "龙虎榜机构明细": {
-        "输入参数": {
-            "trade_date": "交易日期",
-            "ts_code": "TS代码"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "ts_code": "TS代码",
-            "exalter": "营业部名称",
-            "buy": "买入额（万）",
-            "buy_rate": "买入比例",
-            "sell": "卖出额（万）",
-            "sell_rate": "卖出比例",
-            "net_buy": "净成交额（万）"
-        }
-    },
-    "通用行情接口": {
-        "输入参数": {
-            "ts_code": "证券代码",
-            "api": "pro版api对象，如果初始化了set_token，此参数可以不需要",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "asset": "资产类别：E股票I沪深指数C数字货币FT期货FD基金O期权，默认E",
-            "adj": "复权类型(只针对股票)：None未复权qfq前复权hfq后复权,默认None",
-            "freq": "数据频度：支持分钟(min)/日(D)/周(W)/月(M)K线，其中1min表示1分钟（类推1/5/15/30/60分钟），默认D。目前有120积分的用户自动具备分钟数据试用权限（每分钟5次），正式权限请在QQ群私信群主。",
-            "ma": "均线，支持任意合理int数值",
-            "factors": "股票因子（asset='E'有效）支持tor换手率vr量比",
-            "adjfactor": "复权因子，在复权数据是，如果此参数为True，返回的数据中则带复权因子，默认为False。该功能从1.2.33版本开始生效"
-        }
-    },
-    "股权质押统计数据": {
-        "输入参数": {
-            "ts_code": "股票代码"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "end_date": "截至日期",
-            "pledge_count": "质押次数",
-            "unrest_pledge": "无限售股质押数量（万）",
-            "rest_pledge": "限售股份质押数量（万）",
-            "total_share": "总股本",
-            "pledge_ratio": "质押比例"
-        }
-    },
-    "股权质押明细": {
-        "输入参数": {
-            "ts_code": "股票代码"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "holder_name": "股东名称",
-            "pledge_amount": "质押数量",
-            "start_date": "质押开始日期",
-            "end_date": "质押结束日期",
-            "is_release": "是否已解押",
-            "release_date": "解押日期",
-            "pledgor": "质押方",
-            "holding_amount": "持股总数",
-            "pledged_amount": "质押总数",
-            "p_total_ratio": "本次质押占总股本比例",
-            "h_total_ratio": "持股总数占总股本比例",
-            "is_buyback": "是否回购"
-        }
-    },
-    "上市公司基本信息": {
-        "输入参数": {
-            "exchange": "交易所代码，SSE上交所SZSE深交所，默认SSE"
-        },
-        "输出参数": {
-            "ts_code": "股票代码",
-            "exchange": "交易所代码",
-            "chairman": "法人代表",
-            "manager": "总经理",
-            "secretary": "董秘",
-            "reg_capital": "注册资本",
-            "setup_date": "注册日期",
-            "province": "所在省份",
-            "city": "所在城市",
-            "introduction": "公司介绍",
-            "website": "公司主页",
-            "email": "电子邮件",
-            "office": "办公室",
-            "employees": "员工人数",
-            "main_business": "主要业务及产品",
-            "business_scope": "经营范围"
-        }
-    },
-    "电影月度票房": {
-        "输入参数": {
-            "date": "日期（每月1号，格式YYYYMMDD）"
-        },
-        "输出参数": {
-            "date": "日期",
-            "name": "影片名称",
-            "list_date": "上映日期",
-            "avg_price": "平均票价",
-            "month_amount": "当月票房（万）",
-            "list_day": "月内天数",
-            "p_pc": "场均人次",
-            "wom_index": "口碑指数",
-            "m_ratio": "月度占比",
-            "rank": "排名"
-        }
-    },
-    "电影周度票房": {
-        "输入参数": {
-            "date": "日期（每周一日期，格式YYYYMMDD）"
-        },
-        "输出参数": {
-            "date": "日期",
-            "name": "影片名称",
-            "avg_price": "平均票价",
-            "week_amount": "当周票房（万）",
-            "total": "累计票房（万）",
-            "list_day": "上映天数",
-            "p_pc": "场均人次",
-            "wom_index": "口碑指数",
-            "up_ratio": "环比变化",
-            "rank": "排名"
-        }
-    },
-    "电影日度票房": {
-        "输入参数": {
-            "date": "日期（格式YYYYMMDD）"
-        },
-        "输出参数": {
-            "date": "日期",
-            "name": "影片名称",
-            "avg_price": "平均票价",
-            "day_amount": "当日票房（万）",
-            "total": "累计票房（万）",
-            "list_day": "上映天数",
-            "p_pc": "场均人次",
-            "wom_index": "口碑指数",
-            "up_ratio": "环比变化",
-            "rank": "排名"
-        }
-    },
-    "影院每日票房": {
-        "输入参数": {
-            "date": "日期(格式:YYYYMMDD)"
-        },
-        "输出参数": {
-            "date": "日期",
-            "c_name": "影院名称",
-            "aud_count": "观众人数",
-            "att_ratio": "上座率",
-            "day_amount": "当日票房",
-            "day_showcount": "当日场次",
-            "avg_price": "场均票价",
-            "p_pc": "场均人次",
-            "rank": "排名"
-        }
-    },
-    "公募基金公司": {
-        "输出参数": {
-            "name": "基金公司名称",
-            "shortname": "简称",
-            "short_enname": "英文缩写",
-            "province": "省份",
-            "city": "城市",
-            "address": "注册地址",
-            "phone": "电话",
-            "office": "办公地址",
-            "website": "公司网址",
-            "chairman": "法人代表",
-            "manager": "总经理",
-            "reg_capital": "注册资本",
-            "setup_date": "成立日期",
-            "end_date": "公司终止日期",
-            "employees": "员工总数",
-            "main_business": "主要产品及业务",
-            "org_code": "组织机构代码",
-            "credit_code": "统一社会信用代码"
-        }
-    },
-    "公募基金净值": {
-        "输入参数": {
-            "ts_code": "TS基金代码（二选一）",
-            "end_date": "净值日期（二选一）"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "ann_date": "公告日期",
-            "end_date": "截止日期",
-            "unit_nav": "单位净值",
-            "accum_nav": "累计净值",
-            "accum_div": "累计分红",
-            "net_asset": "资产净值",
-            "total_netasset": "合计资产净值",
-            "adj_nav": "复权单位净值"
-        }
-    },
-    "公募基金分红": {
-        "输入参数": {
-            "ann_date": "公告日（以下参数四选一）",
-            "ex_date": "除息日",
-            "pay_date": "派息日",
-            "ts_code": "基金代码"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "ann_date": "公告日期",
-            "imp_anndate": "分红实施公告日",
-            "base_date": "分配收益基准日",
-            "div_proc": "方案进度",
-            "record_date": "权益登记日",
-            "ex_date": "除息日",
-            "pay_date": "派息日",
-            "earpay_date": "收益支付日",
-            "net_ex_date": "净值除权日",
-            "div_cash": "每股派息",
-            "base_unit": "基准基金份额(万份)",
-            "ear_distr": "可分配收益",
-            "ear_amount": "收益分配金额",
-            "account_date": "红利再投资到账日",
-            "base_year": "份额基准年度"
-        }
-    },
-    "公募基金持仓数据": {
-        "输入参数": {
-            "ts_code": "基金代码"
-        },
-        "输出参数": {
-            "ts_code": "TS基金代码",
-            "ann_date": "公告日期",
-            "end_date": "截止日期",
-            "symbol": "股票代码",
-            "mkv": "持有股票市值",
-            "amount": "持有股票数量",
-            "stk_mkv_ratio": "占股票市值比",
-            "stk_float_ratio": "占流通股本比例"
-        }
-    },
-    "IPO新股列表": {
-        "输入参数": {
-            "start_date": "上网发行开始日期",
-            "end_date": "上网发行结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "sub_code": "申购代码",
-            "name": "名称",
-            "ipo_date": "上网发行日期",
-            "issue_date": "上市日期",
-            "amount": "发行总量（万股）",
-            "market_amount": "上网发行总量（万股）",
-            "price": "发行价格",
-            "pe": "市盈率",
-            "limit_amount": "个人申购上限（万股）",
-            "funds": "募集资金（亿元）",
-            "ballot": "中签率"
-        }
-    },
-    "股票回购": {
-        "输入参数": {
-            "ann_date": "公告日期（任意填参数，如果都不填，单次默认返回2000条）",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "ann_date": "公告日期",
-            "end_date": "截止日期",
-            "proc": "进度",
-            "exp_date": "过期日期",
-            "vol": "回购数量",
-            "amount": "回购金额",
-            "high_limit": "回购最高价",
-            "low_limit": "回购最低价"
-        }
-    },
-    "概念股分类": {
-        "输入参数": {
-            "src": "来源，默认为ts"
-        },
-        "输出参数": {
-            "code": "概念分类ID",
-            "name": "概念分类名称",
-            "src": "来源"
-        }
-    },
-    "概念股列表": {
-        "输入参数": {
-            "id": "概念分类ID（id来自概念股分类接口）",
-            "ts_code": "股票代码（以上参数二选一）"
-        },
-        "输出参数": {
-            "id": "概念代码",
-            "concept_name": "概念名称",
-            "ts_code": "股票代码",
-            "name": "股票名称",
-            "in_date": "纳入日期",
-            "out_date": "剔除日期"
-        }
-    },
-    "场内基金日线行情": {
-        "输入参数": {
-            "ts_code": "基金代码（二选一）",
-            "trade_date": "交易日期（二选一）",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "trade_date": "交易日期",
-            "open": "开盘价",
-            "high": "最高价",
-            "low": "最低价",
-            "close": "收盘价",
-            "pre_close": "昨收盘价",
-            "change": "涨跌额",
-            "pct_chg": "涨跌幅(%)",
-            "vol": "成交量(手)",
-            "amount": "成交额(千元)"
-        }
-    },
-    "大盘指数每日指标": {
-        "输入参数": {
-            "trade_date": "交易日期（格式：YYYYMMDD，比如20181018，下同）",
-            "ts_code": "TS代码",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "trade_date": "交易日期",
-            "total_mv": "当日总市值",
-            "float_mv": "当日流通市值",
-            "total_share": "当日总股本",
-            "float_share": "当日流通股本",
-            "free_share": "当日自由流通股本",
-            "turnover_rate": "换手率",
-            "turnover_rate_f": "流通股换手率",
-            "pe": "市盈率",
-            "pe_ttm": "市盈率TTM",
-            "pb": "市净率"
-        }
-    },
-    "期货合约信息表": {
-        "输入参数": {
-            "exchange": "交易所代码CFFEX-中金所DCE-大商所CZCE-郑商所SHFE-上期所INE-上海国际能源交易中心",
-            "fut_type": "合约类型(1普通合约2主力与连续合约默认取全部)"
-        },
-        "输出参数": {
-            "ts_code": "合约代码",
-            "symbol": "交易标识",
-            "exchange": "交易市场",
-            "name": "中文简称",
-            "fut_code": "合约产品代码",
-            "multiplier": "合约乘数",
-            "trade_unit": "交易计量单位",
-            "per_unit": "交易单位(每手)",
-            "quote_unit": "报价单位",
-            "quote_unit_desc": "最小报价单位说明",
-            "d_mode_desc": "交割方式说明",
-            "list_date": "上市日期",
-            "delist_date": "最后交易日期",
-            "d_month": "交割月份",
-            "last_ddate": "最后交割日",
-            "trade_time_desc": "交易时间说明"
-        }
-    },
-    "交易日历": {
-        "输入参数": {
-            "exchange": "交易所SSE上交所SZSE深交所",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "is_open": "是否交易'0'休市'1'交易"
-        },
-        "输出参数": {
-            "exchange": "交易所SSE上交所SZSE深交所",
-            "cal_date": "日历日期",
-            "is_open": "是否交易0休市1交易",
-            "pretrade_date": "上一个交易日"
-        }
-    },
-    "期货日线行情": {
-        "输入参数": {
-            "trade_date": "交易日期",
-            "ts_code": "合约代码",
-            "exchange": "交易所代码",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS合约代码",
-            "trade_date": "交易日期",
-            "pre_close": "昨收盘价",
-            "pre_settle": "昨结算价",
-            "open": "开盘价",
-            "high": "最高价",
-            "low": "最低价",
-            "close": "收盘价",
-            "settle": "结算价",
-            "change1": "收结涨跌",
-            "change2": "结结涨跌",
-            "vol": "成交量",
-            "amount": "成交金额(万元)",
-            "oi": "持仓量",
-            "oi_chg": "持仓量变化",
-            "delv_settle": "交割结算价"
-        }
-    },
-    "每日成交持仓排名": {
-        "输入参数": {
-            "trade_date": "交易日期（trade_date/symbol至少输入一个参数）",
-            "symbol": "合约或产品代码",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "exchange": "交易所代码"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "symbol": "合约代码或类型",
-            "broker": "期货公司会员简称",
-            "vol": "成交量",
-            "vol_chg": "成交量变化",
-            "long_hld": "持买仓量",
-            "long_chg": "持买仓量变化",
-            "short_hld": "持卖仓量",
-            "short_chg": "持卖仓量变化",
-            "exchange": "交易所"
-        }
-    },
-    "仓单日报": {
-        "输入参数": {
-            "trade_date": "交易日期",
-            "symbol": "产品代码",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "exchange": "交易所代码"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "symbol": "产品代码",
-            "fut_name": "产品名称",
-            "warehouse": "仓库名称",
-            "wh_id": "仓库编号",
-            "pre_vol": "昨日仓单量",
-            "vol": "今日仓单量",
-            "vol_chg": "增减量",
-            "area": "地区",
-            "year": "年度",
-            "grade": "等级",
-            "brand": "品牌",
-            "place": "产地",
-            "pd": "升贴水",
-            "is_ct": "是否折算仓单",
-            "unit": "单位",
-            "exchange": "交易所"
-        }
-    },
-    "结算参数": {
-        "输入参数": {
-            "trade_date": "交易日期（trade_date/ts_code至少需要输入一个参数）",
-            "ts_code": "合约代码",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "exchange": "交易所代码"
-        },
-        "输出参数": {
-            "ts_code": "合约代码",
-            "trade_date": "交易日期",
-            "settle": "结算价",
-            "trading_fee_rate": "交易手续费率",
-            "trading_fee": "交易手续费",
-            "delivery_fee": "交割手续费",
-            "b_hedging_margin_rate": "买套保交易保证金率",
-            "s_hedging_margin_rate": "卖套保交易保证金率",
-            "long_margin_rate": "买投机交易保证金率",
-            "short_margin_rate": "卖投机交易保证金率",
-            "offset_today_fee": "平今仓手续率",
-            "exchange": "交易所"
-        }
-    },
-    "新闻资讯": {
-        "输入参数": {
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "src": "新闻来源见下表"
-        },
-        "输出参数": {
-            "datetime": "新闻时间",
-            "content": "内容",
-            "title": "标题",
-            "channels": "分类"
-        }
-    },
-    "周线行情": {
-        "输入参数": {
-            "ts_code": "TS代码（ts_code,trade_date两个参数任选一）",
-            "trade_date": "交易日期（每周五日期，YYYYMMDD格式）",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "股票代码",
-            "trade_date": "交易日期",
-            "close": "周收盘价",
-            "open": "周开盘价",
-            "high": "周最高价",
-            "low": "周最低价",
-            "pre_close": "上一周收盘价",
-            "change": "周涨跌额",
-            "pct_chg": "未复权周涨跌幅",
-            "vol": "周成交量",
-            "amount": "周成交额"
-        }
-    },
-    "月线行情": {
-        "输入参数": {
-            "ts_code": "TS代码（ts_code,trade_date两个参数任选一）",
-            "trade_date": "交易日期（每月最后一个交易日日期，YYYYMMDD格式）",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "股票代码",
-            "trade_date": "交易日期",
-            "close": "月收盘价",
-            "open": "月开盘价",
-            "high": "月最高价",
-            "low": "月最低价",
-            "pre_close": "上月收盘价",
-            "change": "月涨跌额",
-            "pct_chg": "未复权月涨跌幅",
-            "vol": "月成交量",
-            "amount": "月成交额"
-        }
-    },
-    "A股复权行情": {
-        "接口说明": {
-            "ts_code": "证券代码",
-            "pro_api": "pro版api对象",
-            "start_date": "开始日期(格式：YYYYMMDD)",
-            "end_date": "结束日期(格式：YYYYMMDD)",
-            "asset": "资产类别：E股票I沪深指数C数字货币F期货FD基金O期权，默认E",
-            "adj": "复权类型(只针对股票)：None未复权qfq前复权hfq后复权,默认None",
-            "freq": "数据频度：1MIN表示1分钟（1/5/15/30/60分钟）D日线，默认D",
-            "ma": "均线，支持任意周期的均价和均量，输入任意合理int数值"
-        }
-    },
-    "Shibor利率数据": {
-        "Shibor利率介绍": {
-            "date": "日期(日期输入格式：YYYYMMDD，下同)",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输入参数": {
-            "date": "日期",
-            "on": "隔夜",
-            "1w": "1周",
-            "2w": "2周",
-            "1m": "1个月",
-            "3m": "3个月",
-            "6m": "6个月",
-            "9m": "9个月",
-            "1y": "1年"
-        }
-    },
-    "Shibor报价数据": {
-        "输入参数": {
-            "date": "日期(日期输入格式：YYYYMMDD，下同)",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "bank": "银行名称（中文名称，例如农业银行）"
-        },
-        "输出参数": {
-            "date": "日期",
-            "bank": "报价银行",
-            "on_b": "隔夜_Bid",
-            "on_a": "隔夜_Ask",
-            "1w_b": "1周_Bid",
-            "1w_a": "1周_Ask",
-            "2w_b": "2周_Bid",
-            "2w_a": "2周_Ask",
-            "1m_b": "1月_Bid",
-            "1m_a": "1月_Ask",
-            "3m_b": "3月_Bid",
-            "3m_a": "3月_Ask",
-            "6m_b": "6月_Bid",
-            "6m_a": "6月_Ask",
-            "9m_b": "9月_Bid",
-            "9m_a": "9月_Ask",
-            "1y_b": "1年_Bid",
-            "1y_a": "1年_Ask"
-        }
-    },
-    "LPR贷款基础利率": {
-        "输入参数": {
-            "date": "日期(日期输入格式：YYYYMMDD，下同)",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "date": "日期",
-            "1y": "1年贷款利率"
-        }
-    },
-    "Libor拆借利率": {
-        "输入参数": {
-            "date": "日期(日期输入格式：YYYYMMDD，下同)",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "curr_type": "货币代码(USD美元EUR欧元JPY日元GBP英镑CHF瑞郎，默认是USD)"
-        },
-        "输出参数": {
-            "date": "日期",
-            "curr_type": "货币",
-            "on": "隔夜",
-            "1w": "1周",
-            "1m": "1个月",
-            "2m": "2个月",
-            "3m": "3个月",
-            "6m": "6个月",
-            "12m": "12个月"
-        }
-    },
-    "Hibor利率": {
-        "输入参数": {
-            "date": "日期(日期输入格式：YYYYMMDD，下同)",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "date": "日期",
-            "on": "隔夜",
-            "1w": "1周",
-            "2w": "2周",
-            "1m": "1个月",
-            "2m": "2个月",
-            "3m": "3个月",
-            "6m": "6个月",
-            "12m": "12个月"
-        }
-    },
-    "新闻联播": {
-        "输入参数": {
-            "date": "日期（输入格式：YYYYMMDD比如：20181211）"
-        },
-        "输出参数": {
-            "date": "日期",
-            "title": "标题",
-            "content": "内容"
-        }
-    },
-    "南华期货指数日线行情": {
-        "输入参数": {
-            "ts_code": "指数代码（南华期货指数以.NH结尾，具体请参考本文最下方）",
-            "trade_date": "交易日期（日期格式：YYYYMMDD，下同）",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS指数代码",
-            "trade_date": "交易日",
-            "close": "收盘点位",
-            "open": "开盘点位",
-            "high": "最高点位",
-            "low": "最低点位",
-            "pre_close": "昨日收盘点",
-            "change": "涨跌点",
-            "pct_chg": "涨跌幅",
-            "vol": "成交量",
-            "amount": "成交额（千元）"
-        }
-    },
-    "全国电影剧本备案数据": {
-        "输入参数": {
-            "ann_date": "公布日期（至少输入一个参数，格式：YYYYMMDD，日期不连续，定期公布）",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "rec_no": "备案号",
-            "film_name": "影片名称",
-            "rec_org": "备案单位",
-            "script_writer": "编剧",
-            "rec_result": "备案结果",
-            "rec_area": "备案地",
-            "classified": "影片分类",
-            "date_range": "备案日期区间",
-            "ann_date": "备案结果发布时间"
-        }
-    },
-    "Tushare期权数据": {},
-    "期权合约信息": {
-        "输入参数": {
-            "exchange": "交易所代码（包括上交所SSE等交易所）",
-            "call_put": "期权类型"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "exchange": "交易市场",
-            "name": "合约名称",
-            "per_unit": "合约单位",
-            "opt_code": "标准合约代码",
-            "opt_type": "合约类型",
-            "call_put": "期权类型",
-            "exercise_type": "行权方式",
-            "exercise_price": "行权价格",
-            "s_month": "结算月",
-            "maturity_date": "到期日",
-            "list_price": "挂牌基准价",
-            "list_date": "开始交易日期",
-            "delist_date": "最后交易日期",
-            "last_edate": "最后行权日期",
-            "last_ddate": "最后交割日期",
-            "quote_unit": "报价单位",
-            "min_price_chg": "最小价格波幅"
-        }
-    },
-    "期权日线行情": {
-        "输入参数": {
-            "ts_code": "TS合约代码（输入代码或时间至少任意一个参数）",
-            "trade_date": "交易日期",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "exchange": "交易所"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "trade_date": "交易日期",
-            "exchange": "交易市场",
-            "pre_settle": "昨结算价",
-            "pre_close": "前收盘价",
-            "open": "开盘价",
-            "high": "最高价",
-            "low": "最低价",
-            "close": "收盘价",
-            "settle": "结算价",
-            "vol": "成交量",
-            "amount": "成交金额(万元)",
-            "oi": "持仓量"
-        }
-    },
-    "限售股解禁": {
-        "输入参数": {
-            "ts_code": "TS股票代码（至少输入一个参数）",
-            "ann_date": "公告日期（日期格式：YYYYMMDD，下同）",
-            "float_date": "解禁日期",
-            "start_date": "解禁开始日期",
-            "end_date": "解禁结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "ann_date": "公告日期",
-            "float_date": "解禁日期",
-            "float_share": "流通股份",
-            "float_ratio": "流通股份占总股本比率",
-            "holder_name": "股东名称",
-            "share_type": "股份类型"
-        }
-    },
-    "大宗交易": {
-        "输入参数": {
-            "ts_code": "TS代码（股票代码和日期至少输入一个参数）",
-            "trade_date": "交易日期（格式：YYYYMMDD，下同）",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "trade_date": "交易日历",
-            "price": "成交价",
-            "vol": "成交量（万股）",
-            "amount": "成交金额",
-            "buyer": "买方营业部",
-            "seller": "卖方营业部"
-        }
-    },
-    "财报披露计划": {
-        "输入参数": {
-            "ts_code": "TS股票代码",
-            "end_date": "财报周期（比如20181231表示2018年年报，20180630表示中报)",
-            "pre_date": "计划披露日期",
-            "actual_date": "实际披露日期"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "ann_date": "最新披露公告日",
-            "end_date": "报告期",
-            "pre_date": "预计披露日期",
-            "actual_date": "实际披露日期",
-            "modify_date": "披露日期修正记录"
-        }
-    },
-    "股票账户开户数据": {
-        "输入参数": {
-            "date": "日期",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "date": "统计周期",
-            "weekly_new": "本周新增（万）",
-            "total": "期末总账户数（万）",
-            "weekly_hold": "本周持仓账户数（万）",
-            "weekly_trade": "本周参与交易账户数（万）"
-        }
-    },
-    "股票账户开户数据（旧）": {
-        "输入参数": {
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "date": "统计周期",
-            "new_sh": "本周新增（上海，户）",
-            "new_sz": "本周新增（深圳，户）",
-            "active_sh": "期末有效账户（上海，万户）",
-            "active_sz": "期末有效账户（深圳，万户）",
-            "total_sh": "期末账户数（上海，万户）",
-            "total_sz": "期末账户数（深圳，万户）",
-            "trade_sh": "参与交易账户数（上海，万户）",
-            "trade_sz": "参与交易账户数（深圳，万户）"
-        }
-    },
-    "股东人数": {
-        "输入参数": {
-            "ts_code": "TS股票代码",
-            "enddate": "截止日期",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "end_date": "截止日期",
-            "holder_num": "股东户数"
-        }
-    },
-    "个股资金流向": {
-        "输入参数": {
-            "ts_code": "股票代码（股票和时间参数至少输入一个）",
-            "trade_date": "交易日期",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "trade_date": "交易日期",
-            "buy_sm_vol": "小单买入量",
-            "buy_sm_amount": "小单买入金额（万元）",
-            "sell_sm_vol": "小单卖出量",
-            "sell_sm_amount": "小单卖出金额（万元）",
-            "buy_md_vol": "中单买入量",
-            "buy_md_amount": "中单买入金额（万元）",
-            "sell_md_vol": "中单卖出量",
-            "sell_md_amount": "中单卖出金额（万元）",
-            "buy_lg_vol": "大单买入量",
-            "buy_lg_amount": "大单买入金额（万元）",
-            "sell_lg_vol": "大单卖出量",
-            "sell_lg_amount": "大单卖出金额（万元）",
-            "buy_elg_vol": "特大单买入量",
-            "buy_elg_amount": "特大单买入金额（万元）",
-            "sell_elg_vol": "特大单卖出量",
-            "sell_elg_amount": "特大单卖出金额（万元）",
-            "net_mf_vol": "净流入量",
-            "net_mf_amount": "净流入额（万元）"
-        }
-    },
-    "指数周线行情": {
-        "输入参数": {
-            "ts_code": "TS代码",
-            "trade_date": "交易日期",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS指数代码",
-            "trade_date": "交易日",
-            "close": "收盘点位",
-            "open": "开盘点位",
-            "high": "最高点位",
-            "low": "最低点位",
-            "pre_close": "昨日收盘点",
-            "change": "涨跌点位",
-            "pct_chg": "涨跌幅",
-            "vol": "成交量",
-            "amount": "成交额"
-        }
-    },
-    "指数月线行情": {
-        "输入参数": {
-            "ts_code": "TS代码",
-            "trade_date": "交易日期",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS指数代码",
-            "trade_date": "交易日",
-            "close": "收盘点位",
-            "open": "开盘点位",
-            "high": "最高点位",
-            "low": "最低点位",
-            "pre_close": "昨日收盘点",
-            "change": "涨跌点位",
-            "pct_chg": "涨跌幅",
-            "vol": "成交量",
-            "amount": "成交额"
-        }
-    },
-    "温州民间借贷利率": {
-        "输入参数": {
-            "date": "日期",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "date": "日期",
-            "comp_rate": "温州民间融资综合利率指数(%，下同)",
-            "center_rate": "民间借贷服务中心利率",
-            "micro_rate": "小额贷款公司放款利率",
-            "cm_rate": "民间资本管理公司融资价格",
-            "sdb_rate": "社会直接借贷利率",
-            "om_rate": "其他市场主体利率",
-            "aa_rate": "农村互助会互助金费率",
-            "m1_rate": "温州地区民间借贷分期限利率（一月期）",
-            "m3_rate": "温州地区民间借贷分期限利率（三月期）",
-            "m6_rate": "温州地区民间借贷分期限利率（六月期）",
-            "m12_rate": "温州地区民间借贷分期限利率（一年期）",
-            "long_rate": "温州地区民间借贷分期限利率（长期）"
-        }
-    },
-    "广州民间借贷利率": {
-        "输入参数": {
-            "date": "日期",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "date": "日期",
-            "d10_rate": "小额贷市场平均利率（十天）（单位：%，下同）",
-            "m1_rate": "小额贷市场平均利率（一月期）",
-            "m3_rate": "小额贷市场平均利率（三月期）",
-            "m6_rate": "小额贷市场平均利率（六月期）",
-            "m12_rate": "小额贷市场平均利率（一年期）",
-            "long_rate": "小额贷市场平均利率（长期）"
-        }
-    },
-    "股东增减持": {
-        "输入参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期",
-            "trade_type": "交易类型IN增持DE减持",
-            "holder_type": "股东类型C公司P个人G高管"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "ann_date": "公告日期",
-            "holder_name": "股东名称",
-            "holder_type": "股东类型G高管P个人C公司",
-            "in_de": "类型IN增持DE减持",
-            "change_vol": "变动数量",
-            "change_ratio": "占流通比例",
-            "after_share": "变动后持股",
-            "after_ratio": "变动后占流通比例",
-            "avg_price": "平均价格",
-            "total_share": "持股总数",
-            "begin_date": "增减持开始日期",
-            "close_date": "增减持结束日期"
-        }
-    },
-    "上市公司公告(信息地雷)": {
-        "输入参数": {
-            "ts_code": "股票代码",
-            "ann_date": "公告日期",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期",
-            "year": "年度，目前接口不能跨年获取，设定一个年份即可，比如2019"
-        },
-        "输出参数": {
-            "ts_code": "股票代码",
-            "ann_date": "公告日期",
-            "ann_type": "公告类型",
-            "title": "公告标题",
-            "content": "公告内容",
-            "pub_time": "公告发布时间"
-        }
-    },
-    "外汇基础信息（海外）": {
-        "输入参数": {
-            "exchange": "交易商",
-            "classify": "分类",
-            "ts_code": "TS代码"
-        },
-        "输出参数": {
-            "ts_code": "外汇代码",
-            "name": "名称",
-            "classify": "分类",
-            "exchange": "交易商",
-            "min_unit": "最小交易单位",
-            "max_unit": "最大交易单位",
-            "pip": "最大交易单位",
-            "pip_cost": "点值",
-            "traget_spread": "目标差价",
-            "min_stop_distance": "最小止损距离（点子）",
-            "trading_hours": "交易时间",
-            "break_time": "休市时间"
-        }
-    },
-    "外汇日线行情": {
-        "输入参数": {
-            "ts_code": "TS代码",
-            "trade_date": "交易日期（GMT，日期是格林尼治时间，比北京时间晚一天）",
-            "start_date": "开始日期（GMT）",
-            "end_date": "结束日期（GMT）",
-            "exchange": "交易商，目前只有FXCM"
-        },
-        "输出参数": {
-            "ts_code": "外汇代码",
-            "trade_date": "交易日期",
-            "bid_open": "买入开盘价",
-            "bid_close": "买入收盘价",
-            "bid_high": "买入最高价",
-            "bid_low": "买入最低价",
-            "ask_open": "卖出开盘价",
-            "ask_close": "卖出收盘价",
-            "ask_high": "卖出最高价",
-            "ask_low": "卖出最低价",
-            "tick_qty": "报价笔数",
-            "exchange": "交易商"
-        }
-    },
-    "全国拍摄制作电视剧备案公示数据": {
-        "输入参数": {
-            "report_date": "备案月份（YYYYMM）",
-            "start_date": "备案开始月份（YYYYMM）",
-            "end_date": "备案结束月份（YYYYMM）",
-            "org": "备案机构",
-            "name": "电视剧名称"
-        },
-        "输出参数": {
-            "name": "电视剧名称",
-            "classify": "题材",
-            "types": "体裁",
-            "org": "报备机构",
-            "report_date": "报备时间",
-            "license_key": "许可证号",
-            "episodes": "集数",
-            "shooting_date": "拍摄时间",
-            "prod_cycle": "制作周期",
-            "content": "内容提要",
-            "pro_opi": "省级管理部门备案意见",
-            "dept_opi": "相关部门意见",
-            "remarks": "备注"
-        }
-    },
-    "申万行业分类": {
-        "输入参数": {
-            "index_code": "指数代码",
-            "level": "行业分级（L1/L2/L3）",
-            "src": "指数来源（SW申万）"
-        },
-        "输出参数": {
-            "index_code": "指数代码",
-            "industry_name": "行业名称",
-            "level": "行业名称",
-            "industry_code": "行业代码",
-            "src": "行业分类（SW申万）"
-        }
-    },
-    "申万行业成分构成": {
-        "输入参数": {
-            "index_code": "指数代码",
-            "ts_code": "股票代码",
-            "is_new": "是否最新（默认为“Y是”）"
-        },
-        "输出参数": {
-            "index_code": "指数代码",
-            "index_name": "指数名称",
-            "con_code": "成分股票代码",
-            "con_name": "成分股票名称",
-            "in_date": "纳入日期",
-            "out_date": "剔除日期",
-            "is_new": "是否最新Y是N否"
-        }
-    },
-    "每日涨跌停价格": {
-        "输入参数": {
-            "ts_code": "股票代码",
-            "trade_date": "交易日期",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "ts_code": "TS股票代码",
-            "pre_close": "昨日收盘价",
-            "up_limit": "涨停价",
-            "down_limit": "跌停价"
-        }
-    },
-    "公募基金列表": {
-        "输入参数": {
-            "market": "交易市场:E场内O场外（默认E）"
-        },
-        "输出参数": {
-            "ts_code": "基金代码",
-            "name": "简称",
-            "management": "管理人",
-            "custodian": "托管人",
-            "fund_type": "投资类型",
-            "found_date": "成立日期",
-            "due_date": "到期日期",
-            "list_date": "上市时间",
-            "issue_date": "发行日期",
-            "delist_date": "退市日期",
-            "issue_amount": "发行份额(亿)",
-            "m_fee": "管理费",
-            "c_fee": "托管费",
-            "duration_year": "存续期",
-            "p_value": "面值",
-            "min_amount": "起点金额(万元)",
-            "exp_return": "预期收益率",
-            "benchmark": "业绩比较基准",
-            "status": "存续状态D摘牌I发行L已上市",
-            "invest_type": "投资风格",
-            "type": "基金类型",
-            "trustee": "受托人",
-            "purc_startdate": "日常申购起始日",
-            "redm_startdate": "日常赎回起始日",
-            "market": "E场内O场外"
-        }
-    },
-    "股票列表": {
-        "输入参数": {
-            "is_hs": "是否沪深港通标的，N否H沪股通S深股通",
-            "list_status": "上市状态：L上市D退市P暂停上市",
-            "exchange": "交易所SSE上交所SZSE深交所HKEX港交所(未上线)"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "symbol": "股票代码",
-            "name": "股票名称",
-            "area": "所在地域",
-            "industry": "所属行业",
-            "fullname": "股票全称",
-            "enname": "英文全称",
-            "market": "市场类型（主板/中小板/创业板）",
-            "exchange": "交易所代码",
-            "curr_type": "交易货币",
-            "list_status": "上市状态：L上市D退市P暂停上市",
-            "list_date": "上市日期",
-            "delist_date": "退市日期",
-            "is_hs": "是否沪深港通标的，N否H沪股通S深股通"
-        }
-    },
-    "日线行情": {
-    	"输入参数": {
-            "ts_code": "股票代码（二选一）",
-            "trade_date": "交易日期（二选一）",
-            "start_date": "开始日期(YYYYMMDD)",
-            "end_date": "结束日期(YYYYMMDD)"
-        },
-        "输出参数": {
-            "ts_code": "股票代码",
-            "trade_date": "交易日期",
-            "open": "开盘价",
-            "high": "最高价",
-            "low": "最低价",
-            "close": "收盘价",
-            "pre_close": "昨收价",
-            "change": "涨跌额",
-            "pct_chg": "未复权涨跌幅",
-            "vol": "成交量",
-            "amount": "成交额（千元）"
-        }
-    },
-    "复权因子": {
-        "输入参数": {
-            "ts_code": "股票代码",
-            "trade_date": "交易日期(YYYYMMDD，下同)",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "股票代码",
-            "trade_date": "交易日期",
-            "adj_factor": "复权因子"
-        }
-    },
-    "停复牌信息": {
-        "输入参数": {
-            "ts_code": "股票代码(三选一)",
-            "suspend_date": "停牌日期(三选一)",
-            "resume_date": "复牌日期(三选一)"
-        },
-        "输出参数": {
-            "ts_code": "股票代码",
-            "suspend_date": "停牌日期",
-            "resume_date": "复牌日期",
-            "ann_date": "公告日期",
-            "suspend_reason": "停牌原因",
-            "reason_type": "停牌原因类别"
-        }
-    },
-    "每日指标": {
-        "输入参数": {
-            "ts_code": "股票代码（二选一）",
-            "trade_date": "交易日期（二选一）",
-            "start_date": "开始日期(YYYYMMDD)",
-            "end_date": "结束日期(YYYYMMDD)"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "trade_date": "交易日期",
-            "close": "当日收盘价",
-            "turnover_rate": "换手率",
-            "turnover_rate_f": "流通股换手率",
-            "volume_ratio": "量比",
-            "pe": "市盈率",
-            "pe_ttm": "市盈率TTM",
-            "pb": "市净率",
-            "ps": "市销率",
-            "ps_ttm": "市销率TTM",
-            "total_share": "总股本（万股）",
-            "float_share": "流通股本（万股）",
-            "free_share": "自由流通股本（万）",
-            "total_mv": "总市值（万元）",
-            "circ_mv": "流通市值（万元）"
-        }
-    },
-    "利润表": {
-        "输入参数": {
-            "ts_code": "股票代码",
-            "ann_date": "公告日期",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期",
-            "period": "报告期(每个季度最后一天的日期，比如20171231表示年报)",
-            "report_type": "报告类型：参考下表说明",
-            "comp_type": "公司类型：1一般工商业2银行3保险4证券"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "ann_date": "公告日期",
-            "f_ann_date": "实际公告日期",
-            "end_date": "报告期",
-            "report_type": "报告类型",
-            "comp_type": "公司类型",
-            "basic_eps": "基本每股收益",
-            "diluted_eps": "稀释每股收益",
-            "total_revenue": "营业总收入",
-            "revenue": "营业收入",
-            "int_income": "利息收入",
-            "prem_earned": "已赚保费",
-            "comm_income": "手续费及佣金收入",
-            "n_commis_income": "手续费及佣金净收入",
-            "n_oth_income": "其他经营净收益",
-            "n_oth_b_income": "加:其他业务净收益",
-            "prem_income": "保险业务收入",
-            "out_prem": "减:分出保费",
-            "une_prem_reser": "提取未到期责任准备金",
-            "reins_income": "其中:分保费收入",
-            "n_sec_tb_income": "代理买卖证券业务净收入",
-            "n_sec_uw_income": "证券承销业务净收入",
-            "n_asset_mg_income": "受托客户资产管理业务净收入",
-            "oth_b_income": "其他业务收入",
-            "fv_value_chg_gain": "加:公允价值变动净收益",
-            "invest_income": "加:投资净收益",
-            "ass_invest_income": "其中:对联营企业和合营企业的投资收益",
-            "forex_gain": "加:汇兑净收益",
-            "total_cogs": "营业总成本",
-            "oper_cost": "减:营业成本",
-            "int_exp": "减:利息支出",
-            "comm_exp": "减:手续费及佣金支出",
-            "biz_tax_surchg": "减:营业税金及附加",
-            "sell_exp": "减:销售费用",
-            "admin_exp": "减:管理费用",
-            "fin_exp": "减:财务费用",
-            "assets_impair_loss": "减:资产减值损失",
-            "prem_refund": "退保金",
-            "compens_payout": "赔付总支出",
-            "reser_insur_liab": "提取保险责任准备金",
-            "div_payt": "保户红利支出",
-            "reins_exp": "分保费用",
-            "oper_exp": "营业支出",
-            "compens_payout_refu": "减:摊回赔付支出",
-            "insur_reser_refu": "减:摊回保险责任准备金",
-            "reins_cost_refund": "减:摊回分保费用",
-            "other_bus_cost": "其他业务成本",
-            "operate_profit": "营业利润",
-            "non_oper_income": "加:营业外收入",
-            "non_oper_exp": "减:营业外支出",
-            "nca_disploss": "其中:减:非流动资产处置净损失",
-            "total_profit": "利润总额",
-            "income_tax": "所得税费用",
-            "n_income": "净利润(含少数股东损益)",
-            "n_income_attr_p": "净利润(不含少数股东损益)",
-            "minority_gain": "少数股东损益",
-            "oth_compr_income": "其他综合收益",
-            "t_compr_income": "综合收益总额",
-            "compr_inc_attr_p": "归属于母公司(或股东)的综合收益总额",
-            "compr_inc_attr_m_s": "归属于少数股东的综合收益总额",
-            "ebit": "息税前利润",
-            "ebitda": "息税折旧摊销前利润",
-            "insurance_exp": "保险业务支出",
-            "undist_profit": "年初未分配利润",
-            "distable_profit": "可分配利润",
-            "update_flag": "更新标识"
-        },
-        "报告类型": {
-        	"1":"合并报表",
-        	"2":"单季合并",
-        	"3":"调整单季合并表",
-        	"4":"调整合并报表",
-        	"5":"调整前合并报表",
-        	"6":"母公司报表",
-        	"7":"母公司单季表",
-        	"8":"母公司调整单季表",
-        	"9":"母公司调整表",
-        	"10":"母公司调整前报表",
-        	"11":"调整前合并报表",
-        	"12":"母公司调整前报表"
-        },
-        "公司类型": {
-        	"1":"一般工商业",
-        	"2":"银行",
-        	"3":"保险",
-        	"4":"证券"
-        }
-    },
-    "资产负债表": {
-        "输入参数": {
-            "ts_code": "股票代码",
-            "ann_date": "公告日期",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期",
-            "period": "报告期(每个季度最后一天的日期，比如20171231表示年报)",
-            "report_type": "报告类型：见下方详细说明",
-            "comp_type": "公司类型：1一般工商业2银行3保险4证券"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "f_ann_date": "实际公告日期",
-            "end_date": "报告期",
-            "report_type": "报表类型",
-            "comp_type": "公司类型",
-            "total_share": "期末总股本",
-            "cap_rese": "资本公积金",
-            "undistr_porfit": "未分配利润",
-            "surplus_rese": "盈余公积金",
-            "special_rese": "专项储备",
-            "money_cap": "货币资金",
-            "trad_asset": "交易性金融资产",
-            "notes_receiv": "应收票据",
-            "accounts_receiv": "应收账款",
-            "oth_receiv": "其他应收款",
-            "prepayment": "预付款项",
-            "div_receiv": "应收股利",
-            "int_receiv": "应收利息",
-            "inventories": "存货",
-            "amor_exp": "待摊费用",
-            "nca_within_1y": "一年内到期的非流动资产",
-            "sett_rsrv": "结算备付金",
-            "loanto_oth_bank_fi": "拆出资金",
-            "premium_receiv": "应收保费",
-            "reinsur_receiv": "应收分保账款",
-            "reinsur_res_receiv": "应收分保合同准备金",
-            "pur_resale_fa": "买入返售金融资产",
-            "oth_cur_assets": "其他流动资产",
-            "total_cur_assets": "流动资产合计",
-            "fa_avail_for_sale": "可供出售金融资产",
-            "htm_invest": "持有至到期投资",
-            "lt_eqt_invest": "长期股权投资",
-            "invest_real_estate": "投资性房地产",
-            "time_deposits": "定期存款",
-            "oth_assets": "其他资产",
-            "lt_rec": "长期应收款",
-            "fix_assets": "固定资产",
-            "cip": "在建工程",
-            "const_materials": "工程物资",
-            "fixed_assets_disp": "固定资产清理",
-            "produc_bio_assets": "生产性生物资产",
-            "oil_and_gas_assets": "油气资产",
-            "intan_assets": "无形资产",
-            "r_and_d": "研发支出",
-            "goodwill": "商誉",
-            "lt_amor_exp": "长期待摊费用",
-            "defer_tax_assets": "递延所得税资产",
-            "decr_in_disbur": "发放贷款及垫款",
-            "oth_nca": "其他非流动资产",
-            "total_nca": "非流动资产合计",
-            "cash_reser_cb": "现金及存放中央银行款项",
-            "depos_in_oth_bfi": "存放同业和其它金融机构款项",
-            "prec_metals": "贵金属",
-            "deriv_assets": "衍生金融资产",
-            "rr_reins_une_prem": "应收分保未到期责任准备金",
-            "rr_reins_outstd_cla": "应收分保未决赔款准备金",
-            "rr_reins_lins_liab": "应收分保寿险责任准备金",
-            "rr_reins_lthins_liab": "应收分保长期健康险责任准备金",
-            "refund_depos": "存出保证金",
-            "ph_pledge_loans": "保户质押贷款",
-            "refund_cap_depos": "存出资本保证金",
-            "indep_acct_assets": "独立账户资产",
-            "client_depos": "其中：客户资金存款",
-            "client_prov": "其中：客户备付金",
-            "transac_seat_fee": "其中:交易席位费",
-            "invest_as_receiv": "应收款项类投资",
-            "total_assets": "资产总计",
-            "lt_borr": "长期借款",
-            "st_borr": "短期借款",
-            "cb_borr": "向中央银行借款",
-            "depos_ib_deposits": "吸收存款及同业存放",
-            "loan_oth_bank": "拆入资金",
-            "trading_fl": "交易性金融负债",
-            "notes_payable": "应付票据",
-            "acct_payable": "应付账款",
-            "adv_receipts": "预收款项",
-            "sold_for_repur_fa": "卖出回购金融资产款",
-            "comm_payable": "应付手续费及佣金",
-            "payroll_payable": "应付职工薪酬",
-            "taxes_payable": "应交税费",
-            "int_payable": "应付利息",
-            "div_payable": "应付股利",
-            "oth_payable": "其他应付款",
-            "acc_exp": "预提费用",
-            "deferred_inc": "递延收益",
-            "st_bonds_payable": "应付短期债券",
-            "payable_to_reinsurer": "应付分保账款",
-            "rsrv_insur_cont": "保险合同准备金",
-            "acting_trading_sec": "代理买卖证券款",
-            "acting_uw_sec": "代理承销证券款",
-            "non_cur_liab_due_1y": "一年内到期的非流动负债",
-            "oth_cur_liab": "其他流动负债",
-            "total_cur_liab": "流动负债合计",
-            "bond_payable": "应付债券",
-            "lt_payable": "长期应付款",
-            "specific_payables": "专项应付款",
-            "estimated_liab": "预计负债",
-            "defer_tax_liab": "递延所得税负债",
-            "defer_inc_non_cur_liab": "递延收益-非流动负债",
-            "oth_ncl": "其他非流动负债",
-            "total_ncl": "非流动负债合计",
-            "depos_oth_bfi": "同业和其它金融机构存放款项",
-            "deriv_liab": "衍生金融负债",
-            "depos": "吸收存款",
-            "agency_bus_liab": "代理业务负债",
-            "oth_liab": "其他负债",
-            "prem_receiv_adva": "预收保费",
-            "depos_received": "存入保证金",
-            "ph_invest": "保户储金及投资款",
-            "reser_une_prem": "未到期责任准备金",
-            "reser_outstd_claims": "未决赔款准备金",
-            "reser_lins_liab": "寿险责任准备金",
-            "reser_lthins_liab": "长期健康险责任准备金",
-            "indept_acc_liab": "独立账户负债",
-            "pledge_borr": "其中:质押借款",
-            "indem_payable": "应付赔付款",
-            "policy_div_payable": "应付保单红利",
-            "total_liab": "负债合计",
-            "treasury_share": "减:库存股",
-            "ordin_risk_reser": "一般风险准备",
-            "forex_differ": "外币报表折算差额",
-            "invest_loss_unconf": "未确认的投资损失",
-            "minority_int": "少数股东权益",
-            "total_hldr_eqy_exc_min_int": "股东权益合计(不含少数股东权益)",
-            "total_hldr_eqy_inc_min_int": "股东权益合计(含少数股东权益)",
-            "total_liab_hldr_eqy": "负债及股东权益总计",
-            "lt_payroll_payable": "长期应付职工薪酬",
-            "oth_comp_income": "其他综合收益",
-            "oth_eqt_tools": "其他权益工具",
-            "oth_eqt_tools_p_shr": "其他权益工具(优先股)",
-            "lending_funds": "融出资金",
-            "acc_receivable": "应收款项",
-            "st_fin_payable": "应付短期融资款",
-            "payables": "应付款项",
-            "hfs_assets": "持有待售的资产",
-            "hfs_sales": "持有待售的负债",
-            "update_flag": "更新标识"
-        },
-        "主要报表类型说明": {
-        	"1": "合并报表",
-        	"2": "单季合并",
-        	"3": "调整单季合并表",
-        	"4": "调整合并报表",
-        	"5": "调整前合并报表",
-        	"6": "母公司报表",
-        	"7": "母公司单季表",
-        	"8": "母公司调整单季表",
-        	"9": "母公司调整表",
-        	"10": "母公司调整前报表",
-        	"11": "调整前合并报表",
-        	"12": "母公司调整前报表"
-        },
-        "公司类型": {
-        	"1": "一般工商业",
-        	"2": "银行",
-        	"3": "保险",
-        	"4": "证券"
-        }
-    },
-    "现金流量表": {
-        "输入参数": {
-            "ts_code": "股票代码",
-            "ann_date": "公告日期",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期",
-            "period": "报告期(每个季度最后一天的日期，比如20171231表示年报)",
-            "report_type": "报告类型：见下方详细说明",
-            "comp_type": "公司类型：1一般工商业2银行3保险4证券"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "f_ann_date": "实际公告日期",
-            "end_date": "报告期",
-            "comp_type": "报表类型",
-            "report_type": "公司类型",
-            "net_profit": "净利润",
-            "finan_exp": "财务费用",
-            "c_fr_sale_sg": "销售商品、提供劳务收到的现金",
-            "recp_tax_rends": "收到的税费返还",
-            "n_depos_incr_fi": "客户存款和同业存放款项净增加额",
-            "n_incr_loans_cb": "向中央银行借款净增加额",
-            "n_inc_borr_oth_fi": "向其他金融机构拆入资金净增加额",
-            "prem_fr_orig_contr": "收到原保险合同保费取得的现金",
-            "n_incr_insured_dep": "保户储金净增加额",
-            "n_reinsur_prem": "收到再保业务现金净额",
-            "n_incr_disp_tfa": "处置交易性金融资产净增加额",
-            "ifc_cash_incr": "收取利息和手续费净增加额",
-            "n_incr_disp_faas": "处置可供出售金融资产净增加额",
-            "n_incr_loans_oth_bank": "拆入资金净增加额",
-            "n_cap_incr_repur": "回购业务资金净增加额",
-            "c_fr_oth_operate_a": "收到其他与经营活动有关的现金",
-            "c_inf_fr_operate_a": "经营活动现金流入小计",
-            "c_paid_goods_s": "购买商品、接受劳务支付的现金",
-            "c_paid_to_for_empl": "支付给职工以及为职工支付的现金",
-            "c_paid_for_taxes": "支付的各项税费",
-            "n_incr_clt_loan_adv": "客户贷款及垫款净增加额",
-            "n_incr_dep_cbob": "存放央行和同业款项净增加额",
-            "c_pay_claims_orig_inco": "支付原保险合同赔付款项的现金",
-            "pay_handling_chrg": "支付手续费的现金",
-            "pay_comm_insur_plcy": "支付保单红利的现金",
-            "oth_cash_pay_oper_act": "支付其他与经营活动有关的现金",
-            "st_cash_out_act": "经营活动现金流出小计",
-            "n_cashflow_act": "经营活动产生的现金流量净额",
-            "oth_recp_ral_inv_act": "收到其他与投资活动有关的现金",
-            "c_disp_withdrwl_invest": "收回投资收到的现金",
-            "c_recp_return_invest": "取得投资收益收到的现金",
-            "n_recp_disp_fiolta": "处置固定资产、无形资产和其他长期资产收回的现金净额",
-            "n_recp_disp_sobu": "处置子公司及其他营业单位收到的现金净额",
-            "stot_inflows_inv_act": "投资活动现金流入小计",
-            "c_pay_acq_const_fiolta": "购建固定资产、无形资产和其他长期资产支付的现金",
-            "c_paid_invest": "投资支付的现金",
-            "n_disp_subs_oth_biz": "取得子公司及其他营业单位支付的现金净额",
-            "oth_pay_ral_inv_act": "支付其他与投资活动有关的现金",
-            "n_incr_pledge_loan": "质押贷款净增加额",
-            "stot_out_inv_act": "投资活动现金流出小计",
-            "n_cashflow_inv_act": "投资活动产生的现金流量净额",
-            "c_recp_borrow": "取得借款收到的现金",
-            "proc_issue_bonds": "发行债券收到的现金",
-            "oth_cash_recp_ral_fnc_act": "收到其他与筹资活动有关的现金",
-            "stot_cash_in_fnc_act": "筹资活动现金流入小计",
-            "free_cashflow": "企业自由现金流量",
-            "c_prepay_amt_borr": "偿还债务支付的现金",
-            "c_pay_dist_dpcp_int_exp": "分配股利、利润或偿付利息支付的现金",
-            "incl_dvd_profit_paid_sc_ms": "其中:子公司支付给少数股东的股利、利润",
-            "oth_cashpay_ral_fnc_act": "支付其他与筹资活动有关的现金",
-            "stot_cashout_fnc_act": "筹资活动现金流出小计",
-            "n_cash_flows_fnc_act": "筹资活动产生的现金流量净额",
-            "eff_fx_flu_cash": "汇率变动对现金的影响",
-            "n_incr_cash_cash_equ": "现金及现金等价物净增加额",
-            "c_cash_equ_beg_period": "期初现金及现金等价物余额",
-            "c_cash_equ_end_period": "期末现金及现金等价物余额",
-            "c_recp_cap_contrib": "吸收投资收到的现金",
-            "incl_cash_rec_saims": "其中:子公司吸收少数股东投资收到的现金",
-            "uncon_invest_loss": "未确认投资损失",
-            "prov_depr_assets": "加:资产减值准备",
-            "depr_fa_coga_dpba": "固定资产折旧、油气资产折耗、生产性生物资产折旧",
-            "amort_intang_assets": "无形资产摊销",
-            "lt_amort_deferred_exp": "长期待摊费用摊销",
-            "decr_deferred_exp": "待摊费用减少",
-            "incr_acc_exp": "预提费用增加",
-            "loss_disp_fiolta": "处置固定、无形资产和其他长期资产的损失",
-            "loss_scr_fa": "固定资产报废损失",
-            "loss_fv_chg": "公允价值变动损失",
-            "invest_loss": "投资损失",
-            "decr_def_inc_tax_assets": "递延所得税资产减少",
-            "incr_def_inc_tax_liab": "递延所得税负债增加",
-            "decr_inventories": "存货的减少",
-            "decr_oper_payable": "经营性应收项目的减少",
-            "incr_oper_payable": "经营性应付项目的增加",
-            "others": "其他",
-            "im_net_cashflow_oper_act": "经营活动产生的现金流量净额(间接法)",
-            "conv_debt_into_cap": "债务转为资本",
-            "conv_copbonds_due_within_1y": "一年内到期的可转换公司债券",
-            "fa_fnc_leases": "融资租入固定资产",
-            "end_bal_cash": "现金的期末余额",
-            "beg_bal_cash": "减:现金的期初余额",
-            "end_bal_cash_equ": "加:现金等价物的期末余额",
-            "beg_bal_cash_equ": "减:现金等价物的期初余额",
-            "im_n_incr_cash_equ": "现金及现金等价物净增加额(间接法)",
-            "update_flag": "更新标识"
-        }
-    },
-    "业绩预告": {
-        "输入参数": {
-            "ts_code": "股票代码(二选一)",
-            "ann_date": "公告日期(二选一)",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期",
-            "period": "报告期(每个季度最后一天的日期，比如20171231表示年报)",
-            "type": "预告类型(预增/预减/扭亏/首亏/续亏/续盈/略增/略减)"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "end_date": "报告期",
-            "type": "业绩预告类型(预增/预减/扭亏/首亏/续亏/续盈/略增/略减)",
-            "p_change_min": "预告净利润变动幅度下限",
-            "p_change_max": "预告净利润变动幅度上限",
-            "net_profit_min": "预告净利润下限（万元）",
-            "net_profit_max": "预告净利润上限（万元）",
-            "last_parent_net": "上年同期归属母公司净利润",
-            "first_ann_date": "首次公告日",
-            "summary": "业绩预告摘要",
-            "change_reason": "业绩变动原因"
-        }
-    },
-    "业绩快报": {
-        "输入参数": {
-            "ts_code": "股票代码",
-            "ann_date": "公告日期",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期",
-            "period": "报告期(每个季度最后一天的日期,比如20171231表示年报)"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "end_date": "报告期",
-            "revenue": "营业收入",
-            "operate_profit": "营业利润",
-            "total_profit": "利润总额",
-            "n_income": "净利润",
-            "total_assets": "总资产",
-            "total_hldr_eqy_exc_min_int": "股东权益合计(不含少数股东权益)",
-            "diluted_eps": "每股收益(摊薄)",
-            "diluted_roe": "净资产收益率(摊薄)(%)",
-            "yoy_net_profit": "去年同期修正后净利润",
-            "bps": "每股净资产",
-            "yoy_sales": "同比增长率:营业收入",
-            "yoy_op": "同比增长率:营业利润",
-            "yoy_tp": "同比增长率:利润总额",
-            "yoy_dedu_np": "同比增长率:归属母公司股东的净利润",
-            "yoy_eps": "同比增长率:基本每股收益",
-            "yoy_roe": "同比增减:加权平均净资产收益率",
-            "growth_assets": "比年初增长率:总资产",
-            "yoy_equity": "比年初增长率:归属母公司的股东权益",
-            "growth_bps": "比年初增长率:归属于母公司股东的每股净资产",
-            "or_last_year": "去年同期营业收入",
-            "op_last_year": "去年同期营业利润",
-            "tp_last_year": "去年同期利润总额",
-            "np_last_year": "去年同期净利润",
-            "eps_last_year": "去年同期每股收益",
-            "open_net_assets": "期初净资产",
-            "open_bps": "期初每股净资产",
-            "perf_summary": "业绩简要说明",
-            "is_audit": "是否审计：1是0否",
-            "remark": "备注"
-        }
-    },
-    "沪深港通资金流向": {
-        "输入参数": {
-            "trade_date": "交易日期(二选一)",
-            "start_date": "开始日期(二选一)",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "ggt_ss": "港股通（上海）",
-            "ggt_sz": "港股通（深圳）",
-            "hgt": "沪股通（百万元）",
-            "sgt": "深股通（百万元）",
-            "north_money": "北向资金（百万元）",
-            "south_money": "南向资金（百万元）"
-        }
-    },
-    "沪深股通十大成交股": {
-        "输入参数": {
-            "ts_code": "股票代码（二选一）",
-            "trade_date": "交易日期（二选一）",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "market_type": "市场类型（1：沪市3：深市）"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "ts_code": "股票代码",
-            "name": "股票名称",
-            "close": "收盘价",
-            "change": "涨跌额",
-            "rank": "资金排名",
-            "market_type": "市场类型（1：沪市3：深市）",
-            "amount": "成交金额",
-            "net_amount": "净成交金额",
-            "buy": "买入金额",
-            "sell": "卖出金额"
-        }
-    },
-    "港股通十大成交股": {
-        "输入参数": {
-            "ts_code": "股票代码（二选一）",
-            "trade_date": "交易日期（二选一）",
-            "start_date": "开始日期",
-            "end_date": "结束日期",
-            "market_type": "市场类型2：港股通（沪）4：港股通（深）"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "ts_code": "股票代码",
-            "name": "股票名称",
-            "close": "收盘价",
-            "p_change": "涨跌幅",
-            "rank": "资金排名",
-            "market_type": "市场类型2：港股通（沪）4：港股通（深）",
-            "amount": "累计成交金额",
-            "net_amount": "净买入金额",
-            "sh_amount": "沪市成交金额",
-            "sh_net_amount": "沪市净买入金额",
-            "sh_buy": "沪市买入金额",
-            "sh_sell": "沪市卖出金额",
-            "sz_amount": "深市成交金额",
-            "sz_net_amount": "深市净买入金额",
-            "sz_buy": "深市买入金额",
-            "sz_sell": "深市卖出金额"
-        }
-    },
-    "融资融券交易汇总": {
-        "输入参数": {
-            "trade_date": "交易日期",
-            "exchange_id": "交易所代码",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "exchange_id": "交易所代码（SSE上交所SZSE深交所）",
-            "rzye": "融资余额",
-            "rzmre": "融资买入额",
-            "rzche": "融资偿还额",
-            "rqye": "融券余额",
-            "rqmcl": "融券卖出量",
-            "rzrqye": "融资融券余额"
-        }
-    },
-    "融资融券交易明细": {
-        "输入参数": {
-            "trade_date": "交易日期",
-            "ts_code": "TS代码",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "trade_date": "交易日期",
-            "ts_code": "TS股票代码",
-            "rzye": "融资余额",
-            "rqye": "融券余额",
-            "rzmre": "融资买入额",
-            "rqyl": "融券余量",
-            "rzche": "融资偿还额",
-            "rqchl": "融券偿还量",
-            "rqmcl": "融券卖出量",
-            "rzrqye": "融资融券余额"
-        }
-    },
-    "前十大股东": {
-        "输入参数": {
-            "ts_code": "TS代码",
-            "period": "报告期",
-            "ann_date": "公告日期",
-            "start_date": "报告期开始日期",
-            "end_date": "报告期结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "end_date": "报告期",
-            "holder_name": "股东名称",
-            "hold_amount": "持有数量",
-            "hold_ratio": "持有比例"
-        }
-    },
-    "前十大流通股东": {
-        "输入参数": {
-            "ts_code": "TS代码",
-            "period": "报告期",
-            "ann_date": "公告日期",
-            "start_date": "报告期开始日期",
-            "end_date": "报告期结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "end_date": "报告期",
-            "holder_name": "股东名称",
-            "hold_amount": "持有数量"
-        }
-    },
-    "财务指标数据": {
-        "输入参数": {
-            "ts_code": "TS股票代码,e.g.600001.SH/000001.SZ",
-            "ann_date": "公告日期",
-            "start_date": "报告期开始日期",
-            "end_date": "报告期结束日期",
-            "period": "报告期(每个季度最后一天的日期,比如20171231表示年报)"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "ann_date": "公告日期",
-            "end_date": "报告期",
-            "eps": "基本每股收益",
-            "dt_eps": "稀释每股收益",
-            "total_revenue_ps": "每股营业总收入",
-            "revenue_ps": "每股营业收入",
-            "capital_rese_ps": "每股资本公积",
-            "surplus_rese_ps": "每股盈余公积",
-            "undist_profit_ps": "每股未分配利润",
-            "extra_item": "非经常性损益",
-            "profit_dedt": "扣除非经常性损益后的净利润",
-            "gross_margin": "毛利",
-            "current_ratio": "流动比率",
-            "quick_ratio": "速动比率",
-            "cash_ratio": "保守速动比率",
-            "invturn_days": "存货周转天数",
-            "arturn_days": "应收账款周转天数",
-            "inv_turn": "存货周转率",
-            "ar_turn": "应收账款周转率",
-            "ca_turn": "流动资产周转率",
-            "fa_turn": "固定资产周转率",
-            "assets_turn": "总资产周转率",
-            "op_income": "经营活动净收益",
-            "valuechange_income": "价值变动净收益",
-            "interst_income": "利息费用",
-            "daa": "折旧与摊销",
-            "ebit": "息税前利润",
-            "ebitda": "息税折旧摊销前利润",
-            "fcff": "企业自由现金流量",
-            "fcfe": "股权自由现金流量",
-            "current_exint": "无息流动负债",
-            "noncurrent_exint": "无息非流动负债",
-            "interestdebt": "带息债务",
-            "netdebt": "净债务",
-            "tangible_asset": "有形资产",
-            "working_capital": "营运资金",
-            "networking_capital": "营运流动资本",
-            "invest_capital": "全部投入资本",
-            "retained_earnings": "留存收益",
-            "diluted2_eps": "期末摊薄每股收益",
-            "bps": "每股净资产",
-            "ocfps": "每股经营活动产生的现金流量净额",
-            "retainedps": "每股留存收益",
-            "cfps": "每股现金流量净额",
-            "ebit_ps": "每股息税前利润",
-            "fcff_ps": "每股企业自由现金流量",
-            "fcfe_ps": "每股股东自由现金流量",
-            "netprofit_margin": "销售净利率",
-            "grossprofit_margin": "销售毛利率",
-            "cogs_of_sales": "销售成本率",
-            "expense_of_sales": "销售期间费用率",
-            "profit_to_gr": "净利润/营业总收入",
-            "saleexp_to_gr": "销售费用/营业总收入",
-            "adminexp_of_gr": "管理费用/营业总收入",
-            "finaexp_of_gr": "财务费用/营业总收入",
-            "impai_ttm": "资产减值损失/营业总收入",
-            "gc_of_gr": "营业总成本/营业总收入",
-            "op_of_gr": "营业利润/营业总收入",
-            "ebit_of_gr": "息税前利润/营业总收入",
-            "roe": "净资产收益率",
-            "roe_waa": "加权平均净资产收益率",
-            "roe_dt": "净资产收益率(扣除非经常损益)",
-            "roa": "总资产报酬率",
-            "npta": "总资产净利润",
-            "roic": "投入资本回报率",
-            "roe_yearly": "年化净资产收益率",
-            "roa2_yearly": "年化总资产报酬率",
-            "roe_avg": "平均净资产收益率(增发条件)",
-            "opincome_of_ebt": "经营活动净收益/利润总额",
-            "investincome_of_ebt": "价值变动净收益/利润总额",
-            "n_op_profit_of_ebt": "营业外收支净额/利润总额",
-            "tax_to_ebt": "所得税/利润总额",
-            "dtprofit_to_profit": "扣除非经常损益后的净利润/净利润",
-            "salescash_to_or": "销售商品提供劳务收到的现金/营业收入",
-            "ocf_to_or": "经营活动产生的现金流量净额/营业收入",
-            "ocf_to_opincome": "经营活动产生的现金流量净额/经营活动净收益",
-            "capitalized_to_da": "资本支出/折旧和摊销",
-            "debt_to_assets": "资产负债率",
-            "assets_to_eqt": "权益乘数",
-            "dp_assets_to_eqt": "权益乘数(杜邦分析)",
-            "ca_to_assets": "流动资产/总资产",
-            "nca_to_assets": "非流动资产/总资产",
-            "tbassets_to_totalassets": "有形资产/总资产",
-            "int_to_talcap": "带息债务/全部投入资本",
-            "eqt_to_talcapital": "归属于母公司的股东权益/全部投入资本",
-            "currentdebt_to_debt": "流动负债/负债合计",
-            "longdeb_to_debt": "非流动负债/负债合计",
-            "ocf_to_shortdebt": "经营活动产生的现金流量净额/流动负债",
-            "debt_to_eqt": "产权比率",
-            "eqt_to_debt": "归属于母公司的股东权益/负债合计",
-            "eqt_to_interestdebt": "归属于母公司的股东权益/带息债务",
-            "tangibleasset_to_debt": "有形资产/负债合计",
-            "tangasset_to_intdebt": "有形资产/带息债务",
-            "tangibleasset_to_netdebt": "有形资产/净债务",
-            "ocf_to_debt": "经营活动产生的现金流量净额/负债合计",
-            "ocf_to_interestdebt": "经营活动产生的现金流量净额/带息债务",
-            "ocf_to_netdebt": "经营活动产生的现金流量净额/净债务",
-            "ebit_to_interest": "已获利息倍数(EBIT/利息费用)",
-            "longdebt_to_workingcapital": "长期债务与营运资金比率",
-            "ebitda_to_debt": "息税折旧摊销前利润/负债合计",
-            "turn_days": "营业周期",
-            "roa_yearly": "年化总资产净利率",
-            "roa_dp": "总资产净利率(杜邦分析)",
-            "fixed_assets": "固定资产合计",
-            "profit_prefin_exp": "扣除财务费用前营业利润",
-            "non_op_profit": "非营业利润",
-            "op_to_ebt": "营业利润／利润总额",
-            "nop_to_ebt": "非营业利润／利润总额",
-            "ocf_to_profit": "经营活动产生的现金流量净额／营业利润",
-            "cash_to_liqdebt": "货币资金／流动负债",
-            "cash_to_liqdebt_withinterest": "货币资金／带息流动负债",
-            "op_to_liqdebt": "营业利润／流动负债",
-            "op_to_debt": "营业利润／负债合计",
-            "roic_yearly": "年化投入资本回报率",
-            "total_fa_trun": "固定资产合计周转率",
-            "profit_to_op": "利润总额／营业收入",
-            "q_opincome": "经营活动单季度净收益",
-            "q_investincome": "价值变动单季度净收益",
-            "q_dtprofit": "扣除非经常损益后的单季度净利润",
-            "q_eps": "每股收益(单季度)",
-            "q_netprofit_margin": "销售净利率(单季度)",
-            "q_gsprofit_margin": "销售毛利率(单季度)",
-            "q_exp_to_sales": "销售期间费用率(单季度)",
-            "q_profit_to_gr": "净利润／营业总收入(单季度)",
-            "q_saleexp_to_gr": "销售费用／营业总收入(单季度)",
-            "q_adminexp_to_gr": "管理费用／营业总收入(单季度)",
-            "q_finaexp_to_gr": "财务费用／营业总收入(单季度)",
-            "q_impair_to_gr_ttm": "资产减值损失／营业总收入(单季度)",
-            "q_gc_to_gr": "营业总成本／营业总收入(单季度)",
-            "q_op_to_gr": "营业利润／营业总收入(单季度)",
-            "q_roe": "净资产收益率(单季度)",
-            "q_dt_roe": "净资产单季度收益率(扣除非经常损益)",
-            "q_npta": "总资产净利润(单季度)",
-            "q_opincome_to_ebt": "经营活动净收益／利润总额(单季度)",
-            "q_investincome_to_ebt": "价值变动净收益／利润总额(单季度)",
-            "q_dtprofit_to_profit": "扣除非经常损益后的净利润／净利润(单季度)",
-            "q_salescash_to_or": "销售商品提供劳务收到的现金／营业收入(单季度)",
-            "q_ocf_to_sales": "经营活动产生的现金流量净额／营业收入(单季度)",
-            "q_ocf_to_or": "经营活动产生的现金流量净额／经营活动净收益(单季度)",
-            "basic_eps_yoy": "基本每股收益同比增长率",
-            "dt_eps_yoy": "稀释每股收益同比增长率",
-            "cfps_yoy": "每股经营活动产生的现金流量净额同比增长率",
-            "op_yoy": "营业利润同比增长率",
-            "ebt_yoy": "利润总额同比增长率",
-            "netprofit_yoy": "归属母公司股东的净利润同比增长率",
-            "dt_netprofit_yoy": "归属母公司股东的净利润-扣除非经常损益同比增长率",
-            "ocf_yoy": "经营活动产生的现金流量净额同比增长率",
-            "roe_yoy": "净资产收益率(摊薄)同比增长率",
-            "bps_yoy": "每股净资产相对年初增长率",
-            "assets_yoy": "资产总计相对年初增长率",
-            "eqt_yoy": "归属母公司的股东权益相对年初增长率",
-            "tr_yoy": "营业总收入同比增长率",
-            "or_yoy": "营业收入同比增长率",
-            "q_gr_yoy": "营业总收入同比增长率(单季度)",
-            "q_gr_qoq": "营业总收入环比增长率(单季度)",
-            "q_sales_yoy": "营业收入同比增长率(单季度)",
-            "q_sales_qoq": "营业收入环比增长率(单季度)",
-            "q_op_yoy": "营业利润同比增长率(单季度)",
-            "q_op_qoq": "营业利润环比增长率(单季度)",
-            "q_profit_yoy": "净利润同比增长率(单季度)",
-            "q_profit_qoq": "净利润环比增长率(单季度)",
-            "q_netprofit_yoy": "归属母公司股东的净利润同比增长率(单季度)",
-            "q_netprofit_qoq": "归属母公司股东的净利润环比增长率(单季度)",
-            "equity_yoy": "净资产同比增长率",
-            "rd_exp": "研发费用",
-            "update_flag": "更新标识"
-        }
-    },
-    "财务审计意见": {
-        "输入参数": {
-            "ts_code": "股票代码",
-            "ann_date": "公告日期",
-            "start_date": "公告开始日期",
-            "end_date": "公告结束日期",
-            "period": "报告期(每个季度最后一天的日期,比如20171231表示年报)"
-        },
-        "输出参数": {
-            "ts_code": "TS股票代码",
-            "ann_date": "公告日期",
-            "end_date": "报告期",
-            "audit_result": "审计结果",
-            "audit_fees": "审计总费用",
-            "audit_agency": "会计事务所",
-            "audit_sign": "签字会计师"
-        }
-    },
-    "主营业务构成": {
-        "输入参数": {
-            "ts_code": "股票代码",
-            "period": "报告期(每个季度最后一天的日期,比如20171231表示年报)",
-            "type": "类型：P按产品D按地区（请输入大写字母P或者D）",
-            "start_date": "报告期开始日期",
-            "end_date": "报告期结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "end_date": "报告期",
-            "bz_item": "主营业务来源",
-            "bz_sales": "主营业务收入",
-            "bz_profit": "主营业务利润",
-            "bz_cost": "主营业务成本",
-            "curr_type": "货币代码",
-            "update_flag": "是否更新"
-        }
-    },
-    "台湾电子产业月营收明细": {
-        "输入参数": {
-            "date": "报告期",
-            "item": "产品代码",
-            "symbol": "公司代码",
-            "start_date": "报告期开始日期",
-            "end_date": "报告期结束日期",
-            "source": "None"
-        },
-        "输出参数": {
-            "date": "报告期",
-            "item": "产品代码",
-            "symbol": "公司代码",
-            "op_income": "月度营收",
-            "consop_income": "合并月度营收（默认不展示）"
-        }
-    },
-    "台湾电子产业月营收": {
-        "输入参数": {
-            "date": "报告期",
-            "item": "产品代码",
-            "start_date": "报告期开始日期",
-            "end_date": "报告期结束日期"
-        },
-        "输出参数": {
-            "date": "报告期",
-            "item": "产品代码",
-            "op_income": "月度收入"
-        }
-    },
-    "指数基本信息": {
-        "输入参数": {
-            "market": "交易所或服务商",
-            "publisher": "发布商",
-            "category": "指数类别"
-        },
-        "输出参数": {
-            "ts_code": "TS代码",
-            "name": "简称",
-            "fullname": "指数全称",
-            "market": "市场",
-            "publisher": "发布方",
-            "index_type": "指数风格",
-            "category": "指数类别",
-            "base_date": "基期",
-            "base_point": "基点",
-            "list_date": "发布日期",
-            "weight_rule": "加权方式",
-            "desc": "描述",
-            "exp_date": "终止日期"
-        }
-    },
-    "指数日线行情": {
-        "输入参数": {
-            "ts_code": "指数代码",
-            "trade_date": "交易日期（日期格式：YYYYMMDD，下同）",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "ts_code": "TS指数代码",
-            "trade_date": "交易日",
-            "close": "收盘点位",
-            "open": "开盘点位",
-            "high": "最高点位",
-            "low": "最低点位",
-            "pre_close": "昨日收盘点",
-            "change": "涨跌点",
-            "pct_chg": "涨跌幅",
-            "vol": "成交量",
-            "amount": "成交额（千元）"
-        }
-    },
-    "指数成分和权重": {
-        "输入参数": {
-            "index_code": "指数代码(二选一)",
-            "trade_date": "交易日期（二选一）",
-            "start_date": "开始日期",
-            "end_date": "结束日期"
-        },
-        "输出参数": {
-            "index_code": "指数代码",
-            "con_code": "成分代码",
-            "trade_date": "交易日期",
-            "weight": "权重"
+    "参数描述": {
+        "股票曾用名": {
+            "输入参数": {
+                "ts_code": "TS代码",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "name": "证券名称",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "ann_date": "公告日期",
+                "change_reason": "变更原因"
+            }
+        },
+        "分红送股": {
+            "输入参数": {
+                "ts_code": "TS代码",
+                "ann_date": "公告日",
+                "record_date": "股权登记日期",
+                "ex_date": "除权除息日",
+                "imp_ann_date": "实施公告日"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "end_date": "分红年度",
+                "ann_date": "预案公告日",
+                "div_proc": "实施进度",
+                "stk_div": "每股送转",
+                "stk_bo_rate": "每股送股比例",
+                "stk_co_rate": "每股转增比例",
+                "cash_div": "税后每股分红",
+                "cash_div_tax": "税前每股分红",
+                "record_date": "股权登记日",
+                "ex_date": "除权除息日",
+                "pay_date": "派息日",
+                "div_listdate": "红股上市日",
+                "imp_ann_date": "实施公告日",
+                "base_date": "基准日",
+                "base_share": "基准股本（万）"
+            }
+        },
+        "沪深股通成份股": {
+            "输入参数": {
+                "hs_type": "类型SH沪股通SZ深股通",
+                "is_new": "是否最新1是0否(默认1)"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "hs_type": "沪深港通类型SH沪SZ深",
+                "in_date": "纳入日期",
+                "out_date": "剔除日期",
+                "is_new": "是否最新1是0否"
+            }
+        },
+        "龙虎榜每日明细": {
+            "输入参数": {
+                "trade_date": "交易日期",
+                "ts_code": "股票代码"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "ts_code": "TS代码",
+                "name": "名称",
+                "close": "收盘价",
+                "pct_change": "涨跌幅",
+                "turnover_rate": "换手率",
+                "amount": "总成交额",
+                "l_sell": "龙虎榜卖出额",
+                "l_buy": "龙虎榜买入额",
+                "l_amount": "龙虎榜成交额",
+                "net_amount": "龙虎榜净买入额",
+                "net_rate": "龙虎榜净买额占比",
+                "amount_rate": "龙虎榜成交额占比",
+                "float_values": "当日流通市值",
+                "reason": "上榜理由"
+            }
+        },
+        "龙虎榜机构明细": {
+            "输入参数": {
+                "trade_date": "交易日期",
+                "ts_code": "TS代码"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "ts_code": "TS代码",
+                "exalter": "营业部名称",
+                "buy": "买入额（万）",
+                "buy_rate": "买入比例",
+                "sell": "卖出额（万）",
+                "sell_rate": "卖出比例",
+                "net_buy": "净成交额（万）"
+            }
+        },
+        "通用行情接口": {
+            "输入参数": {
+                "ts_code": "证券代码",
+                "api": "pro版api对象，如果初始化了set_token，此参数可以不需要",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "asset": "资产类别：E股票I沪深指数C数字货币FT期货FD基金O期权，默认E",
+                "adj": "复权类型(只针对股票)：None未复权qfq前复权hfq后复权,默认None",
+                "freq": "数据频度：支持分钟(min)/日(D)/周(W)/月(M)K线，其中1min表示1分钟（类推1/5/15/30/60分钟），默认D。目前有120积分的用户自动具备分钟数据试用权限（每分钟5次），正式权限请在QQ群私信群主。",
+                "ma": "均线，支持任意合理int数值",
+                "factors": "股票因子（asset='E'有效）支持tor换手率vr量比",
+                "adjfactor": "复权因子，在复权数据是，如果此参数为True，返回的数据中则带复权因子，默认为False。该功能从1.2.33版本开始生效"
+            }
+        },
+        "股权质押统计数据": {
+            "输入参数": {
+                "ts_code": "股票代码"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "end_date": "截至日期",
+                "pledge_count": "质押次数",
+                "unrest_pledge": "无限售股质押数量（万）",
+                "rest_pledge": "限售股份质押数量（万）",
+                "total_share": "总股本",
+                "pledge_ratio": "质押比例"
+            }
+        },
+        "股权质押明细": {
+            "输入参数": {
+                "ts_code": "股票代码"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "holder_name": "股东名称",
+                "pledge_amount": "质押数量",
+                "start_date": "质押开始日期",
+                "end_date": "质押结束日期",
+                "is_release": "是否已解押",
+                "release_date": "解押日期",
+                "pledgor": "质押方",
+                "holding_amount": "持股总数",
+                "pledged_amount": "质押总数",
+                "p_total_ratio": "本次质押占总股本比例",
+                "h_total_ratio": "持股总数占总股本比例",
+                "is_buyback": "是否回购"
+            }
+        },
+        "上市公司基本信息": {
+            "输入参数": {
+                "exchange": "交易所代码，SSE上交所SZSE深交所，默认SSE"
+            },
+            "输出参数": {
+                "ts_code": "股票代码",
+                "exchange": "交易所代码",
+                "chairman": "法人代表",
+                "manager": "总经理",
+                "secretary": "董秘",
+                "reg_capital": "注册资本",
+                "setup_date": "注册日期",
+                "province": "所在省份",
+                "city": "所在城市",
+                "introduction": "公司介绍",
+                "website": "公司主页",
+                "email": "电子邮件",
+                "office": "办公室",
+                "employees": "员工人数",
+                "main_business": "主要业务及产品",
+                "business_scope": "经营范围"
+            }
+        },
+        "电影月度票房": {
+            "输入参数": {
+                "date": "日期（每月1号）"
+            },
+            "输出参数": {
+                "date": "日期",
+                "name": "影片名称",
+                "list_date": "上映日期",
+                "avg_price": "平均票价",
+                "month_amount": "当月票房（万）",
+                "list_day": "月内天数",
+                "p_pc": "场均人次",
+                "wom_index": "口碑指数",
+                "m_ratio": "月度占比",
+                "rank": "排名"
+            }
+        },
+        "电影周度票房": {
+            "输入参数": {
+                "date": "日期（每周一日期）"
+            },
+            "输出参数": {
+                "date": "日期",
+                "name": "影片名称",
+                "avg_price": "平均票价",
+                "week_amount": "当周票房（万）",
+                "total": "累计票房（万）",
+                "list_day": "上映天数",
+                "p_pc": "场均人次",
+                "wom_index": "口碑指数",
+                "up_ratio": "环比变化",
+                "rank": "排名"
+            }
+        },
+        "电影日度票房": {
+            "输入参数": {
+                "date": "日期"
+            },
+            "输出参数": {
+                "date": "日期",
+                "name": "影片名称",
+                "avg_price": "平均票价",
+                "day_amount": "当日票房（万）",
+                "total": "累计票房（万）",
+                "list_day": "上映天数",
+                "p_pc": "场均人次",
+                "wom_index": "口碑指数",
+                "up_ratio": "环比变化",
+                "rank": "排名"
+            }
+        },
+        "影院每日票房": {
+            "输入参数": {
+                "date": "日期"
+            },
+            "输出参数": {
+                "date": "日期",
+                "c_name": "影院名称",
+                "aud_count": "观众人数",
+                "att_ratio": "上座率",
+                "day_amount": "当日票房",
+                "day_showcount": "当日场次",
+                "avg_price": "场均票价",
+                "p_pc": "场均人次",
+                "rank": "排名"
+            }
+        },
+        "公募基金公司": {
+            "输出参数": {
+                "name": "基金公司名称",
+                "shortname": "简称",
+                "short_enname": "英文缩写",
+                "province": "省份",
+                "city": "城市",
+                "address": "注册地址",
+                "phone": "电话",
+                "office": "办公地址",
+                "website": "公司网址",
+                "chairman": "法人代表",
+                "manager": "总经理",
+                "reg_capital": "注册资本",
+                "setup_date": "成立日期",
+                "end_date": "公司终止日期",
+                "employees": "员工总数",
+                "main_business": "主要产品及业务",
+                "org_code": "组织机构代码",
+                "credit_code": "统一社会信用代码"
+            }
+        },
+        "公募基金净值": {
+            "输入参数": {
+                "ts_code": "TS基金代码（二选一）",
+                "end_date": "净值日期（二选一）"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "ann_date": "公告日期",
+                "end_date": "截止日期",
+                "unit_nav": "单位净值",
+                "accum_nav": "累计净值",
+                "accum_div": "累计分红",
+                "net_asset": "资产净值",
+                "total_netasset": "合计资产净值",
+                "adj_nav": "复权单位净值"
+            }
+        },
+        "公募基金分红": {
+            "输入参数": {
+                "ann_date": "公告日（以下参数四选一）",
+                "ex_date": "除息日",
+                "pay_date": "派息日",
+                "ts_code": "基金代码"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "ann_date": "公告日期",
+                "imp_anndate": "分红实施公告日",
+                "base_date": "分配收益基准日",
+                "div_proc": "方案进度",
+                "record_date": "权益登记日",
+                "ex_date": "除息日",
+                "pay_date": "派息日",
+                "earpay_date": "收益支付日",
+                "net_ex_date": "净值除权日",
+                "div_cash": "每股派息",
+                "base_unit": "基准基金份额(万份)",
+                "ear_distr": "可分配收益",
+                "ear_amount": "收益分配金额",
+                "account_date": "红利再投资到账日",
+                "base_year": "份额基准年度"
+            }
+        },
+        "公募基金持仓数据": {
+            "输入参数": {
+                "ts_code": "基金代码"
+            },
+            "输出参数": {
+                "ts_code": "TS基金代码",
+                "ann_date": "公告日期",
+                "end_date": "截止日期",
+                "symbol": "股票代码",
+                "mkv": "持有股票市值",
+                "amount": "持有股票数量",
+                "stk_mkv_ratio": "占股票市值比",
+                "stk_float_ratio": "占流通股本比例"
+            }
+        },
+        "IPO新股列表": {
+            "输入参数": {
+                "start_date": "上网发行开始日期",
+                "end_date": "上网发行结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "sub_code": "申购代码",
+                "name": "名称",
+                "ipo_date": "上网发行日期",
+                "issue_date": "上市日期",
+                "amount": "发行总量",
+                "market_amount": "上网发行总量",
+                "price": "发行价格",
+                "pe": "市盈率",
+                "limit_amount": "个人申购上限",
+                "funds": "募集资金",
+                "ballot": "中签率"
+            }
+        },
+        "股票回购": {
+            "输入参数": {
+                "ann_date": "公告日期（任意填参数，如果都不填，单次默认返回2000条）",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "ann_date": "公告日期",
+                "end_date": "截止日期",
+                "proc": "进度",
+                "exp_date": "过期日期",
+                "vol": "回购数量",
+                "amount": "回购金额",
+                "high_limit": "回购最高价",
+                "low_limit": "回购最低价"
+            }
+        },
+        "概念股分类": {
+            "输入参数": {
+                "src": "来源，默认为ts"
+            },
+            "输出参数": {
+                "code": "概念分类ID",
+                "name": "概念分类名称",
+                "src": "来源"
+            }
+        },
+        "概念股列表": {
+            "输入参数": {
+                "id": "概念分类ID（id来自概念股分类接口）",
+                "ts_code": "股票代码（以上参数二选一）"
+            },
+            "输出参数": {
+                "id": "概念代码",
+                "concept_name": "概念名称",
+                "ts_code": "股票代码",
+                "name": "股票名称",
+                "in_date": "纳入日期",
+                "out_date": "剔除日期"
+            }
+        },
+        "场内基金日线行情": {
+            "输入参数": {
+                "ts_code": "基金代码（二选一）",
+                "trade_date": "交易日期（二选一）",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "trade_date": "交易日期",
+                "open": "开盘价",
+                "high": "最高价",
+                "low": "最低价",
+                "close": "收盘价",
+                "pre_close": "昨收盘价",
+                "change": "涨跌额",
+                "pct_chg": "涨跌幅(%)",
+                "vol": "成交量(手)",
+                "amount": "成交额(千元)"
+            }
+        },
+        "大盘指数每日指标": {
+            "输入参数": {
+                "trade_date": "交易日期",
+                "ts_code": "TS代码",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "trade_date": "交易日期",
+                "total_mv": "总市值",
+                "float_mv": "流通市值",
+                "total_share": "总股本",
+                "float_share": "流通股本",
+                "free_share": "自由流通股本",
+                "turnover_rate": "换手率",
+                "turnover_rate_f": "流通股换手率",
+                "pe": "市盈率",
+                "pe_ttm": "市盈率TTM",
+                "pb": "市净率"
+            }
+        },
+        "期货合约信息表": {
+            "输入参数": {
+                "exchange": "交易所代码CFFEX-中金所DCE-大商所CZCE-郑商所SHFE-上期所INE-上海国际能源交易中心",
+                "fut_type": "合约类型(1普通合约2主力与连续合约默认取全部)"
+            },
+            "输出参数": {
+                "ts_code": "合约代码",
+                "symbol": "交易标识",
+                "exchange": "交易市场",
+                "name": "中文简称",
+                "fut_code": "合约产品代码",
+                "multiplier": "合约乘数",
+                "trade_unit": "交易计量单位",
+                "per_unit": "交易单位(每手)",
+                "quote_unit": "报价单位",
+                "quote_unit_desc": "最小报价单位说明",
+                "d_mode_desc": "交割方式说明",
+                "list_date": "上市日期",
+                "delist_date": "最后交易日期",
+                "d_month": "交割月份",
+                "last_ddate": "最后交割日",
+                "trade_time_desc": "交易时间说明"
+            }
+        },
+        "交易日历": {
+            "输入参数": {
+                "exchange": "交易所SSE上交所SZSE深交所",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "is_open": "是否交易'0'休市'1'交易"
+            },
+            "输出参数": {
+                "exchange": "交易所SSE上交所SZSE深交所",
+                "cal_date": "日历日期",
+                "is_open": "是否交易0休市1交易",
+                "pretrade_date": "上一个交易日"
+            }
+        },
+        "期货日线行情": {
+            "输入参数": {
+                "trade_date": "交易日期",
+                "ts_code": "合约代码",
+                "exchange": "交易所代码",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS合约代码",
+                "trade_date": "交易日期",
+                "pre_close": "昨收盘价",
+                "pre_settle": "昨结算价",
+                "open": "开盘价",
+                "high": "最高价",
+                "low": "最低价",
+                "close": "收盘价",
+                "settle": "结算价",
+                "change1": "收结涨跌",
+                "change2": "结结涨跌",
+                "vol": "成交量",
+                "amount": "成交金额(万元)",
+                "oi": "持仓量",
+                "oi_chg": "持仓量变化",
+                "delv_settle": "交割结算价"
+            }
+        },
+        "每日成交持仓排名": {
+            "输入参数": {
+                "trade_date": "交易日期（trade_date/symbol至少输入一个参数）",
+                "symbol": "合约或产品代码",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "exchange": "交易所代码"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "symbol": "合约代码或类型",
+                "broker": "期货公司会员简称",
+                "vol": "成交量",
+                "vol_chg": "成交量变化",
+                "long_hld": "持买仓量",
+                "long_chg": "持买仓量变化",
+                "short_hld": "持卖仓量",
+                "short_chg": "持卖仓量变化",
+                "exchange": "交易所"
+            }
+        },
+        "仓单日报": {
+            "输入参数": {
+                "trade_date": "交易日期",
+                "symbol": "产品代码",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "exchange": "交易所代码"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "symbol": "产品代码",
+                "fut_name": "产品名称",
+                "warehouse": "仓库名称",
+                "wh_id": "仓库编号",
+                "pre_vol": "昨日仓单量",
+                "vol": "今日仓单量",
+                "vol_chg": "增减量",
+                "area": "地区",
+                "year": "年度",
+                "grade": "等级",
+                "brand": "品牌",
+                "place": "产地",
+                "pd": "升贴水",
+                "is_ct": "是否折算仓单",
+                "unit": "单位",
+                "exchange": "交易所"
+            }
+        },
+        "结算参数": {
+            "输入参数": {
+                "trade_date": "交易日期（trade_date/ts_code至少需要输入一个参数）",
+                "ts_code": "合约代码",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "exchange": "交易所代码"
+            },
+            "输出参数": {
+                "ts_code": "合约代码",
+                "trade_date": "交易日期",
+                "settle": "结算价",
+                "trading_fee_rate": "交易手续费率",
+                "trading_fee": "交易手续费",
+                "delivery_fee": "交割手续费",
+                "b_hedging_margin_rate": "买套保交易保证金率",
+                "s_hedging_margin_rate": "卖套保交易保证金率",
+                "long_margin_rate": "买投机交易保证金率",
+                "short_margin_rate": "卖投机交易保证金率",
+                "offset_today_fee": "平今仓手续率",
+                "exchange": "交易所"
+            }
+        },
+        "新闻资讯": {
+            "输入参数": {
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "src": "新闻来源见下表"
+            },
+            "输出参数": {
+                "datetime": "新闻时间",
+                "content": "内容",
+                "title": "标题",
+                "channels": "分类"
+            }
+        },
+        "周线行情": {
+            "输入参数": {
+                "ts_code": "TS代码（ts_code,trade_date两个参数任选一）",
+                "trade_date": "交易日期（每周五日期）",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "股票代码",
+                "trade_date": "交易日期",
+                "close": "周收盘价",
+                "open": "周开盘价",
+                "high": "周最高价",
+                "low": "周最低价",
+                "pre_close": "上一周收盘价",
+                "change": "周涨跌额",
+                "pct_chg": "未复权周涨跌幅",
+                "vol": "周成交量",
+                "amount": "周成交额"
+            }
+        },
+        "月线行情": {
+            "输入参数": {
+                "ts_code": "TS代码（ts_code,trade_date两个参数任选一）",
+                "trade_date": "交易日期（每月最后一个交易日日期）",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "股票代码",
+                "trade_date": "交易日期",
+                "close": "月收盘价",
+                "open": "月开盘价",
+                "high": "月最高价",
+                "low": "月最低价",
+                "pre_close": "上月收盘价",
+                "change": "月涨跌额",
+                "pct_chg": "未复权月涨跌幅",
+                "vol": "月成交量",
+                "amount": "月成交额"
+            }
+        },
+        "A股复权行情": {
+            "接口说明": {
+                "ts_code": "证券代码",
+                "pro_api": "pro版api对象",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "asset": "资产类别：E股票I沪深指数C数字货币F期货FD基金O期权，默认E",
+                "adj": "复权类型(只针对股票)：None未复权qfq前复权hfq后复权,默认None",
+                "freq": "数据频度：1MIN表示1分钟（1/5/15/30/60分钟）D日线，默认D",
+                "ma": "均线，支持任意周期的均价和均量，输入任意合理int数值"
+            }
+        },
+        "Shibor利率数据": {
+            "Shibor利率介绍": {
+                "date": "日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输入参数": {
+                "date": "日期",
+                "on": "隔夜",
+                "1w": "1周",
+                "2w": "2周",
+                "1m": "1个月",
+                "3m": "3个月",
+                "6m": "6个月",
+                "9m": "9个月",
+                "1y": "1年"
+            }
+        },
+        "Shibor报价数据": {
+            "输入参数": {
+                "date": "日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "bank": "银行名称（中文名称，例如农业银行）"
+            },
+            "输出参数": {
+                "date": "日期",
+                "bank": "报价银行",
+                "on_b": "隔夜_Bid",
+                "on_a": "隔夜_Ask",
+                "1w_b": "1周_Bid",
+                "1w_a": "1周_Ask",
+                "2w_b": "2周_Bid",
+                "2w_a": "2周_Ask",
+                "1m_b": "1月_Bid",
+                "1m_a": "1月_Ask",
+                "3m_b": "3月_Bid",
+                "3m_a": "3月_Ask",
+                "6m_b": "6月_Bid",
+                "6m_a": "6月_Ask",
+                "9m_b": "9月_Bid",
+                "9m_a": "9月_Ask",
+                "1y_b": "1年_Bid",
+                "1y_a": "1年_Ask"
+            }
+        },
+        "LPR贷款基础利率": {
+            "输入参数": {
+                "date": "日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "date": "日期",
+                "1y": "1年贷款利率"
+            }
+        },
+        "Libor拆借利率": {
+            "输入参数": {
+                "date": "日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "curr_type": "货币代码(USD美元EUR欧元JPY日元GBP英镑CHF瑞郎，默认是USD)"
+            },
+            "输出参数": {
+                "date": "日期",
+                "curr_type": "货币",
+                "on": "隔夜",
+                "1w": "1周",
+                "1m": "1个月",
+                "2m": "2个月",
+                "3m": "3个月",
+                "6m": "6个月",
+                "12m": "12个月"
+            }
+        },
+        "Hibor利率": {
+            "输入参数": {
+                "date": "日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "date": "日期",
+                "on": "隔夜",
+                "1w": "1周",
+                "2w": "2周",
+                "1m": "1个月",
+                "2m": "2个月",
+                "3m": "3个月",
+                "6m": "6个月",
+                "12m": "12个月"
+            }
+        },
+        "新闻联播": {
+            "输入参数": {
+                "date": "日期"
+            },
+            "输出参数": {
+                "date": "日期",
+                "title": "标题",
+                "content": "内容"
+            }
+        },
+        "南华期货指数日线行情": {
+            "输入参数": {
+                "ts_code": "指数代码（南华期货指数以.NH结尾，具体请参考本文最下方）",
+                "trade_date": "交易日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS指数代码",
+                "trade_date": "交易日",
+                "close": "收盘点位",
+                "open": "开盘点位",
+                "high": "最高点位",
+                "low": "最低点位",
+                "pre_close": "昨日收盘点",
+                "change": "涨跌点",
+                "pct_chg": "涨跌幅",
+                "vol": "成交量",
+                "amount": "成交额（千元）"
+            }
+        },
+        "全国电影剧本备案数据": {
+            "输入参数": {
+                "ann_date": "公布日期（至少输入一个参数，日期不连续，定期公布）",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "rec_no": "备案号",
+                "film_name": "影片名称",
+                "rec_org": "备案单位",
+                "script_writer": "编剧",
+                "rec_result": "备案结果",
+                "rec_area": "备案地",
+                "classified": "影片分类",
+                "date_range": "备案日期区间",
+                "ann_date": "备案结果发布时间"
+            }
+        },
+        "期权合约信息": {
+            "输入参数": {
+                "exchange": "交易所代码（包括上交所SSE等交易所）",
+                "call_put": "期权类型"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "exchange": "交易市场",
+                "name": "合约名称",
+                "per_unit": "合约单位",
+                "opt_code": "标准合约代码",
+                "opt_type": "合约类型",
+                "call_put": "期权类型",
+                "exercise_type": "行权方式",
+                "exercise_price": "行权价格",
+                "s_month": "结算月",
+                "maturity_date": "到期日",
+                "list_price": "挂牌基准价",
+                "list_date": "开始交易日期",
+                "delist_date": "最后交易日期",
+                "last_edate": "最后行权日期",
+                "last_ddate": "最后交割日期",
+                "quote_unit": "报价单位",
+                "min_price_chg": "最小价格波幅"
+            }
+        },
+        "期权日线行情": {
+            "输入参数": {
+                "ts_code": "TS合约代码（输入代码或时间至少任意一个参数）",
+                "trade_date": "交易日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "exchange": "交易所"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "trade_date": "交易日期",
+                "exchange": "交易市场",
+                "pre_settle": "昨结算价",
+                "pre_close": "前收盘价",
+                "open": "开盘价",
+                "high": "最高价",
+                "low": "最低价",
+                "close": "收盘价",
+                "settle": "结算价",
+                "vol": "成交量",
+                "amount": "成交金额(万元)",
+                "oi": "持仓量"
+            }
+        },
+        "限售股解禁": {
+            "输入参数": {
+                "ts_code": "TS股票代码（至少输入一个参数）",
+                "ann_date": "公告日期",
+                "float_date": "解禁日期",
+                "start_date": "解禁开始日期",
+                "end_date": "解禁结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "ann_date": "公告日期",
+                "float_date": "解禁日期",
+                "float_share": "流通股份",
+                "float_ratio": "流通股份占总股本比率",
+                "holder_name": "股东名称",
+                "share_type": "股份类型"
+            }
+        },
+        "大宗交易": {
+            "输入参数": {
+                "ts_code": "TS代码（股票代码和日期至少输入一个参数）",
+                "trade_date": "交易日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "trade_date": "交易日历",
+                "price": "成交价",
+                "vol": "成交量（万股）",
+                "amount": "成交金额",
+                "buyer": "买方营业部",
+                "seller": "卖方营业部"
+            }
+        },
+        "财报披露计划": {
+            "输入参数": {
+                "ts_code": "TS股票代码",
+                "end_date": "财报周期（比如20181231表示2018年年报，20180630表示中报)",
+                "pre_date": "计划披露日期",
+                "actual_date": "实际披露日期"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "ann_date": "最新披露公告日",
+                "end_date": "报告期",
+                "pre_date": "预计披露日期",
+                "actual_date": "实际披露日期",
+                "modify_date": "披露日期修正记录"
+            }
+        },
+        "股票账户开户数据": {
+            "输入参数": {
+                "date": "日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "date": "统计周期",
+                "weekly_new": "本周新增（万）",
+                "total": "期末总账户数（万）",
+                "weekly_hold": "本周持仓账户数（万）",
+                "weekly_trade": "本周参与交易账户数（万）"
+            }
+        },
+        "股票账户开户数据（旧）": {
+            "输入参数": {
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "date": "统计周期",
+                "new_sh": "本周新增（上海，户）",
+                "new_sz": "本周新增（深圳，户）",
+                "active_sh": "期末有效账户（上海，万户）",
+                "active_sz": "期末有效账户（深圳，万户）",
+                "total_sh": "期末账户数（上海，万户）",
+                "total_sz": "期末账户数（深圳，万户）",
+                "trade_sh": "参与交易账户数（上海，万户）",
+                "trade_sz": "参与交易账户数（深圳，万户）"
+            }
+        },
+        "股东人数": {
+            "输入参数": {
+                "ts_code": "TS股票代码",
+                "enddate": "截止日期",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "end_date": "截止日期",
+                "holder_num": "股东户数"
+            }
+        },
+        "个股资金流向": {
+            "输入参数": {
+                "ts_code": "股票代码（股票和时间参数至少输入一个）",
+                "trade_date": "交易日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "trade_date": "交易日期",
+                "buy_sm_vol": "小单买入量",
+                "buy_sm_amount": "小单买入金额（万元）",
+                "sell_sm_vol": "小单卖出量",
+                "sell_sm_amount": "小单卖出金额（万元）",
+                "buy_md_vol": "中单买入量",
+                "buy_md_amount": "中单买入金额（万元）",
+                "sell_md_vol": "中单卖出量",
+                "sell_md_amount": "中单卖出金额（万元）",
+                "buy_lg_vol": "大单买入量",
+                "buy_lg_amount": "大单买入金额（万元）",
+                "sell_lg_vol": "大单卖出量",
+                "sell_lg_amount": "大单卖出金额（万元）",
+                "buy_elg_vol": "特大单买入量",
+                "buy_elg_amount": "特大单买入金额（万元）",
+                "sell_elg_vol": "特大单卖出量",
+                "sell_elg_amount": "特大单卖出金额（万元）",
+                "net_mf_vol": "净流入量",
+                "net_mf_amount": "净流入额（万元）"
+            }
+        },
+        "指数周线行情": {
+            "输入参数": {
+                "ts_code": "TS代码",
+                "trade_date": "交易日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS指数代码",
+                "trade_date": "交易日",
+                "close": "收盘点位",
+                "open": "开盘点位",
+                "high": "最高点位",
+                "low": "最低点位",
+                "pre_close": "昨日收盘点",
+                "change": "涨跌点位",
+                "pct_chg": "涨跌幅",
+                "vol": "成交量",
+                "amount": "成交额"
+            }
+        },
+        "指数月线行情": {
+            "输入参数": {
+                "ts_code": "TS代码",
+                "trade_date": "交易日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS指数代码",
+                "trade_date": "交易日",
+                "close": "收盘点位",
+                "open": "开盘点位",
+                "high": "最高点位",
+                "low": "最低点位",
+                "pre_close": "昨日收盘点",
+                "change": "涨跌点位",
+                "pct_chg": "涨跌幅",
+                "vol": "成交量",
+                "amount": "成交额"
+            }
+        },
+        "温州民间借贷利率": {
+            "输入参数": {
+                "date": "日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "date": "日期",
+                "comp_rate": "温州民间融资综合利率指数(%，下同)",
+                "center_rate": "民间借贷服务中心利率",
+                "micro_rate": "小额贷款公司放款利率",
+                "cm_rate": "民间资本管理公司融资价格",
+                "sdb_rate": "社会直接借贷利率",
+                "om_rate": "其他市场主体利率",
+                "aa_rate": "农村互助会互助金费率",
+                "m1_rate": "温州地区民间借贷分期限利率（一月期）",
+                "m3_rate": "温州地区民间借贷分期限利率（三月期）",
+                "m6_rate": "温州地区民间借贷分期限利率（六月期）",
+                "m12_rate": "温州地区民间借贷分期限利率（一年期）",
+                "long_rate": "温州地区民间借贷分期限利率（长期）"
+            }
+        },
+        "广州民间借贷利率": {
+            "输入参数": {
+                "date": "日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "date": "日期",
+                "d10_rate": "小额贷市场平均利率（十天）（单位：%，下同）",
+                "m1_rate": "小额贷市场平均利率（一月期）",
+                "m3_rate": "小额贷市场平均利率（三月期）",
+                "m6_rate": "小额贷市场平均利率（六月期）",
+                "m12_rate": "小额贷市场平均利率（一年期）",
+                "long_rate": "小额贷市场平均利率（长期）"
+            }
+        },
+        "股东增减持": {
+            "输入参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期",
+                "trade_type": "交易类型IN增持DE减持",
+                "holder_type": "股东类型C公司P个人G高管"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "ann_date": "公告日期",
+                "holder_name": "股东名称",
+                "holder_type": "股东类型G高管P个人C公司",
+                "in_de": "类型IN增持DE减持",
+                "change_vol": "变动数量",
+                "change_ratio": "占流通比例",
+                "after_share": "变动后持股",
+                "after_ratio": "变动后占流通比例",
+                "avg_price": "平均价格",
+                "total_share": "持股总数",
+                "begin_date": "增减持开始日期",
+                "close_date": "增减持结束日期"
+            }
+        },
+        "上市公司公告(信息地雷)": {
+            "输入参数": {
+                "ts_code": "股票代码",
+                "ann_date": "公告日期",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期",
+                "year": "年度，目前接口不能跨年获取，设定一个年份即可，比如2019"
+            },
+            "输出参数": {
+                "ts_code": "股票代码",
+                "ann_date": "公告日期",
+                "ann_type": "公告类型",
+                "title": "公告标题",
+                "content": "公告内容",
+                "pub_time": "公告发布时间"
+            }
+        },
+        "外汇基础信息（海外）": {
+            "输入参数": {
+                "exchange": "交易商",
+                "classify": "分类",
+                "ts_code": "TS代码"
+            },
+            "输出参数": {
+                "ts_code": "外汇代码",
+                "name": "名称",
+                "classify": "分类",
+                "exchange": "交易商",
+                "min_unit": "最小交易单位",
+                "max_unit": "最大交易单位",
+                "pip": "最大交易单位",
+                "pip_cost": "点值",
+                "traget_spread": "目标差价",
+                "min_stop_distance": "最小止损距离（点子）",
+                "trading_hours": "交易时间",
+                "break_time": "休市时间"
+            }
+        },
+        "外汇日线行情": {
+            "输入参数": {
+                "ts_code": "TS代码",
+                "trade_date": "交易日期（GMT，日期是格林尼治时间，比北京时间晚一天）",
+                "start_date": "开始日期（GMT）",
+                "end_date": "结束日期（GMT）",
+                "exchange": "交易商，目前只有FXCM"
+            },
+            "输出参数": {
+                "ts_code": "外汇代码",
+                "trade_date": "交易日期",
+                "bid_open": "买入开盘价",
+                "bid_close": "买入收盘价",
+                "bid_high": "买入最高价",
+                "bid_low": "买入最低价",
+                "ask_open": "卖出开盘价",
+                "ask_close": "卖出收盘价",
+                "ask_high": "卖出最高价",
+                "ask_low": "卖出最低价",
+                "tick_qty": "报价笔数",
+                "exchange": "交易商"
+            }
+        },
+        "全国拍摄制作电视剧备案公示数据": {
+            "输入参数": {
+                "report_date": "备案月份（YYYYMM）",
+                "start_date": "备案开始月份（YYYYMM）",
+                "end_date": "备案结束月份（YYYYMM）",
+                "org": "备案机构",
+                "name": "电视剧名称"
+            },
+            "输出参数": {
+                "name": "电视剧名称",
+                "classify": "题材",
+                "types": "体裁",
+                "org": "报备机构",
+                "report_date": "报备时间",
+                "license_key": "许可证号",
+                "episodes": "集数",
+                "shooting_date": "拍摄时间",
+                "prod_cycle": "制作周期",
+                "content": "内容提要",
+                "pro_opi": "省级管理部门备案意见",
+                "dept_opi": "相关部门意见",
+                "remarks": "备注"
+            }
+        },
+        "申万行业分类": {
+            "输入参数": {
+                "index_code": "指数代码",
+                "level": "行业分级（L1/L2/L3）",
+                "src": "指数来源（SW申万）"
+            },
+            "输出参数": {
+                "index_code": "指数代码",
+                "industry_name": "行业名称",
+                "level": "行业名称",
+                "industry_code": "行业代码",
+                "src": "行业分类（SW申万）"
+            }
+        },
+        "申万行业成分构成": {
+            "输入参数": {
+                "index_code": "指数代码",
+                "ts_code": "股票代码",
+                "is_new": "是否最新（默认为“Y是”）"
+            },
+            "输出参数": {
+                "index_code": "指数代码",
+                "index_name": "指数名称",
+                "con_code": "成分股票代码",
+                "con_name": "成分股票名称",
+                "in_date": "纳入日期",
+                "out_date": "剔除日期",
+                "is_new": "是否最新Y是N否"
+            }
+        },
+        "每日涨跌停价格": {
+            "输入参数": {
+                "ts_code": "股票代码",
+                "trade_date": "交易日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "ts_code": "TS股票代码",
+                "pre_close": "昨日收盘价",
+                "up_limit": "涨停价",
+                "down_limit": "跌停价"
+            }
+        },
+        "公募基金列表": {
+            "输入参数": {
+                "market": "交易市场:E场内O场外（默认E）"
+            },
+            "输出参数": {
+                "ts_code": "基金代码",
+                "name": "简称",
+                "management": "管理人",
+                "custodian": "托管人",
+                "fund_type": "投资类型",
+                "found_date": "成立日期",
+                "due_date": "到期日期",
+                "list_date": "上市时间",
+                "issue_date": "发行日期",
+                "delist_date": "退市日期",
+                "issue_amount": "发行份额(亿)",
+                "m_fee": "管理费",
+                "c_fee": "托管费",
+                "duration_year": "存续期",
+                "p_value": "面值",
+                "min_amount": "起点金额(万元)",
+                "exp_return": "预期收益率",
+                "benchmark": "业绩比较基准",
+                "status": "存续状态D摘牌I发行L已上市",
+                "invest_type": "投资风格",
+                "type": "基金类型",
+                "trustee": "受托人",
+                "purc_startdate": "日常申购起始日",
+                "redm_startdate": "日常赎回起始日",
+                "market": "E场内O场外"
+            }
+        },
+        "股票列表": {
+            "输入参数": {
+                "is_hs": "是否沪深港通标的，N否H沪股通S深股通",
+                "list_status": "上市状态：L上市D退市P暂停上市",
+                "exchange": "交易所SSE上交所SZSE深交所HKEX港交所(未上线)"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "symbol": "股票代码",
+                "name": "股票名称",
+                "area": "所在地域",
+                "industry": "所属行业",
+                "fullname": "股票全称",
+                "enname": "英文全称",
+                "market": "市场类型（主板/中小板/创业板）",
+                "exchange": "交易所代码",
+                "curr_type": "交易货币",
+                "list_status": "上市状态：L上市D退市P暂停上市",
+                "list_date": "上市日期",
+                "delist_date": "退市日期",
+                "is_hs": "是否沪深港通标的，N否H沪股通S深股通"
+            }
+        },
+        "日线行情": {
+            "输入参数": {
+                "ts_code": "股票代码（二选一）",
+                "trade_date": "交易日期（二选一）",
+                "start_date": "开始日期(YYYYMMDD)",
+                "end_date": "结束日期(YYYYMMDD)"
+            },
+            "输出参数": {
+                "ts_code": "股票代码",
+                "trade_date": "交易日期",
+                "open": "开盘价",
+                "high": "最高价",
+                "low": "最低价",
+                "close": "收盘价",
+                "pre_close": "昨收价",
+                "change": "涨跌额",
+                "pct_chg": "未复权涨跌幅",
+                "vol": "成交量",
+                "amount": "成交额"
+            }
+        },
+        "复权因子": {
+            "输入参数": {
+                "ts_code": "股票代码",
+                "trade_date": "交易日期(YYYYMMDD，下同)",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "股票代码",
+                "trade_date": "交易日期",
+                "adj_factor": "复权因子"
+            }
+        },
+        "停复牌信息": {
+            "输入参数": {
+                "ts_code": "股票代码(三选一)",
+                "suspend_date": "停牌日期(三选一)",
+                "resume_date": "复牌日期(三选一)"
+            },
+            "输出参数": {
+                "ts_code": "股票代码",
+                "suspend_date": "停牌日期",
+                "resume_date": "复牌日期",
+                "ann_date": "公告日期",
+                "suspend_reason": "停牌原因",
+                "reason_type": "停牌原因类别"
+            }
+        },
+        "每日指标": {
+            "输入参数": {
+                "ts_code": "股票代码（二选一）",
+                "trade_date": "交易日期（二选一）",
+                "start_date": "开始日期(YYYYMMDD)",
+                "end_date": "结束日期(YYYYMMDD)"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "trade_date": "交易日期",
+                "close": "当日收盘价",
+                "turnover_rate": "换手率",
+                "turnover_rate_f": "流通股换手率",
+                "volume_ratio": "量比",
+                "pe": "市盈率",
+                "pe_ttm": "市盈率TTM",
+                "pb": "市净率",
+                "ps": "市销率",
+                "ps_ttm": "市销率TTM",
+                "total_share": "总股本",
+                "float_share": "流通股本",
+                "free_share": "自由流通股本",
+                "total_mv": "总市值",
+                "circ_mv": "流通市值"
+            }
+        },
+        "利润表": {
+            "输入参数": {
+                "ts_code": "股票代码",
+                "ann_date": "公告日期",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期",
+                "period": "报告期(每个季度最后一天的日期，比如20171231表示年报)",
+                "report_type": "报告类型：参考下表说明",
+                "comp_type": "公司类型：1一般工商业2银行3保险4证券"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "ann_date": "公告日期",
+                "f_ann_date": "实际公告日期",
+                "end_date": "报告期",
+                "report_type": "报表类型",
+                "comp_type": "公司类型",
+                "basic_eps": "基本每股收益",
+                "diluted_eps": "稀释每股收益",
+                "total_revenue": "营业总收入",
+                "revenue": "营业收入",
+                "int_income": "利息收入",
+                "prem_earned": "已赚保费",
+                "comm_income": "手续费及佣金收入",
+                "n_commis_income": "手续费及佣金净收入",
+                "n_oth_income": "其他经营净收益",
+                "n_oth_b_income": "其他业务净收益",
+                "prem_income": "保险业务收入",
+                "out_prem": "分出保费",
+                "une_prem_reser": "提取未到期责任准备金",
+                "reins_income": "分保费收入",
+                "n_sec_tb_income": "代理买卖证券业务净收入",
+                "n_sec_uw_income": "证券承销业务净收入",
+                "n_asset_mg_income": "受托客户资产管理业务净收入",
+                "oth_b_income": "其他业务收入",
+                "fv_value_chg_gain": "公允价值变动净收益",
+                "invest_income": "投资净收益",
+                "ass_invest_income": "对联营企业和合营企业的投资收益",
+                "forex_gain": "汇兑净收益",
+                "total_cogs": "营业总成本",
+                "oper_cost": "营业成本",
+                "int_exp": "利息支出",
+                "comm_exp": "手续费及佣金支出",
+                "biz_tax_surchg": "营业税金及附加",
+                "sell_exp": "销售费用",
+                "admin_exp": "管理费用",
+                "fin_exp": "财务费用",
+                "assets_impair_loss": "资产减值损失",
+                "prem_refund": "退保金",
+                "compens_payout": "赔付总支出",
+                "reser_insur_liab": "提取保险责任准备金",
+                "div_payt": "保户红利支出",
+                "reins_exp": "分保费用",
+                "oper_exp": "营业支出",
+                "compens_payout_refu": "摊回赔付支出",
+                "insur_reser_refu": "摊回保险责任准备金",
+                "reins_cost_refund": "摊回分保费用",
+                "other_bus_cost": "其他业务成本",
+                "operate_profit": "营业利润",
+                "non_oper_income": "营业外收入",
+                "non_oper_exp": "营业外支出",
+                "nca_disploss": "非流动资产处置净损失",
+                "total_profit": "利润总额",
+                "income_tax": "所得税费用",
+                "n_income": "净利润(含少数股东损益)",
+                "n_income_attr_p": "净利润(不含少数股东损益)",
+                "minority_gain": "少数股东损益",
+                "oth_compr_income": "其他综合收益",
+                "t_compr_income": "综合收益总额",
+                "compr_inc_attr_p": "归属于母公司或股东的综合收益总额",
+                "compr_inc_attr_m_s": "归属于少数股东的综合收益总额",
+                "ebit": "息税前利润",
+                "ebitda": "息税折旧摊销前利润",
+                "insurance_exp": "保险业务支出",
+                "undist_profit": "年初未分配利润",
+                "distable_profit": "可分配利润"
+            },
+            "报告类型": {
+                "1": "合并报表",
+                "2": "单季合并",
+                "3": "调整单季合并表",
+                "4": "调整合并报表",
+                "5": "调整前合并报表",
+                "6": "母公司报表",
+                "7": "母公司单季表",
+                "8": "母公司调整单季表",
+                "9": "母公司调整表",
+                "10": "母公司调整前报表",
+                "11": "调整前合并报表",
+                "12": "母公司调整前报表"
+            },
+            "公司类型": {
+                "1": "一般工商业",
+                "2": "银行",
+                "3": "保险",
+                "4": "证券"
+            }
+        },
+        "资产负债表": {
+            "输入参数": {
+                "ts_code": "股票代码",
+                "ann_date": "公告日期",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期",
+                "period": "报告期(每个季度最后一天的日期，比如20171231表示年报)",
+                "report_type": "报告类型：见下方详细说明",
+                "comp_type": "公司类型：1一般工商业2银行3保险4证券"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "f_ann_date": "实际公告日期",
+                "end_date": "报告期",
+                "report_type": "报表类型",
+                "comp_type": "公司类型",
+                "total_share": "期末总股本",
+                "cap_rese": "资本公积金",
+                "undistr_porfit": "未分配利润",
+                "surplus_rese": "盈余公积金",
+                "special_rese": "专项储备",
+                "money_cap": "货币资金",
+                "trad_asset": "交易性金融资产",
+                "notes_receiv": "应收票据",
+                "accounts_receiv": "应收账款",
+                "oth_receiv": "其他应收款",
+                "prepayment": "预付款项",
+                "div_receiv": "应收股利",
+                "int_receiv": "应收利息",
+                "inventories": "存货",
+                "amor_exp": "待摊费用",
+                "nca_within_1y": "一年内到期的非流动资产",
+                "sett_rsrv": "结算备付金",
+                "loanto_oth_bank_fi": "拆出资金",
+                "premium_receiv": "应收保费",
+                "reinsur_receiv": "应收分保账款",
+                "reinsur_res_receiv": "应收分保合同准备金",
+                "pur_resale_fa": "买入返售金融资产",
+                "oth_cur_assets": "其他流动资产",
+                "total_cur_assets": "流动资产合计",
+                "fa_avail_for_sale": "可供出售金融资产",
+                "htm_invest": "持有至到期投资",
+                "lt_eqt_invest": "长期股权投资",
+                "invest_real_estate": "投资性房地产",
+                "time_deposits": "定期存款",
+                "oth_assets": "其他资产",
+                "lt_rec": "长期应收款",
+                "fix_assets": "固定资产",
+                "cip": "在建工程",
+                "const_materials": "工程物资",
+                "fixed_assets_disp": "固定资产清理",
+                "produc_bio_assets": "生产性生物资产",
+                "oil_and_gas_assets": "油气资产",
+                "intan_assets": "无形资产",
+                "r_and_d": "研发支出",
+                "goodwill": "商誉",
+                "lt_amor_exp": "长期待摊费用",
+                "defer_tax_assets": "递延所得税资产",
+                "decr_in_disbur": "发放贷款及垫款",
+                "oth_nca": "其他非流动资产",
+                "total_nca": "非流动资产合计",
+                "cash_reser_cb": "现金及存放中央银行款项",
+                "depos_in_oth_bfi": "存放同业和其它金融机构款项",
+                "prec_metals": "贵金属",
+                "deriv_assets": "衍生金融资产",
+                "rr_reins_une_prem": "应收分保未到期责任准备金",
+                "rr_reins_outstd_cla": "应收分保未决赔款准备金",
+                "rr_reins_lins_liab": "应收分保寿险责任准备金",
+                "rr_reins_lthins_liab": "应收分保长期健康险责任准备金",
+                "refund_depos": "存出保证金",
+                "ph_pledge_loans": "保户质押贷款",
+                "refund_cap_depos": "存出资本保证金",
+                "indep_acct_assets": "独立账户资产",
+                "client_depos": "客户资金存款",
+                "client_prov": "客户备付金",
+                "transac_seat_fee": "交易席位费",
+                "invest_as_receiv": "应收款项类投资",
+                "total_assets": "资产总计",
+                "lt_borr": "长期借款",
+                "st_borr": "短期借款",
+                "cb_borr": "向中央银行借款",
+                "depos_ib_deposits": "吸收存款及同业存放",
+                "loan_oth_bank": "拆入资金",
+                "trading_fl": "交易性金融负债",
+                "notes_payable": "应付票据",
+                "acct_payable": "应付账款",
+                "adv_receipts": "预收款项",
+                "sold_for_repur_fa": "卖出回购金融资产款",
+                "comm_payable": "应付手续费及佣金",
+                "payroll_payable": "应付职工薪酬",
+                "taxes_payable": "应交税费",
+                "int_payable": "应付利息",
+                "div_payable": "应付股利",
+                "oth_payable": "其他应付款",
+                "acc_exp": "预提费用",
+                "deferred_inc": "递延收益",
+                "st_bonds_payable": "应付短期债券",
+                "payable_to_reinsurer": "应付分保账款",
+                "rsrv_insur_cont": "保险合同准备金",
+                "acting_trading_sec": "代理买卖证券款",
+                "acting_uw_sec": "代理承销证券款",
+                "non_cur_liab_due_1y": "一年内到期的非流动负债",
+                "oth_cur_liab": "其他流动负债",
+                "total_cur_liab": "流动负债合计",
+                "bond_payable": "应付债券",
+                "lt_payable": "长期应付款",
+                "specific_payables": "专项应付款",
+                "estimated_liab": "预计负债",
+                "defer_tax_liab": "递延所得税负债",
+                "defer_inc_non_cur_liab": "递延收益-非流动负债",
+                "oth_ncl": "其他非流动负债",
+                "total_ncl": "非流动负债合计",
+                "depos_oth_bfi": "同业和其它金融机构存放款项",
+                "deriv_liab": "衍生金融负债",
+                "depos": "吸收存款",
+                "agency_bus_liab": "代理业务负债",
+                "oth_liab": "其他负债",
+                "prem_receiv_adva": "预收保费",
+                "depos_received": "存入保证金",
+                "ph_invest": "保户储金及投资款",
+                "reser_une_prem": "未到期责任准备金",
+                "reser_outstd_claims": "未决赔款准备金",
+                "reser_lins_liab": "寿险责任准备金",
+                "reser_lthins_liab": "长期健康险责任准备金",
+                "indept_acc_liab": "独立账户负债",
+                "pledge_borr": "质押借款",
+                "indem_payable": "应付赔付款",
+                "policy_div_payable": "应付保单红利",
+                "total_liab": "负债合计",
+                "treasury_share": "库存股",
+                "ordin_risk_reser": "一般风险准备",
+                "forex_differ": "外币报表折算差额",
+                "invest_loss_unconf": "未确认的投资损失",
+                "minority_int": "少数股东权益",
+                "total_hldr_eqy_exc_min_int": "股东权益合计(不含少数股东权益)",
+                "total_hldr_eqy_inc_min_int": "股东权益合计(含少数股东权益)",
+                "total_liab_hldr_eqy": "负债及股东权益总计",
+                "lt_payroll_payable": "长期应付职工薪酬",
+                "oth_comp_income": "其他综合收益",
+                "oth_eqt_tools": "其他权益工具",
+                "oth_eqt_tools_p_shr": "优先股",
+                "lending_funds": "融出资金",
+                "acc_receivable": "应收款项",
+                "st_fin_payable": "应付短期融资款",
+                "payables": "应付款项",
+                "hfs_assets": "持有待售的资产",
+                "hfs_sales": "持有待售的负债",
+                "update_flag": "更新标识"
+            },
+            "主要报表类型说明": {
+                "1": "合并报表",
+                "2": "单季合并",
+                "3": "调整单季合并表",
+                "4": "调整合并报表",
+                "5": "调整前合并报表",
+                "6": "母公司报表",
+                "7": "母公司单季表",
+                "8": "母公司调整单季表",
+                "9": "母公司调整表",
+                "10": "母公司调整前报表",
+                "11": "调整前合并报表",
+                "12": "母公司调整前报表"
+            },
+            "公司类型": {
+                "1": "一般工商业",
+                "2": "银行",
+                "3": "保险",
+                "4": "证券"
+            }
+        },
+        "现金流量表": {
+            "输入参数": {
+                "ts_code": "股票代码",
+                "ann_date": "公告日期",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期",
+                "period": "报告期(每个季度最后一天的日期，比如20171231表示年报)",
+                "report_type": "报告类型：见下方详细说明",
+                "comp_type": "公司类型：1一般工商业2银行3保险4证券"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "f_ann_date": "实际公告日期",
+                "end_date": "报告期",
+                "comp_type": "报表类型",
+                "report_type": "公司类型",
+                "net_profit": "净利润",
+                "finan_exp": "财务费用",
+                "c_fr_sale_sg": "销售商品、提供劳务收到的现金",
+                "recp_tax_rends": "收到的税费返还",
+                "n_depos_incr_fi": "客户存款和同业存放款项净增加额",
+                "n_incr_loans_cb": "向中央银行借款净增加额",
+                "n_inc_borr_oth_fi": "向其他金融机构拆入资金净增加额",
+                "prem_fr_orig_contr": "收到原保险合同保费取得的现金",
+                "n_incr_insured_dep": "保户储金净增加额",
+                "n_reinsur_prem": "收到再保业务现金净额",
+                "n_incr_disp_tfa": "处置交易性金融资产净增加额",
+                "ifc_cash_incr": "收取利息和手续费净增加额",
+                "n_incr_disp_faas": "处置可供出售金融资产净增加额",
+                "n_incr_loans_oth_bank": "拆入资金净增加额",
+                "n_cap_incr_repur": "回购业务资金净增加额",
+                "c_fr_oth_operate_a": "收到其他与经营活动有关的现金",
+                "c_inf_fr_operate_a": "经营活动现金流入小计",
+                "c_paid_goods_s": "购买商品、接受劳务支付的现金",
+                "c_paid_to_for_empl": "支付给职工以及为职工支付的现金",
+                "c_paid_for_taxes": "支付的各项税费",
+                "n_incr_clt_loan_adv": "客户贷款及垫款净增加额",
+                "n_incr_dep_cbob": "存放央行和同业款项净增加额",
+                "c_pay_claims_orig_inco": "支付原保险合同赔付款项的现金",
+                "pay_handling_chrg": "支付手续费的现金",
+                "pay_comm_insur_plcy": "支付保单红利的现金",
+                "oth_cash_pay_oper_act": "支付其他与经营活动有关的现金",
+                "st_cash_out_act": "经营活动现金流出小计",
+                "n_cashflow_act": "经营活动产生的现金流量净额",
+                "oth_recp_ral_inv_act": "收到其他与投资活动有关的现金",
+                "c_disp_withdrwl_invest": "收回投资收到的现金",
+                "c_recp_return_invest": "取得投资收益收到的现金",
+                "n_recp_disp_fiolta": "处置固定资产、无形资产和其他长期资产收回的现金净额",
+                "n_recp_disp_sobu": "处置子公司及其他营业单位收到的现金净额",
+                "stot_inflows_inv_act": "投资活动现金流入小计",
+                "c_pay_acq_const_fiolta": "购建固定资产、无形资产和其他长期资产支付的现金",
+                "c_paid_invest": "投资支付的现金",
+                "n_disp_subs_oth_biz": "取得子公司及其他营业单位支付的现金净额",
+                "oth_pay_ral_inv_act": "支付其他与投资活动有关的现金",
+                "n_incr_pledge_loan": "质押贷款净增加额",
+                "stot_out_inv_act": "投资活动现金流出小计",
+                "n_cashflow_inv_act": "投资活动产生的现金流量净额",
+                "c_recp_borrow": "取得借款收到的现金",
+                "proc_issue_bonds": "发行债券收到的现金",
+                "oth_cash_recp_ral_fnc_act": "收到其他与筹资活动有关的现金",
+                "stot_cash_in_fnc_act": "筹资活动现金流入小计",
+                "free_cashflow": "企业自由现金流量",
+                "c_prepay_amt_borr": "偿还债务支付的现金",
+                "c_pay_dist_dpcp_int_exp": "分配股利、利润或偿付利息支付的现金",
+                "incl_dvd_profit_paid_sc_ms": "子公司支付给少数股东的股利、利润",
+                "oth_cashpay_ral_fnc_act": "支付其他与筹资活动有关的现金",
+                "stot_cashout_fnc_act": "筹资活动现金流出小计",
+                "n_cash_flows_fnc_act": "筹资活动产生的现金流量净额",
+                "eff_fx_flu_cash": "汇率变动对现金的影响",
+                "n_incr_cash_cash_equ": "现金及现金等价物净增加额",
+                "c_cash_equ_beg_period": "期初现金及现金等价物余额",
+                "c_cash_equ_end_period": "期末现金及现金等价物余额",
+                "c_recp_cap_contrib": "吸收投资收到的现金",
+                "incl_cash_rec_saims": "子公司吸收少数股东投资收到的现金",
+                "uncon_invest_loss": "未确认投资损失",
+                "prov_depr_assets": "资产减值准备",
+                "depr_fa_coga_dpba": "固定资产折旧、油气资产折耗、生产性生物资产折旧",
+                "amort_intang_assets": "无形资产摊销",
+                "lt_amort_deferred_exp": "长期待摊费用摊销",
+                "decr_deferred_exp": "待摊费用减少",
+                "incr_acc_exp": "预提费用增加",
+                "loss_disp_fiolta": "处置固定、无形资产和其他长期资产的损失",
+                "loss_scr_fa": "固定资产报废损失",
+                "loss_fv_chg": "公允价值变动损失",
+                "invest_loss": "投资损失",
+                "decr_def_inc_tax_assets": "递延所得税资产减少",
+                "incr_def_inc_tax_liab": "递延所得税负债增加",
+                "decr_inventories": "存货的减少",
+                "decr_oper_payable": "经营性应收项目的减少",
+                "incr_oper_payable": "经营性应付项目的增加",
+                "others": "其他",
+                "im_net_cashflow_oper_act": "经营活动产生的现金流量净额(间接法)",
+                "conv_debt_into_cap": "债务转为资本",
+                "conv_copbonds_due_within_1y": "一年内到期的可转换公司债券",
+                "fa_fnc_leases": "融资租入固定资产",
+                "end_bal_cash": "现金的期末余额",
+                "beg_bal_cash": "现金的期初余额",
+                "end_bal_cash_equ": "现金等价物的期末余额",
+                "beg_bal_cash_equ": "现金等价物的期初余额",
+                "im_n_incr_cash_equ": "现金及现金等价物净增加额(间接法)"
+            }
+        },
+        "业绩预告": {
+            "输入参数": {
+                "ts_code": "股票代码(二选一)",
+                "ann_date": "公告日期(二选一)",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期",
+                "period": "报告期(每个季度最后一天的日期，比如20171231表示年报)",
+                "type": "预告类型(预增/预减/扭亏/首亏/续亏/续盈/略增/略减)"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "end_date": "报告期",
+                "type": "业绩预告类型(预增/预减/扭亏/首亏/续亏/续盈/略增/略减)",
+                "p_change_min": "预告净利润变动幅度下限",
+                "p_change_max": "预告净利润变动幅度上限",
+                "net_profit_min": "预告净利润下限（万元）",
+                "net_profit_max": "预告净利润上限（万元）",
+                "last_parent_net": "上年同期归属母公司净利润",
+                "first_ann_date": "首次公告日",
+                "summary": "业绩预告摘要",
+                "change_reason": "业绩变动原因"
+            }
+        },
+        "业绩快报": {
+            "输入参数": {
+                "ts_code": "股票代码",
+                "ann_date": "公告日期",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期",
+                "period": "报告期(每个季度最后一天的日期,比如20171231表示年报)"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "end_date": "报告期",
+                "revenue": "营业收入",
+                "operate_profit": "营业利润",
+                "total_profit": "利润总额",
+                "n_income": "净利润",
+                "total_assets": "总资产",
+                "total_hldr_eqy_exc_min_int": "股东权益合计(不含少数股东权益)",
+                "diluted_eps": "每股收益(摊薄)",
+                "diluted_roe": "净资产收益率(摊薄)(%)",
+                "yoy_net_profit": "去年同期修正后净利润",
+                "bps": "每股净资产",
+                "yoy_sales": "同比增长率:营业收入",
+                "yoy_op": "同比增长率:营业利润",
+                "yoy_tp": "同比增长率:利润总额",
+                "yoy_dedu_np": "同比增长率:归属母公司股东的净利润",
+                "yoy_eps": "同比增长率:基本每股收益",
+                "yoy_roe": "同比增减:加权平均净资产收益率",
+                "growth_assets": "比年初增长率:总资产",
+                "yoy_equity": "比年初增长率:归属母公司的股东权益",
+                "growth_bps": "比年初增长率:归属于母公司股东的每股净资产",
+                "or_last_year": "去年同期营业收入",
+                "op_last_year": "去年同期营业利润",
+                "tp_last_year": "去年同期利润总额",
+                "np_last_year": "去年同期净利润",
+                "eps_last_year": "去年同期每股收益",
+                "open_net_assets": "期初净资产",
+                "open_bps": "期初每股净资产",
+                "perf_summary": "业绩简要说明",
+                "is_audit": "是否审计：1是0否",
+                "remark": "备注"
+            }
+        },
+        "沪深港通资金流向": {
+            "输入参数": {
+                "trade_date": "交易日期(二选一)",
+                "start_date": "开始日期(二选一)",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "ggt_ss": "港股通（上海）",
+                "ggt_sz": "港股通（深圳）",
+                "hgt": "沪股通（百万元）",
+                "sgt": "深股通（百万元）",
+                "north_money": "北向资金（百万元）",
+                "south_money": "南向资金（百万元）"
+            }
+        },
+        "沪深股通十大成交股": {
+            "输入参数": {
+                "ts_code": "股票代码（二选一）",
+                "trade_date": "交易日期（二选一）",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "market_type": "市场类型（1：沪市3：深市）"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "ts_code": "股票代码",
+                "name": "股票名称",
+                "close": "收盘价",
+                "change": "涨跌额",
+                "rank": "资金排名",
+                "market_type": "市场类型（1：沪市3：深市）",
+                "amount": "成交金额",
+                "net_amount": "净成交金额",
+                "buy": "买入金额",
+                "sell": "卖出金额"
+            }
+        },
+        "港股通十大成交股": {
+            "输入参数": {
+                "ts_code": "股票代码（二选一）",
+                "trade_date": "交易日期（二选一）",
+                "start_date": "开始日期",
+                "end_date": "结束日期",
+                "market_type": "市场类型2：港股通（沪）4：港股通（深）"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "ts_code": "股票代码",
+                "name": "股票名称",
+                "close": "收盘价",
+                "p_change": "涨跌幅",
+                "rank": "资金排名",
+                "market_type": "市场类型2：港股通（沪）4：港股通（深）",
+                "amount": "累计成交金额",
+                "net_amount": "净买入金额",
+                "sh_amount": "沪市成交金额",
+                "sh_net_amount": "沪市净买入金额",
+                "sh_buy": "沪市买入金额",
+                "sh_sell": "沪市卖出金额",
+                "sz_amount": "深市成交金额",
+                "sz_net_amount": "深市净买入金额",
+                "sz_buy": "深市买入金额",
+                "sz_sell": "深市卖出金额"
+            }
+        },
+        "融资融券交易汇总": {
+            "输入参数": {
+                "trade_date": "交易日期",
+                "exchange_id": "交易所代码",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "exchange_id": "交易所代码（SSE上交所SZSE深交所）",
+                "rzye": "融资余额",
+                "rzmre": "融资买入额",
+                "rzche": "融资偿还额",
+                "rqye": "融券余额",
+                "rqmcl": "融券卖出量",
+                "rzrqye": "融资融券余额"
+            }
+        },
+        "融资融券交易明细": {
+            "输入参数": {
+                "trade_date": "交易日期",
+                "ts_code": "TS代码",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "trade_date": "交易日期",
+                "ts_code": "TS股票代码",
+                "rzye": "融资余额",
+                "rqye": "融券余额",
+                "rzmre": "融资买入额",
+                "rqyl": "融券余量",
+                "rzche": "融资偿还额",
+                "rqchl": "融券偿还量",
+                "rqmcl": "融券卖出量",
+                "rzrqye": "融资融券余额"
+            }
+        },
+        "前十大股东": {
+            "输入参数": {
+                "ts_code": "TS代码",
+                "period": "报告期",
+                "ann_date": "公告日期",
+                "start_date": "报告期开始日期",
+                "end_date": "报告期结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "end_date": "报告期",
+                "holder_name": "股东名称",
+                "hold_amount": "持有数量",
+                "hold_ratio": "持有比例"
+            }
+        },
+        "前十大流通股东": {
+            "输入参数": {
+                "ts_code": "TS代码",
+                "period": "报告期",
+                "ann_date": "公告日期",
+                "start_date": "报告期开始日期",
+                "end_date": "报告期结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "end_date": "报告期",
+                "holder_name": "股东名称",
+                "hold_amount": "持有数量"
+            }
+        },
+        "财务指标数据": {
+            "输入参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "start_date": "报告期开始日期",
+                "end_date": "报告期结束日期",
+                "period": "报告期(每个季度最后一天的日期,比如20171231表示年报)"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "ann_date": "公告日期",
+                "end_date": "报告期",
+                "eps": "基本每股收益",
+                "dt_eps": "稀释每股收益",
+                "total_revenue_ps": "每股营业总收入",
+                "revenue_ps": "每股营业收入",
+                "capital_rese_ps": "每股资本公积",
+                "surplus_rese_ps": "每股盈余公积",
+                "undist_profit_ps": "每股未分配利润",
+                "extra_item": "非经常性损益",
+                "profit_dedt": "扣除非经常性损益后的净利润",
+                "gross_margin": "毛利",
+                "current_ratio": "流动比率",
+                "quick_ratio": "速动比率",
+                "cash_ratio": "保守速动比率",
+                "invturn_days": "存货周转天数",
+                "arturn_days": "应收账款周转天数",
+                "inv_turn": "存货周转率",
+                "ar_turn": "应收账款周转率",
+                "ca_turn": "流动资产周转率",
+                "fa_turn": "固定资产周转率",
+                "assets_turn": "总资产周转率",
+                "op_income": "经营活动净收益",
+                "valuechange_income": "价值变动净收益",
+                "interst_income": "利息费用",
+                "daa": "折旧与摊销",
+                "ebit": "息税前利润",
+                "ebitda": "息税折旧摊销前利润",
+                "fcff": "企业自由现金流量",
+                "fcfe": "股权自由现金流量",
+                "current_exint": "无息流动负债",
+                "noncurrent_exint": "无息非流动负债",
+                "interestdebt": "带息债务",
+                "netdebt": "净债务",
+                "tangible_asset": "有形资产",
+                "working_capital": "营运资金",
+                "networking_capital": "营运流动资本",
+                "invest_capital": "全部投入资本",
+                "retained_earnings": "留存收益",
+                "diluted2_eps": "期末摊薄每股收益",
+                "bps": "每股净资产",
+                "ocfps": "每股经营活动产生的现金流量净额",
+                "retainedps": "每股留存收益",
+                "cfps": "每股现金流量净额",
+                "ebit_ps": "每股息税前利润",
+                "fcff_ps": "每股企业自由现金流量",
+                "fcfe_ps": "每股股东自由现金流量",
+                "netprofit_margin": "销售净利率",
+                "grossprofit_margin": "销售毛利率",
+                "cogs_of_sales": "销售成本率",
+                "expense_of_sales": "销售期间费用率",
+                "profit_to_gr": "净利润/营业总收入",
+                "saleexp_to_gr": "销售费用/营业总收入",
+                "adminexp_of_gr": "管理费用/营业总收入",
+                "finaexp_of_gr": "财务费用/营业总收入",
+                "impai_ttm": "资产减值损失/营业总收入",
+                "gc_of_gr": "营业总成本/营业总收入",
+                "op_of_gr": "营业利润/营业总收入",
+                "ebit_of_gr": "息税前利润/营业总收入",
+                "roe": "净资产收益率",
+                "roe_waa": "加权平均净资产收益率",
+                "roe_dt": "净资产收益率(扣除非经常损益)",
+                "roa": "总资产报酬率",
+                "npta": "总资产净利润",
+                "roic": "投入资本回报率",
+                "roe_yearly": "年化净资产收益率",
+                "roa2_yearly": "年化总资产报酬率",
+                "roe_avg": "平均净资产收益率(增发条件)",
+                "opincome_of_ebt": "经营活动净收益/利润总额",
+                "investincome_of_ebt": "价值变动净收益/利润总额",
+                "n_op_profit_of_ebt": "营业外收支净额/利润总额",
+                "tax_to_ebt": "所得税/利润总额",
+                "dtprofit_to_profit": "扣除非经常损益后的净利润/净利润",
+                "salescash_to_or": "销售商品提供劳务收到的现金/营业收入",
+                "ocf_to_or": "经营活动产生的现金流量净额/营业收入",
+                "ocf_to_opincome": "经营活动产生的现金流量净额/经营活动净收益",
+                "capitalized_to_da": "资本支出/折旧和摊销",
+                "debt_to_assets": "资产负债率",
+                "assets_to_eqt": "权益乘数",
+                "dp_assets_to_eqt": "权益乘数(杜邦分析)",
+                "ca_to_assets": "流动资产/总资产",
+                "nca_to_assets": "非流动资产/总资产",
+                "tbassets_to_totalassets": "有形资产/总资产",
+                "int_to_talcap": "带息债务/全部投入资本",
+                "eqt_to_talcapital": "归属于母公司的股东权益/全部投入资本",
+                "currentdebt_to_debt": "流动负债/负债合计",
+                "longdeb_to_debt": "非流动负债/负债合计",
+                "ocf_to_shortdebt": "经营活动产生的现金流量净额/流动负债",
+                "debt_to_eqt": "产权比率",
+                "eqt_to_debt": "归属于母公司的股东权益/负债合计",
+                "eqt_to_interestdebt": "归属于母公司的股东权益/带息债务",
+                "tangibleasset_to_debt": "有形资产/负债合计",
+                "tangasset_to_intdebt": "有形资产/带息债务",
+                "tangibleasset_to_netdebt": "有形资产/净债务",
+                "ocf_to_debt": "经营活动产生的现金流量净额/负债合计",
+                "ocf_to_interestdebt": "经营活动产生的现金流量净额/带息债务",
+                "ocf_to_netdebt": "经营活动产生的现金流量净额/净债务",
+                "ebit_to_interest": "已获利息倍数(EBIT/利息费用)",
+                "longdebt_to_workingcapital": "长期债务与营运资金比率",
+                "ebitda_to_debt": "息税折旧摊销前利润/负债合计",
+                "turn_days": "营业周期",
+                "roa_yearly": "年化总资产净利率",
+                "roa_dp": "总资产净利率(杜邦分析)",
+                "fixed_assets": "固定资产合计",
+                "profit_prefin_exp": "扣除财务费用前营业利润",
+                "non_op_profit": "非营业利润",
+                "op_to_ebt": "营业利润／利润总额",
+                "nop_to_ebt": "非营业利润／利润总额",
+                "ocf_to_profit": "经营活动产生的现金流量净额／营业利润",
+                "cash_to_liqdebt": "货币资金／流动负债",
+                "cash_to_liqdebt_withinterest": "货币资金／带息流动负债",
+                "op_to_liqdebt": "营业利润／流动负债",
+                "op_to_debt": "营业利润／负债合计",
+                "roic_yearly": "年化投入资本回报率",
+                "total_fa_trun": "固定资产合计周转率",
+                "profit_to_op": "利润总额／营业收入",
+                "q_opincome": "经营活动单季度净收益",
+                "q_investincome": "价值变动单季度净收益",
+                "q_dtprofit": "扣除非经常损益后的单季度净利润",
+                "q_eps": "每股收益(单季度)",
+                "q_netprofit_margin": "销售净利率(单季度)",
+                "q_gsprofit_margin": "销售毛利率(单季度)",
+                "q_exp_to_sales": "销售期间费用率(单季度)",
+                "q_profit_to_gr": "净利润／营业总收入(单季度)",
+                "q_saleexp_to_gr": "销售费用／营业总收入(单季度)",
+                "q_adminexp_to_gr": "管理费用／营业总收入(单季度)",
+                "q_finaexp_to_gr": "财务费用／营业总收入(单季度)",
+                "q_impair_to_gr_ttm": "资产减值损失／营业总收入(单季度)",
+                "q_gc_to_gr": "营业总成本／营业总收入(单季度)",
+                "q_op_to_gr": "营业利润／营业总收入(单季度)",
+                "q_roe": "净资产收益率(单季度)",
+                "q_dt_roe": "净资产单季度收益率(扣除非经常损益)",
+                "q_npta": "总资产净利润(单季度)",
+                "q_opincome_to_ebt": "经营活动净收益／利润总额(单季度)",
+                "q_investincome_to_ebt": "价值变动净收益／利润总额(单季度)",
+                "q_dtprofit_to_profit": "扣除非经常损益后的净利润／净利润(单季度)",
+                "q_salescash_to_or": "销售商品提供劳务收到的现金／营业收入(单季度)",
+                "q_ocf_to_sales": "经营活动产生的现金流量净额／营业收入(单季度)",
+                "q_ocf_to_or": "经营活动产生的现金流量净额／经营活动净收益(单季度)",
+                "basic_eps_yoy": "基本每股收益同比增长率",
+                "dt_eps_yoy": "稀释每股收益同比增长率",
+                "cfps_yoy": "每股经营活动产生的现金流量净额同比增长率",
+                "op_yoy": "营业利润同比增长率",
+                "ebt_yoy": "利润总额同比增长率",
+                "netprofit_yoy": "归属母公司股东的净利润同比增长率",
+                "dt_netprofit_yoy": "归属母公司股东的净利润-扣除非经常损益同比增长率",
+                "ocf_yoy": "经营活动产生的现金流量净额同比增长率",
+                "roe_yoy": "净资产收益率(摊薄)同比增长率",
+                "bps_yoy": "每股净资产相对年初增长率",
+                "assets_yoy": "资产总计相对年初增长率",
+                "eqt_yoy": "归属母公司的股东权益相对年初增长率",
+                "tr_yoy": "营业总收入同比增长率",
+                "or_yoy": "营业收入同比增长率",
+                "q_gr_yoy": "营业总收入同比增长率(单季度)",
+                "q_gr_qoq": "营业总收入环比增长率(单季度)",
+                "q_sales_yoy": "营业收入同比增长率(单季度)",
+                "q_sales_qoq": "营业收入环比增长率(单季度)",
+                "q_op_yoy": "营业利润同比增长率(单季度)",
+                "q_op_qoq": "营业利润环比增长率(单季度)",
+                "q_profit_yoy": "净利润同比增长率(单季度)",
+                "q_profit_qoq": "净利润环比增长率(单季度)",
+                "q_netprofit_yoy": "归属母公司股东的净利润同比增长率(单季度)",
+                "q_netprofit_qoq": "归属母公司股东的净利润环比增长率(单季度)",
+                "equity_yoy": "净资产同比增长率",
+                "rd_exp": "研发费用",
+                "update_flag": "更新标识"
+            }
+        },
+        "财务审计意见": {
+            "输入参数": {
+                "ts_code": "股票代码",
+                "ann_date": "公告日期",
+                "start_date": "公告开始日期",
+                "end_date": "公告结束日期",
+                "period": "报告期(每个季度最后一天的日期,比如20171231表示年报)"
+            },
+            "输出参数": {
+                "ts_code": "TS股票代码",
+                "ann_date": "公告日期",
+                "end_date": "报告期",
+                "audit_result": "审计结果",
+                "audit_fees": "审计总费用",
+                "audit_agency": "会计事务所",
+                "audit_sign": "签字会计师"
+            }
+        },
+        "主营业务构成": {
+            "输入参数": {
+                "ts_code": "股票代码",
+                "period": "报告期(每个季度最后一天的日期,比如20171231表示年报)",
+                "type": "类型：P按产品D按地区（请输入大写字母P或者D）",
+                "start_date": "报告期开始日期",
+                "end_date": "报告期结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "end_date": "报告期",
+                "bz_item": "主营业务来源",
+                "bz_sales": "主营业务收入",
+                "bz_profit": "主营业务利润",
+                "bz_cost": "主营业务成本",
+                "curr_type": "货币代码",
+                "update_flag": "是否更新"
+            }
+        },
+        "台湾电子产业月营收明细": {
+            "输入参数": {
+                "date": "报告期",
+                "item": "产品代码",
+                "symbol": "公司代码",
+                "start_date": "报告期开始日期",
+                "end_date": "报告期结束日期",
+                "source": "None"
+            },
+            "输出参数": {
+                "date": "报告期",
+                "item": "产品代码",
+                "symbol": "公司代码",
+                "op_income": "月度营收",
+                "consop_income": "合并月度营收（默认不展示）"
+            }
+        },
+        "台湾电子产业月营收": {
+            "输入参数": {
+                "date": "报告期",
+                "item": "产品代码",
+                "start_date": "报告期开始日期",
+                "end_date": "报告期结束日期"
+            },
+            "输出参数": {
+                "date": "报告期",
+                "item": "产品代码",
+                "op_income": "月度收入"
+            }
+        },
+        "指数基本信息": {
+            "输入参数": {
+                "market": "交易所或服务商",
+                "publisher": "发布商",
+                "category": "指数类别"
+            },
+            "输出参数": {
+                "ts_code": "TS代码",
+                "name": "简称",
+                "fullname": "指数全称",
+                "market": "市场",
+                "publisher": "发布方",
+                "index_type": "指数风格",
+                "category": "指数类别",
+                "base_date": "基期",
+                "base_point": "基点",
+                "list_date": "发布日期",
+                "weight_rule": "加权方式",
+                "desc": "描述",
+                "exp_date": "终止日期"
+            }
+        },
+        "指数日线行情": {
+            "输入参数": {
+                "ts_code": "指数代码",
+                "trade_date": "交易日期",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "ts_code": "TS指数代码",
+                "trade_date": "交易日",
+                "close": "收盘点位",
+                "open": "开盘点位",
+                "high": "最高点位",
+                "low": "最低点位",
+                "pre_close": "昨日收盘点",
+                "change": "涨跌点",
+                "pct_chg": "涨跌幅",
+                "vol": "成交量",
+                "amount": "成交额"
+            }
+        },
+        "指数成分和权重": {
+            "输入参数": {
+                "index_code": "指数代码(二选一)",
+                "trade_date": "交易日期（二选一）",
+                "start_date": "开始日期",
+                "end_date": "结束日期"
+            },
+            "输出参数": {
+                "index_code": "指数代码",
+                "con_code": "成分代码",
+                "trade_date": "交易日期",
+                "weight": "权重"
+            }
+        }
+    },
+    "数据库参数": {
+        "股票曾用名": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "证券名称": "str"
+        },
+        "上市公司基本信息":{
+            "ID": "varchar",
+            "交易所代码": "str",
+            "法人代表": "str",
+            "总经理": "str",
+            "董秘": "str",
+            "注册资本": "double",
+            "注册日期": "datetime",
+            "所在省份": "str",
+            "所在城市": "str",
+            "公司介绍": "str",
+            "公司主页": "str",
+            "电子邮件": "str",
+            "办公室": "str",
+            "员工人数": "int",
+            "主要业务及产品": "str",
+            "经营范围": "str"
+        },
+        "股票日行情": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "开盘价": "float",
+            "最高价": "float",
+            "最低价": "float",
+            "收盘价": "float",
+            "昨收价": "float",
+            "涨跌额": "float",
+            "成交量": "float",
+            "成交额": "double",
+            "复权因子": "float",
+            "换手率": "float",
+            "流通股换手率": "float",
+            "量比": "float",
+            "市盈率": "float",
+            "市盈率TTM": "float",
+            "市净率": "float",
+            "市销率": "float",
+            "市销率TTM": "float",
+            "总股本": "double",
+            "流通股本": "double",
+            "自由流通股本": "double",
+            "总市值": "double",
+            "流通市值": "double"
+        },
+        "指数日行情": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "收盘点位": "float",
+            "开盘点位": "float",
+            "最高点位": "float",
+            "最低点位": "float",
+            "昨日收盘点": "float",
+            "涨跌点": "float",
+            "涨跌幅": "float",
+            "成交量": "double",
+            "成交额": "double",
+            "总市值": "double",
+            "流通市值": "double",
+            "总股本": "double",
+            "流通股本": "double",
+            "自由流通股本": "double",
+            "换手率": "float",
+            "流通股换手率": "float",
+            "市盈率": "float",
+            "市盈率TTM": "float",
+            "市净率": "float"
+        },
+        "IPO新股列表": {
+            "ID": "varchar",
+            "申购代码": "varchar",
+            "名称": "str",
+            "上网发行日期": "datetime",
+            "上市日期": "datetime",
+            "发行总量": "double",
+            "上网发行总量": "double",
+            "发行价格": "float",
+            "市盈率": "float",
+            "个人申购上限": "double",
+            "募集资金": "double",
+            "中签率": "float"
+        },
+        "合并资产负债表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "期末总股本": "double",
+            "资本公积金": "double",
+            "未分配利润": "double",
+            "盈余公积金": "double",
+            "专项储备": "double",
+            "货币资金": "double",
+            "交易性金融资产": "double",
+            "应收票据": "double",
+            "应收账款": "double",
+            "其他应收款": "double",
+            "预付款项": "double",
+            "应收股利": "double",
+            "应收利息": "double",
+            "存货": "double",
+            "待摊费用": "double",
+            "一年内到期的非流动资产": "double",
+            "结算备付金": "double",
+            "拆出资金": "double",
+            "应收保费": "double",
+            "应收分保账款": "double",
+            "应收分保合同准备金": "double",
+            "买入返售金融资产": "double",
+            "其他流动资产": "double",
+            "流动资产合计": "double",
+            "可供出售金融资产": "double",
+            "持有至到期投资": "double",
+            "长期股权投资": "double",
+            "投资性房地产": "double",
+            "定期存款": "double",
+            "其他资产": "double",
+            "长期应收款": "double",
+            "固定资产": "double",
+            "在建工程": "double",
+            "工程物资": "double",
+            "固定资产清理": "double",
+            "生产性生物资产": "double",
+            "油气资产": "double",
+            "无形资产": "double",
+            "研发支出": "double",
+            "商誉": "double",
+            "长期待摊费用": "double",
+            "递延所得税资产": "double",
+            "发放贷款及垫款": "double",
+            "其他非流动资产": "double",
+            "非流动资产合计": "double",
+            "现金及存放中央银行款项": "double",
+            "存放同业和其它金融机构款项": "double",
+            "贵金属": "double",
+            "衍生金融资产": "double",
+            "应收分保未到期责任准备金": "double",
+            "应收分保未决赔款准备金": "double",
+            "应收分保寿险责任准备金": "double",
+            "应收分保长期健康险责任准备金": "double",
+            "存出保证金": "double",
+            "保户质押贷款": "double",
+            "存出资本保证金": "double",
+            "独立账户资产": "double",
+            "客户资金存款": "double",
+            "客户备付金": "double",
+            "交易席位费": "double",
+            "应收款项类投资": "double",
+            "资产总计": "double",
+            "长期借款": "double",
+            "短期借款": "double",
+            "向中央银行借款": "double",
+            "吸收存款及同业存放": "double",
+            "拆入资金": "double",
+            "交易性金融负债": "double",
+            "应付票据": "double",
+            "应付账款": "double",
+            "预收款项": "double",
+            "卖出回购金融资产款": "double",
+            "应付手续费及佣金": "double",
+            "应付职工薪酬": "double",
+            "应交税费": "double",
+            "应付利息": "double",
+            "应付股利": "double",
+            "其他应付款": "double",
+            "预提费用": "double",
+            "递延收益": "double",
+            "应付短期债券": "double",
+            "应付分保账款": "double",
+            "保险合同准备金": "double",
+            "代理买卖证券款": "double",
+            "代理承销证券款": "double",
+            "一年内到期的非流动负债": "double",
+            "其他流动负债": "double",
+            "流动负债合计": "double",
+            "应付债券": "double",
+            "长期应付款": "double",
+            "专项应付款": "double",
+            "预计负债": "double",
+            "递延所得税负债": "double",
+            "递延收益-非流动负债": "double",
+            "其他非流动负债": "double",
+            "非流动负债合计": "double",
+            "同业和其它金融机构存放款项": "double",
+            "衍生金融负债": "double",
+            "吸收存款": "double",
+            "代理业务负债": "double",
+            "其他负债": "double",
+            "预收保费": "double",
+            "存入保证金": "double",
+            "保户储金及投资款": "double",
+            "未到期责任准备金": "double",
+            "未决赔款准备金": "double",
+            "寿险责任准备金": "double",
+            "长期健康险责任准备金": "double",
+            "独立账户负债": "double",
+            "质押借款": "double",
+            "应付赔付款": "double",
+            "应付保单红利": "double",
+            "负债合计": "double",
+            "库存股": "double",
+            "一般风险准备": "double",
+            "外币报表折算差额": "double",
+            "未确认的投资损失": "double",
+            "少数股东权益": "double",
+            "股东权益合计(不含少数股东权益)": "double",
+            "股东权益合计(含少数股东权益)": "double",
+            "负债及股东权益总计": "double",
+            "长期应付职工薪酬": "double",
+            "其他综合收益": "double",
+            "其他权益工具": "double",
+            "优先股": "double",
+            "融出资金": "double",
+            "应收款项": "double",
+            "应付短期融资款": "double",
+            "应付款项": "double",
+            "持有待售的资产": "double",
+            "持有待售的负债": "double"
+        },
+        "母公司资产负债表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "期末总股本": "double",
+            "资本公积金": "double",
+            "未分配利润": "double",
+            "盈余公积金": "double",
+            "专项储备": "double",
+            "货币资金": "double",
+            "交易性金融资产": "double",
+            "应收票据": "double",
+            "应收账款": "double",
+            "其他应收款": "double",
+            "预付款项": "double",
+            "应收股利": "double",
+            "应收利息": "double",
+            "存货": "double",
+            "待摊费用": "double",
+            "一年内到期的非流动资产": "double",
+            "结算备付金": "double",
+            "拆出资金": "double",
+            "应收保费": "double",
+            "应收分保账款": "double",
+            "应收分保合同准备金": "double",
+            "买入返售金融资产": "double",
+            "其他流动资产": "double",
+            "流动资产合计": "double",
+            "可供出售金融资产": "double",
+            "持有至到期投资": "double",
+            "长期股权投资": "double",
+            "投资性房地产": "double",
+            "定期存款": "double",
+            "其他资产": "double",
+            "长期应收款": "double",
+            "固定资产": "double",
+            "在建工程": "double",
+            "工程物资": "double",
+            "固定资产清理": "double",
+            "生产性生物资产": "double",
+            "油气资产": "double",
+            "无形资产": "double",
+            "研发支出": "double",
+            "商誉": "double",
+            "长期待摊费用": "double",
+            "递延所得税资产": "double",
+            "发放贷款及垫款": "double",
+            "其他非流动资产": "double",
+            "非流动资产合计": "double",
+            "现金及存放中央银行款项": "double",
+            "存放同业和其它金融机构款项": "double",
+            "贵金属": "double",
+            "衍生金融资产": "double",
+            "应收分保未到期责任准备金": "double",
+            "应收分保未决赔款准备金": "double",
+            "应收分保寿险责任准备金": "double",
+            "应收分保长期健康险责任准备金": "double",
+            "存出保证金": "double",
+            "保户质押贷款": "double",
+            "存出资本保证金": "double",
+            "独立账户资产": "double",
+            "客户资金存款": "double",
+            "客户备付金": "double",
+            "交易席位费": "double",
+            "应收款项类投资": "double",
+            "资产总计": "double",
+            "长期借款": "double",
+            "短期借款": "double",
+            "向中央银行借款": "double",
+            "吸收存款及同业存放": "double",
+            "拆入资金": "double",
+            "交易性金融负债": "double",
+            "应付票据": "double",
+            "应付账款": "double",
+            "预收款项": "double",
+            "卖出回购金融资产款": "double",
+            "应付手续费及佣金": "double",
+            "应付职工薪酬": "double",
+            "应交税费": "double",
+            "应付利息": "double",
+            "应付股利": "double",
+            "其他应付款": "double",
+            "预提费用": "double",
+            "递延收益": "double",
+            "应付短期债券": "double",
+            "应付分保账款": "double",
+            "保险合同准备金": "double",
+            "代理买卖证券款": "double",
+            "代理承销证券款": "double",
+            "一年内到期的非流动负债": "double",
+            "其他流动负债": "double",
+            "流动负债合计": "double",
+            "应付债券": "double",
+            "长期应付款": "double",
+            "专项应付款": "double",
+            "预计负债": "double",
+            "递延所得税负债": "double",
+            "递延收益-非流动负债": "double",
+            "其他非流动负债": "double",
+            "非流动负债合计": "double",
+            "同业和其它金融机构存放款项": "double",
+            "衍生金融负债": "double",
+            "吸收存款": "double",
+            "代理业务负债": "double",
+            "其他负债": "double",
+            "预收保费": "double",
+            "存入保证金": "double",
+            "保户储金及投资款": "double",
+            "未到期责任准备金": "double",
+            "未决赔款准备金": "double",
+            "寿险责任准备金": "double",
+            "长期健康险责任准备金": "double",
+            "独立账户负债": "double",
+            "质押借款": "double",
+            "应付赔付款": "double",
+            "应付保单红利": "double",
+            "负债合计": "double",
+            "库存股": "double",
+            "一般风险准备": "double",
+            "外币报表折算差额": "double",
+            "未确认的投资损失": "double",
+            "少数股东权益": "double",
+            "股东权益合计(不含少数股东权益)": "double",
+            "股东权益合计(含少数股东权益)": "double",
+            "负债及股东权益总计": "double",
+            "长期应付职工薪酬": "double",
+            "其他综合收益": "double",
+            "其他权益工具": "double",
+            "优先股": "double",
+            "融出资金": "double",
+            "应收款项": "double",
+            "应付短期融资款": "double",
+            "应付款项": "double",
+            "持有待售的资产": "double",
+            "持有待售的负债": "double"
+        },
+        "合并利润表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "基本每股收益": "float",
+            "稀释每股收益": "float",
+            "营业总收入": "double",
+            "营业收入": "double",
+            "利息收入": "double",
+            "已赚保费": "double",
+            "手续费及佣金收入": "double",
+            "手续费及佣金净收入": "double",
+            "其他经营净收益": "double",
+            "其他业务净收益": "double",
+            "保险业务收入": "double",
+            "分出保费": "double",
+            "提取未到期责任准备金": "double",
+            "分保费收入": "double",
+            "代理买卖证券业务净收入": "double",
+            "证券承销业务净收入": "double",
+            "受托客户资产管理业务净收入": "double",
+            "其他业务收入": "double",
+            "公允价值变动净收益": "double",
+            "投资净收益": "double",
+            "对联营企业和合营企业的投资收益": "double",
+            "汇兑净收益": "double",
+            "营业总成本": "double",
+            "营业成本": "double",
+            "利息支出": "double",
+            "手续费及佣金支出": "double",
+            "营业税金及附加": "double",
+            "销售费用": "double",
+            "管理费用": "double",
+            "财务费用": "double",
+            "资产减值损失": "double",
+            "退保金": "double",
+            "赔付总支出": "double",
+            "提取保险责任准备金": "double",
+            "保户红利支出": "double",
+            "分保费用": "double",
+            "营业支出": "double",
+            "摊回赔付支出": "double",
+            "摊回保险责任准备金": "double",
+            "摊回分保费用": "double",
+            "其他业务成本": "double",
+            "营业利润": "double",
+            "营业外收入": "double",
+            "营业外支出": "double",
+            "非流动资产处置净损失": "double",
+            "利润总额": "double",
+            "所得税费用": "double",
+            "净利润(含少数股东损益)": "double",
+            "净利润(不含少数股东损益)": "double",
+            "少数股东损益": "double",
+            "其他综合收益": "double",
+            "综合收益总额": "double",
+            "归属于母公司或股东的综合收益总额": "double",
+            "归属于少数股东的综合收益总额": "double",
+            "息税前利润": "double",
+            "息税折旧摊销前利润": "double",
+            "保险业务支出": "double",
+            "年初未分配利润": "double",
+            "可分配利润": "double"
+        },
+        "合并单季度利润表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "基本每股收益": "float",
+            "稀释每股收益": "float",
+            "营业总收入": "double",
+            "营业收入": "double",
+            "利息收入": "double",
+            "已赚保费": "double",
+            "手续费及佣金收入": "double",
+            "手续费及佣金净收入": "double",
+            "其他经营净收益": "double",
+            "其他业务净收益": "double",
+            "保险业务收入": "double",
+            "分出保费": "double",
+            "提取未到期责任准备金": "double",
+            "分保费收入": "double",
+            "代理买卖证券业务净收入": "double",
+            "证券承销业务净收入": "double",
+            "受托客户资产管理业务净收入": "double",
+            "其他业务收入": "double",
+            "公允价值变动净收益": "double",
+            "投资净收益": "double",
+            "对联营企业和合营企业的投资收益": "double",
+            "汇兑净收益": "double",
+            "营业总成本": "double",
+            "营业成本": "double",
+            "利息支出": "double",
+            "手续费及佣金支出": "double",
+            "营业税金及附加": "double",
+            "销售费用": "double",
+            "管理费用": "double",
+            "财务费用": "double",
+            "资产减值损失": "double",
+            "退保金": "double",
+            "赔付总支出": "double",
+            "提取保险责任准备金": "double",
+            "保户红利支出": "double",
+            "分保费用": "double",
+            "营业支出": "double",
+            "摊回赔付支出": "double",
+            "摊回保险责任准备金": "double",
+            "摊回分保费用": "double",
+            "其他业务成本": "double",
+            "营业利润": "double",
+            "营业外收入": "double",
+            "营业外支出": "double",
+            "非流动资产处置净损失": "double",
+            "利润总额": "double",
+            "所得税费用": "double",
+            "净利润(含少数股东损益)": "double",
+            "净利润(不含少数股东损益)": "double",
+            "少数股东损益": "double",
+            "其他综合收益": "double",
+            "综合收益总额": "double",
+            "归属于母公司或股东的综合收益总额": "double",
+            "归属于少数股东的综合收益总额": "double",
+            "息税前利润": "double",
+            "息税折旧摊销前利润": "double",
+            "保险业务支出": "double",
+            "年初未分配利润": "double",
+            "可分配利润": "double"
+        },
+        "母公司利润表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "基本每股收益": "float",
+            "稀释每股收益": "float",
+            "营业总收入": "double",
+            "营业收入": "double",
+            "利息收入": "double",
+            "已赚保费": "double",
+            "手续费及佣金收入": "double",
+            "手续费及佣金净收入": "double",
+            "其他经营净收益": "double",
+            "其他业务净收益": "double",
+            "保险业务收入": "double",
+            "分出保费": "double",
+            "提取未到期责任准备金": "double",
+            "分保费收入": "double",
+            "代理买卖证券业务净收入": "double",
+            "证券承销业务净收入": "double",
+            "受托客户资产管理业务净收入": "double",
+            "其他业务收入": "double",
+            "公允价值变动净收益": "double",
+            "投资净收益": "double",
+            "对联营企业和合营企业的投资收益": "double",
+            "汇兑净收益": "double",
+            "营业总成本": "double",
+            "营业成本": "double",
+            "利息支出": "double",
+            "手续费及佣金支出": "double",
+            "营业税金及附加": "double",
+            "销售费用": "double",
+            "管理费用": "double",
+            "财务费用": "double",
+            "资产减值损失": "double",
+            "退保金": "double",
+            "赔付总支出": "double",
+            "提取保险责任准备金": "double",
+            "保户红利支出": "double",
+            "分保费用": "double",
+            "营业支出": "double",
+            "摊回赔付支出": "double",
+            "摊回保险责任准备金": "double",
+            "摊回分保费用": "double",
+            "其他业务成本": "double",
+            "营业利润": "double",
+            "营业外收入": "double",
+            "营业外支出": "double",
+            "非流动资产处置净损失": "double",
+            "利润总额": "double",
+            "所得税费用": "double",
+            "净利润(含少数股东损益)": "double",
+            "净利润(不含少数股东损益)": "double",
+            "少数股东损益": "double",
+            "其他综合收益": "double",
+            "综合收益总额": "double",
+            "归属于母公司或股东的综合收益总额": "double",
+            "归属于少数股东的综合收益总额": "double",
+            "息税前利润": "double",
+            "息税折旧摊销前利润": "double",
+            "保险业务支出": "double",
+            "年初未分配利润": "double",
+            "可分配利润": "double"
+        },
+        "母公司单季度利润表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "基本每股收益": "float",
+            "稀释每股收益": "float",
+            "营业总收入": "double",
+            "营业收入": "double",
+            "利息收入": "double",
+            "已赚保费": "double",
+            "手续费及佣金收入": "double",
+            "手续费及佣金净收入": "double",
+            "其他经营净收益": "double",
+            "其他业务净收益": "double",
+            "保险业务收入": "double",
+            "分出保费": "double",
+            "提取未到期责任准备金": "double",
+            "分保费收入": "double",
+            "代理买卖证券业务净收入": "double",
+            "证券承销业务净收入": "double",
+            "受托客户资产管理业务净收入": "double",
+            "其他业务收入": "double",
+            "公允价值变动净收益": "double",
+            "投资净收益": "double",
+            "对联营企业和合营企业的投资收益": "double",
+            "汇兑净收益": "double",
+            "营业总成本": "double",
+            "营业成本": "double",
+            "利息支出": "double",
+            "手续费及佣金支出": "double",
+            "营业税金及附加": "double",
+            "销售费用": "double",
+            "管理费用": "double",
+            "财务费用": "double",
+            "资产减值损失": "double",
+            "退保金": "double",
+            "赔付总支出": "double",
+            "提取保险责任准备金": "double",
+            "保户红利支出": "double",
+            "分保费用": "double",
+            "营业支出": "double",
+            "摊回赔付支出": "double",
+            "摊回保险责任准备金": "double",
+            "摊回分保费用": "double",
+            "其他业务成本": "double",
+            "营业利润": "double",
+            "营业外收入": "double",
+            "营业外支出": "double",
+            "非流动资产处置净损失": "double",
+            "利润总额": "double",
+            "所得税费用": "double",
+            "净利润(含少数股东损益)": "double",
+            "净利润(不含少数股东损益)": "double",
+            "少数股东损益": "double",
+            "其他综合收益": "double",
+            "综合收益总额": "double",
+            "归属于母公司或股东的综合收益总额": "double",
+            "归属于少数股东的综合收益总额": "double",
+            "息税前利润": "double",
+            "息税折旧摊销前利润": "double",
+            "保险业务支出": "double",
+            "年初未分配利润": "double",
+            "可分配利润": "double"
+        },
+        "合并现金流量表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "净利润": "double",
+            "财务费用": "double",
+            "销售商品、提供劳务收到的现金": "double",
+            "收到的税费返还": "double",
+            "客户存款和同业存放款项净增加额": "double",
+            "向中央银行借款净增加额": "double",
+            "向其他金融机构拆入资金净增加额": "double",
+            "收到原保险合同保费取得的现金": "double",
+            "保户储金净增加额": "double",
+            "收到再保业务现金净额": "double",
+            "处置交易性金融资产净增加额": "double",
+            "收取利息和手续费净增加额": "double",
+            "处置可供出售金融资产净增加额": "double",
+            "拆入资金净增加额": "double",
+            "回购业务资金净增加额": "double",
+            "收到其他与经营活动有关的现金": "double",
+            "经营活动现金流入小计": "double",
+            "购买商品、接受劳务支付的现金": "double",
+            "支付给职工以及为职工支付的现金": "double",
+            "支付的各项税费": "double",
+            "客户贷款及垫款净增加额": "double",
+            "存放央行和同业款项净增加额": "double",
+            "支付原保险合同赔付款项的现金": "double",
+            "支付手续费的现金": "double",
+            "支付保单红利的现金": "double",
+            "支付其他与经营活动有关的现金": "double",
+            "经营活动现金流出小计": "double",
+            "经营活动产生的现金流量净额": "double",
+            "收到其他与投资活动有关的现金": "double",
+            "收回投资收到的现金": "double",
+            "取得投资收益收到的现金": "double",
+            "处置固定资产、无形资产和其他长期资产收回的现金净额": "double",
+            "处置子公司及其他营业单位收到的现金净额": "double",
+            "投资活动现金流入小计": "double",
+            "购建固定资产、无形资产和其他长期资产支付的现金": "double",
+            "投资支付的现金": "double",
+            "取得子公司及其他营业单位支付的现金净额": "double",
+            "支付其他与投资活动有关的现金": "double",
+            "质押贷款净增加额": "double",
+            "投资活动现金流出小计": "double",
+            "投资活动产生的现金流量净额": "double",
+            "取得借款收到的现金": "double",
+            "发行债券收到的现金": "double",
+            "收到其他与筹资活动有关的现金": "double",
+            "筹资活动现金流入小计": "double",
+            "企业自由现金流量": "double",
+            "偿还债务支付的现金": "double",
+            "分配股利、利润或偿付利息支付的现金": "double",
+            "子公司支付给少数股东的股利、利润": "double",
+            "支付其他与筹资活动有关的现金": "double",
+            "筹资活动现金流出小计": "double",
+            "筹资活动产生的现金流量净额": "double",
+            "汇率变动对现金的影响": "double",
+            "现金及现金等价物净增加额": "double",
+            "期初现金及现金等价物余额": "double",
+            "期末现金及现金等价物余额": "double",
+            "吸收投资收到的现金": "double",
+            "子公司吸收少数股东投资收到的现金": "double",
+            "未确认投资损失": "double",
+            "资产减值准备": "double",
+            "固定资产折旧、油气资产折耗、生产性生物资产折旧": "double",
+            "无形资产摊销": "double",
+            "长期待摊费用摊销": "double",
+            "待摊费用减少": "double",
+            "预提费用增加": "double",
+            "处置固定、无形资产和其他长期资产的损失": "double",
+            "固定资产报废损失": "double",
+            "公允价值变动损失": "double",
+            "投资损失": "double",
+            "递延所得税资产减少": "double",
+            "递延所得税负债增加": "double",
+            "存货的减少": "double",
+            "经营性应收项目的减少": "double",
+            "经营性应付项目的增加": "double",
+            "其他": "double",
+            "经营活动产生的现金流量净额(间接法)": "double",
+            "债务转为资本": "double",
+            "一年内到期的可转换公司债券": "double",
+            "融资租入固定资产": "double",
+            "现金的期末余额": "double",
+            "现金的期初余额": "double",
+            "现金等价物的期末余额": "double",
+            "现金等价物的期初余额": "double",
+            "现金及现金等价物净增加额(间接法)": "double"
+        },
+        "合并单季度现金流量表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "净利润": "double",
+            "财务费用": "double",
+            "销售商品、提供劳务收到的现金": "double",
+            "收到的税费返还": "double",
+            "客户存款和同业存放款项净增加额": "double",
+            "向中央银行借款净增加额": "double",
+            "向其他金融机构拆入资金净增加额": "double",
+            "收到原保险合同保费取得的现金": "double",
+            "保户储金净增加额": "double",
+            "收到再保业务现金净额": "double",
+            "处置交易性金融资产净增加额": "double",
+            "收取利息和手续费净增加额": "double",
+            "处置可供出售金融资产净增加额": "double",
+            "拆入资金净增加额": "double",
+            "回购业务资金净增加额": "double",
+            "收到其他与经营活动有关的现金": "double",
+            "经营活动现金流入小计": "double",
+            "购买商品、接受劳务支付的现金": "double",
+            "支付给职工以及为职工支付的现金": "double",
+            "支付的各项税费": "double",
+            "客户贷款及垫款净增加额": "double",
+            "存放央行和同业款项净增加额": "double",
+            "支付原保险合同赔付款项的现金": "double",
+            "支付手续费的现金": "double",
+            "支付保单红利的现金": "double",
+            "支付其他与经营活动有关的现金": "double",
+            "经营活动现金流出小计": "double",
+            "经营活动产生的现金流量净额": "double",
+            "收到其他与投资活动有关的现金": "double",
+            "收回投资收到的现金": "double",
+            "取得投资收益收到的现金": "double",
+            "处置固定资产、无形资产和其他长期资产收回的现金净额": "double",
+            "处置子公司及其他营业单位收到的现金净额": "double",
+            "投资活动现金流入小计": "double",
+            "购建固定资产、无形资产和其他长期资产支付的现金": "double",
+            "投资支付的现金": "double",
+            "取得子公司及其他营业单位支付的现金净额": "double",
+            "支付其他与投资活动有关的现金": "double",
+            "质押贷款净增加额": "double",
+            "投资活动现金流出小计": "double",
+            "投资活动产生的现金流量净额": "double",
+            "取得借款收到的现金": "double",
+            "发行债券收到的现金": "double",
+            "收到其他与筹资活动有关的现金": "double",
+            "筹资活动现金流入小计": "double",
+            "企业自由现金流量": "double",
+            "偿还债务支付的现金": "double",
+            "分配股利、利润或偿付利息支付的现金": "double",
+            "子公司支付给少数股东的股利、利润": "double",
+            "支付其他与筹资活动有关的现金": "double",
+            "筹资活动现金流出小计": "double",
+            "筹资活动产生的现金流量净额": "double",
+            "汇率变动对现金的影响": "double",
+            "现金及现金等价物净增加额": "double",
+            "期初现金及现金等价物余额": "double",
+            "期末现金及现金等价物余额": "double",
+            "吸收投资收到的现金": "double",
+            "子公司吸收少数股东投资收到的现金": "double",
+            "未确认投资损失": "double",
+            "资产减值准备": "double",
+            "固定资产折旧、油气资产折耗、生产性生物资产折旧": "double",
+            "无形资产摊销": "double",
+            "长期待摊费用摊销": "double",
+            "待摊费用减少": "double",
+            "预提费用增加": "double",
+            "处置固定、无形资产和其他长期资产的损失": "double",
+            "固定资产报废损失": "double",
+            "公允价值变动损失": "double",
+            "投资损失": "double",
+            "递延所得税资产减少": "double",
+            "递延所得税负债增加": "double",
+            "存货的减少": "double",
+            "经营性应收项目的减少": "double",
+            "经营性应付项目的增加": "double",
+            "其他": "double",
+            "经营活动产生的现金流量净额(间接法)": "double",
+            "债务转为资本": "double",
+            "一年内到期的可转换公司债券": "double",
+            "融资租入固定资产": "double",
+            "现金的期末余额": "double",
+            "现金的期初余额": "double",
+            "现金等价物的期末余额": "double",
+            "现金等价物的期初余额": "double",
+            "现金及现金等价物净增加额(间接法)": "double"
+        },
+        "母公司现金流量表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "净利润": "double",
+            "财务费用": "double",
+            "销售商品、提供劳务收到的现金": "double",
+            "收到的税费返还": "double",
+            "客户存款和同业存放款项净增加额": "double",
+            "向中央银行借款净增加额": "double",
+            "向其他金融机构拆入资金净增加额": "double",
+            "收到原保险合同保费取得的现金": "double",
+            "保户储金净增加额": "double",
+            "收到再保业务现金净额": "double",
+            "处置交易性金融资产净增加额": "double",
+            "收取利息和手续费净增加额": "double",
+            "处置可供出售金融资产净增加额": "double",
+            "拆入资金净增加额": "double",
+            "回购业务资金净增加额": "double",
+            "收到其他与经营活动有关的现金": "double",
+            "经营活动现金流入小计": "double",
+            "购买商品、接受劳务支付的现金": "double",
+            "支付给职工以及为职工支付的现金": "double",
+            "支付的各项税费": "double",
+            "客户贷款及垫款净增加额": "double",
+            "存放央行和同业款项净增加额": "double",
+            "支付原保险合同赔付款项的现金": "double",
+            "支付手续费的现金": "double",
+            "支付保单红利的现金": "double",
+            "支付其他与经营活动有关的现金": "double",
+            "经营活动现金流出小计": "double",
+            "经营活动产生的现金流量净额": "double",
+            "收到其他与投资活动有关的现金": "double",
+            "收回投资收到的现金": "double",
+            "取得投资收益收到的现金": "double",
+            "处置固定资产、无形资产和其他长期资产收回的现金净额": "double",
+            "处置子公司及其他营业单位收到的现金净额": "double",
+            "投资活动现金流入小计": "double",
+            "购建固定资产、无形资产和其他长期资产支付的现金": "double",
+            "投资支付的现金": "double",
+            "取得子公司及其他营业单位支付的现金净额": "double",
+            "支付其他与投资活动有关的现金": "double",
+            "质押贷款净增加额": "double",
+            "投资活动现金流出小计": "double",
+            "投资活动产生的现金流量净额": "double",
+            "取得借款收到的现金": "double",
+            "发行债券收到的现金": "double",
+            "收到其他与筹资活动有关的现金": "double",
+            "筹资活动现金流入小计": "double",
+            "企业自由现金流量": "double",
+            "偿还债务支付的现金": "double",
+            "分配股利、利润或偿付利息支付的现金": "double",
+            "子公司支付给少数股东的股利、利润": "double",
+            "支付其他与筹资活动有关的现金": "double",
+            "筹资活动现金流出小计": "double",
+            "筹资活动产生的现金流量净额": "double",
+            "汇率变动对现金的影响": "double",
+            "现金及现金等价物净增加额": "double",
+            "期初现金及现金等价物余额": "double",
+            "期末现金及现金等价物余额": "double",
+            "吸收投资收到的现金": "double",
+            "子公司吸收少数股东投资收到的现金": "double",
+            "未确认投资损失": "double",
+            "资产减值准备": "double",
+            "固定资产折旧、油气资产折耗、生产性生物资产折旧": "double",
+            "无形资产摊销": "double",
+            "长期待摊费用摊销": "double",
+            "待摊费用减少": "double",
+            "预提费用增加": "double",
+            "处置固定、无形资产和其他长期资产的损失": "double",
+            "固定资产报废损失": "double",
+            "公允价值变动损失": "double",
+            "投资损失": "double",
+            "递延所得税资产减少": "double",
+            "递延所得税负债增加": "double",
+            "存货的减少": "double",
+            "经营性应收项目的减少": "double",
+            "经营性应付项目的增加": "double",
+            "其他": "double",
+            "经营活动产生的现金流量净额(间接法)": "double",
+            "债务转为资本": "double",
+            "一年内到期的可转换公司债券": "double",
+            "融资租入固定资产": "double",
+            "现金的期末余额": "double",
+            "现金的期初余额": "double",
+            "现金等价物的期末余额": "double",
+            "现金等价物的期初余额": "double",
+            "现金及现金等价物净增加额(间接法)": "double"
+        },
+        "母公司单季度现金流量表": {
+            "DateTime": "datetime",
+            "ID": "varchar",
+            "公告日期": "datetime",
+            "报告期": "datetime",
+            "报表类型": "str",
+            "公司类型": "str",
+            "净利润": "double",
+            "财务费用": "double",
+            "销售商品、提供劳务收到的现金": "double",
+            "收到的税费返还": "double",
+            "客户存款和同业存放款项净增加额": "double",
+            "向中央银行借款净增加额": "double",
+            "向其他金融机构拆入资金净增加额": "double",
+            "收到原保险合同保费取得的现金": "double",
+            "保户储金净增加额": "double",
+            "收到再保业务现金净额": "double",
+            "处置交易性金融资产净增加额": "double",
+            "收取利息和手续费净增加额": "double",
+            "处置可供出售金融资产净增加额": "double",
+            "拆入资金净增加额": "double",
+            "回购业务资金净增加额": "double",
+            "收到其他与经营活动有关的现金": "double",
+            "经营活动现金流入小计": "double",
+            "购买商品、接受劳务支付的现金": "double",
+            "支付给职工以及为职工支付的现金": "double",
+            "支付的各项税费": "double",
+            "客户贷款及垫款净增加额": "double",
+            "存放央行和同业款项净增加额": "double",
+            "支付原保险合同赔付款项的现金": "double",
+            "支付手续费的现金": "double",
+            "支付保单红利的现金": "double",
+            "支付其他与经营活动有关的现金": "double",
+            "经营活动现金流出小计": "double",
+            "经营活动产生的现金流量净额": "double",
+            "收到其他与投资活动有关的现金": "double",
+            "收回投资收到的现金": "double",
+            "取得投资收益收到的现金": "double",
+            "处置固定资产、无形资产和其他长期资产收回的现金净额": "double",
+            "处置子公司及其他营业单位收到的现金净额": "double",
+            "投资活动现金流入小计": "double",
+            "购建固定资产、无形资产和其他长期资产支付的现金": "double",
+            "投资支付的现金": "double",
+            "取得子公司及其他营业单位支付的现金净额": "double",
+            "支付其他与投资活动有关的现金": "double",
+            "质押贷款净增加额": "double",
+            "投资活动现金流出小计": "double",
+            "投资活动产生的现金流量净额": "double",
+            "取得借款收到的现金": "double",
+            "发行债券收到的现金": "double",
+            "收到其他与筹资活动有关的现金": "double",
+            "筹资活动现金流入小计": "double",
+            "企业自由现金流量": "double",
+            "偿还债务支付的现金": "double",
+            "分配股利、利润或偿付利息支付的现金": "double",
+            "子公司支付给少数股东的股利、利润": "double",
+            "支付其他与筹资活动有关的现金": "double",
+            "筹资活动现金流出小计": "double",
+            "筹资活动产生的现金流量净额": "double",
+            "汇率变动对现金的影响": "double",
+            "现金及现金等价物净增加额": "double",
+            "期初现金及现金等价物余额": "double",
+            "期末现金及现金等价物余额": "double",
+            "吸收投资收到的现金": "double",
+            "子公司吸收少数股东投资收到的现金": "double",
+            "未确认投资损失": "double",
+            "资产减值准备": "double",
+            "固定资产折旧、油气资产折耗、生产性生物资产折旧": "double",
+            "无形资产摊销": "double",
+            "长期待摊费用摊销": "double",
+            "待摊费用减少": "double",
+            "预提费用增加": "double",
+            "处置固定、无形资产和其他长期资产的损失": "double",
+            "固定资产报废损失": "double",
+            "公允价值变动损失": "double",
+            "投资损失": "double",
+            "递延所得税资产减少": "double",
+            "递延所得税负债增加": "double",
+            "存货的减少": "double",
+            "经营性应收项目的减少": "double",
+            "经营性应付项目的增加": "double",
+            "其他": "double",
+            "经营活动产生的现金流量净额(间接法)": "double",
+            "债务转为资本": "double",
+            "一年内到期的可转换公司债券": "double",
+            "融资租入固定资产": "double",
+            "现金的期末余额": "double",
+            "现金的期初余额": "double",
+            "现金等价物的期末余额": "double",
+            "现金等价物的期初余额": "double",
+            "现金及现金等价物净增加额(间接法)": "double"
         }
     }
 }
