@@ -58,8 +58,9 @@ class DataFrameMySQLWriter(object):
         col_names = list(table_info.keys())
         col_types = [self.type_mapper[it] for it in table_info.values()]
         primary_keys = list({'DateTime', 'ID'} & set(col_names))
-        if table_name.lower() in meta.tables:
-            logging.info(table_name + ' already exists!!!')
+        existing_tables = [it.lower() for it in meta.tables]
+        if table_name.lower() in existing_tables:
+            logging.debug(table_name + ' already exists!!!')
             return
 
         new_table = Table(table_name, meta,
@@ -76,7 +77,7 @@ class DataFrameMySQLWriter(object):
         :return:
         """
         metadata = sa.MetaData(self.engine, reflect=True)
-        table = metadata.tables[table_name.lower()]
+        table = metadata.tables[table_name]
         flat_df = df.reset_index()
 
         date_cols = flat_df.select_dtypes(np.datetime64).columns.values.tolist()
@@ -100,14 +101,6 @@ class DataFrameMySQLWriter(object):
         session_maker = sessionmaker(bind=self.engine)
         session = session_maker()
         return session.query(func.max(table.c.DateTime)).one()[0]
-
-    def db_maintenance(self) -> None:
-        """清理股票日行情中的无用复权因子"""
-        table_name = '股票日行情'
-        metadata = sa.MetaData(self.engine, reflect=True)
-        table = metadata.tables[table_name]
-        d = table.delete().where(table.c.开盘价 == None)
-        d.execute()
 
     @staticmethod
     def date2str(date) -> Optional[str]:
@@ -183,7 +176,7 @@ class Tushare2MySQL(object):
         return df
 
     def get_daily_hq(self, trade_date: DateType = None,
-                     start_date: DateType = None, end_date: DateType = dt.date.today()) -> None:
+                     start_date: DateType = None, end_date: DateType = dt.datetime.now()) -> None:
         """获取每日行情
 
         行情信息包括: 开高低收, 量额, 复权因子, 换手率, 市盈, 市净, 市销, 股本, 市值
@@ -209,20 +202,18 @@ class Tushare2MySQL(object):
         with tqdm(dates) as pbar:
             for date in dates:
                 current_date_str = self._datetime2str(date) if not isinstance(date, str) else date
-                pbar.set_description('下载股票日行情: ' + current_date_str)
+                pbar.set_description(f'下载股票日行情: {current_date_str}')
 
                 # price data
                 df = self._pro.daily(trade_date=current_date_str)
                 # 涨跌幅未复权, 没有意义
                 df.drop('pct_chg', axis=1, inplace=True)
                 df['amount'] = df['amount'] * 1000
-                df = self._standardize_df(df, price_desc)
-                self.mysql_writer.update_df(df, '股票日行情')
+                price_df = self._standardize_df(df, price_desc)
 
                 # adj_factor data
                 df = self._pro.adj_factor(trade_date=current_date_str)
-                df = self._standardize_df(df, adj_factor_desc)
-                self.mysql_writer.update_df(df, '股票日行情')
+                adj_df = self._standardize_df(df, adj_factor_desc)
 
                 # indicator data
                 df = self._pro.query('daily_basic', trade_date=current_date_str)
@@ -230,12 +221,14 @@ class Tushare2MySQL(object):
                 df.drop('close', axis=1, inplace=True)
                 df[['total_share', 'float_share', 'free_share', 'total_mv', 'circ_mv']] = \
                     df[['total_share', 'float_share', 'free_share', 'total_mv', 'circ_mv']] * 10000
-                df = self._standardize_df(df, indicator_desc)
-                self.mysql_writer.update_df(df, '股票日行情')
+                indicator_df = self._standardize_df(df, indicator_desc)
+
+                # combine all dfs
+                full_df = pd.concat([price_df, adj_df, indicator_df], axis=1)
+                full_df.dropna(subset=['开盘价'], inplace=True)
+                self.mysql_writer.update_df(full_df, '股票日行情')
 
                 pbar.update(1)
-
-        self.mysql_writer.db_maintenance()
 
     def get_past_names(self, ticker: str = None, start_date: DateType = None) -> pd.DataFrame:
         """获取曾用名
@@ -256,7 +249,7 @@ class Tushare2MySQL(object):
             self.get_all_stocks()
         with tqdm(self._all_stocks) as pbar:
             for stock in self._all_stocks:
-                pbar.set_description('下载股票名称: ' + stock)
+                pbar.set_description(f'下载股票名称: {stock}')
                 df = self.get_past_names(stock)
                 self.mysql_writer.update_df(df, '股票曾用名')
                 pbar.update(1)
@@ -359,7 +352,7 @@ class Tushare2MySQL(object):
         with tqdm(stock_list) as pbar:
             loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cashflow_desc, cashflow)]
             for ticker in stock_list:
-                pbar.set_description('下载财报: ' + ticker)
+                pbar.set_description(f'下载财报: {ticker}')
                 download_data(self._pro.balancesheet, ['1', '4', '5', '11'], balance_sheet_desc, '合并' + balance_sheet)
                 download_data(self._pro.balancesheet, ['6', '9', '10', '12'], balance_sheet_desc, '母公司' + balance_sheet)
                 for f, desc, table in loop_vars:

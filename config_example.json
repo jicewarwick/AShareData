@@ -2,6 +2,7 @@
 	"tushare_token": "**********",
 	"ip": "localhost",
 	"port": 3306,
+	"db_name": "tushare",
 	"username": "******",
 	"password": "******"
 }
