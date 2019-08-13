@@ -196,8 +196,10 @@ class Tushare2MySQL(object):
         table_name = '输出参数'
 
         price_desc = self._factor_param[price_category][table_name]
+        price_fields = ['ts_code', 'trade_date', 'open', 'high', 'low', 'close', 'vol', 'amount']
         adj_factor_desc = self._factor_param[adj_factor_category][table_name]
         indicator_desc = self._factor_param[indicator_category][table_name]
+        indicator_fields = ['ts_code', 'trade_date', 'total_share', 'float_share', 'free_share']
 
         with tqdm(dates) as pbar:
             for date in dates:
@@ -205,9 +207,7 @@ class Tushare2MySQL(object):
                 pbar.set_description(f'下载股票日行情: {current_date_str}')
 
                 # price data
-                df = self._pro.daily(trade_date=current_date_str)
-                # 涨跌幅未复权, 没有意义
-                df.drop('pct_chg', axis=1, inplace=True)
+                df = self._pro.daily(trade_date=current_date_str, fields=','.join(price_fields))
                 df['amount'] = df['amount'] * 1000
                 price_df = self._standardize_df(df, price_desc)
 
@@ -216,9 +216,7 @@ class Tushare2MySQL(object):
                 adj_df = self._standardize_df(df, adj_factor_desc)
 
                 # indicator data
-                df = self._pro.query('daily_basic', trade_date=current_date_str)
-                # 重复收盘价
-                df.drop('close', axis=1, inplace=True)
+                df = self._pro.query('daily_basic', trade_date=current_date_str, fields=indicator_fields)
                 df[['total_share', 'float_share', 'free_share', 'total_mv', 'circ_mv']] = \
                     df[['total_share', 'float_share', 'free_share', 'total_mv', 'circ_mv']] * 10000
                 indicator_df = self._standardize_df(df, indicator_desc)
