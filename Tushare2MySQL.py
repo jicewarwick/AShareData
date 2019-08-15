@@ -58,16 +58,16 @@ class DataFrameMySQLWriter(object):
         col_names = list(table_info.keys())
         col_types = [self.type_mapper[it] for it in table_info.values()]
         primary_keys = list({'DateTime', 'ID'} & set(col_names))
-        existing_tables = [it.lower() for it in meta.tables]
-        if table_name.lower() in existing_tables:
-            logging.debug(table_name + ' already exists!!!')
+        if table_name.lower() in meta.tables:
+            logging.debug(f'{table_name} already exists!!!')
             return
 
-        new_table = Table(table_name, meta,
+        # all table names are lower()ed to be compatible between windows and linux
+        new_table = Table(table_name.lower(), meta,
                           *(Column(col_name, col_type) for col_name, col_type in zip(col_names, col_types)),
                           sa.PrimaryKeyConstraint(*primary_keys))
         new_table.create()
-        logging.info('Table ' + table_name + ' created')
+        logging.info(f'Table {table_name} created')
 
     def update_df(self, df: pd.DataFrame, table_name: str) -> None:
         """ Write DataFrame to database
@@ -229,7 +229,9 @@ class Tushare2MySQL(object):
                 pbar.update(1)
 
     def get_past_names(self, ticker: str = None, start_date: DateType = None) -> pd.DataFrame:
-        """获取曾用名
+        """
+        获取曾用名
+
         ref: https://tushare.pro/document/2?doc_id=100
         """
         data_category = '股票曾用名'
