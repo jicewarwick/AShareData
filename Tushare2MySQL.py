@@ -60,7 +60,8 @@ class DataFrameMySQLWriter(object):
         :param table_name: 表名
         :param table_info: dict{字段名: 类型}
         """
-        meta = sa.MetaData(bind=self.engine, reflect=True)
+        meta = sa.MetaData(bind=self.engine)
+        meta.reflect()
         col_names = list(table_info.keys())
         col_types = [self.type_mapper[it] for it in table_info.values()]
         primary_keys = list({'DateTime', 'ID'} & set(col_names))
@@ -77,14 +78,15 @@ class DataFrameMySQLWriter(object):
         logging.info(f'表 {table_name} 创建成功.')
 
     def drop_all_tables(self):
-        metadata = sa.MetaData(self.engine, reflect=True)
+        metadata = sa.MetaData(self.engine)
         logging.debug('DROPPING ALL TABLES')
         for table in metadata.tables.values():
             table.drop()
 
     def update_df(self, df: pd.DataFrame, table_name: str) -> None:
         """ 将DataFrame写入数据库"""
-        metadata = sa.MetaData(self.engine, reflect=True)
+        metadata = sa.MetaData(self.engine)
+        metadata.reflect()
         table = metadata.tables[table_name.lower()]
         flat_df = df.reset_index()
 
@@ -111,7 +113,8 @@ class DataFrameMySQLWriter(object):
         latest_time = None
         latest_id = None
 
-        metadata = sa.MetaData(self.engine, reflect=True)
+        metadata = sa.MetaData(self.engine)
+        metadata.reflect()
         assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = metadata.tables[table_name]
         if 'DateTime' in table.columns.keys():
@@ -462,10 +465,12 @@ class Tushare2MySQL(object):
     def get_calendar(self) -> List[dt.datetime]:
         """返回上交所交易日历"""
         df = self._pro.query('trade_cal', is_open=1)
-        calendar = df.cal_date.values.tolist()
+        cal_date = df.cal_date
+        cal_date.name = '交易日期'
+        cal_date = cal_date.map(self._str2datetime)
+        self._calendar = cal_date.values.tolist()
         if self.mysql_writer:
-            df.to_sql('交易日历', self.mysql_writer.engine, if_exists='replace')
-        self._calendar = [self._str2datetime(it) for it in calendar]
+            cal_date.to_sql('交易日历', self.mysql_writer.engine, if_exists='replace')
         return self._calendar
 
     def select_dates(self, start: DateType, end: DateType):
