@@ -2226,13 +2226,10 @@
         "指数日行情": {
             "DateTime": "datetime",
             "ID": "varchar",
-            "收盘点位": "float",
             "开盘点位": "float",
             "最高点位": "float",
             "最低点位": "float",
-            "昨日收盘点": "float",
-            "涨跌点": "float",
-            "涨跌幅": "float",
+          "收盘点位": "float",
             "成交量": "double",
             "成交额": "double",
             "总市值": "double",
@@ -2240,8 +2237,6 @@
             "总股本": "double",
             "流通股本": "double",
             "自由流通股本": "double",
-            "换手率": "float",
-            "流通股换手率": "float",
             "市盈率": "float",
             "市盈率TTM": "float",
             "市净率": "float"

@@ -1,6 +1,6 @@
 import json
-import unittest
 import logging
+import unittest
 
 from Tushare2MySQL import Tushare2MySQL
 
@@ -46,6 +46,7 @@ class Tushare2MySQLTest(unittest.TestCase):
 
     def test_routine(self):
         self.downloader.update_routine()
+
 
 if __name__ == '__main__':
     unittest.main()

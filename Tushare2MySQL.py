@@ -1,8 +1,8 @@
 import datetime as dt
 import json
-from time import sleep
-from typing import Union, Sequence, Dict, List, Optional, Callable, Tuple
 import logging
+from time import sleep
+from typing import Sequence, List, Optional, Callable, Tuple, Mapping
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from tqdm import tqdm
 
-DateType = Union[str, dt.datetime, dt.date]
+from utils import date_type2str, date_type2datetime, DateType, select_dates
 
 Base = declarative_base()
 
@@ -53,7 +53,7 @@ class DataFrameMySQLWriter(object):
         url = URL(drivername=driver, username=username, password=password, host=ip, port=port, database=db_name)
         self.engine = sa.create_engine(url)
 
-    def create_table(self, table_name, table_info: Dict[str, str]) -> None:
+    def create_table(self, table_name, table_info: Mapping[str, str]) -> None:
         """
         创建表
 
@@ -232,7 +232,7 @@ class Tushare2MySQL(object):
         """
         if (not trade_date) & (not start_date):
             raise ValueError('trade_date 和 start_date 必填一个!')
-        dates = [trade_date] if trade_date else self.select_dates(start_date, end_date)
+        dates = [trade_date] if trade_date else select_dates(self._calendar, start_date, end_date)
 
         price_category = '日线行情'
         adj_factor_category = '复权因子'
@@ -247,11 +247,12 @@ class Tushare2MySQL(object):
 
         with tqdm(dates) as pbar:
             for date in dates:
-                current_date_str = self._datetime2str(date)
+                current_date_str = date_type2str(date)
                 pbar.set_description(f'下载股票日行情: {current_date_str}')
 
                 # price data
                 df = self._pro.daily(trade_date=current_date_str, fields=','.join(price_fields))
+                df['vol'] = df['vol'] * 100
                 df['amount'] = df['amount'] * 1000
                 price_df = self._standardize_df(df, price_desc)
 
@@ -261,7 +262,8 @@ class Tushare2MySQL(object):
 
                 # indicator data
                 df = self._pro.query('daily_basic', trade_date=current_date_str, fields=indicator_fields)
-                df[['total_share', 'float_share', 'free_share']] = df[['total_share', 'float_share', 'free_share']] * 10000
+                df[['total_share', 'float_share', 'free_share']] = df[['total_share', 'float_share',
+                                                                       'free_share']] * 10000
                 indicator_df = self._standardize_df(df, indicator_desc)
 
                 # combine all dfs
@@ -307,7 +309,7 @@ class Tushare2MySQL(object):
         column_desc = self._factor_param[data_category][table_name]
 
         if end_date:
-            end_date = self._datetime2str(end_date)
+            end_date = date_type2str(end_date)
         df = self._pro.new_share(end_date=end_date)
         df[['amount', 'market_amount', 'limit_amount']] = df[['amount', 'market_amount', 'limit_amount']] * 10000
         df['funds'] = df['funds'] * 100000000
@@ -318,7 +320,7 @@ class Tushare2MySQL(object):
 
     def get_index_daily(self, start_date: DateType = None, end_date: DateType = None) -> None:
         """
-        更新指数行情信息. 包括开高低收, 量额, 换手率, 市盈, 市净, 市销, 股本, 市值
+        更新指数行情信息. 包括开高低收, 量额, 市盈, 市净, 市值
         默认指数为沪指, 深指, 中小盘, 创业板, 50, 300, 500
         注:300不包含市盈等指标
 
@@ -327,29 +329,37 @@ class Tushare2MySQL(object):
         :return: 指数行情信息
         """
         if start_date:
-            start_date = self._datetime2str(start_date)
+            start_date = date_type2str(start_date)
         if end_date:
-            end_date = self._datetime2str(end_date)
+            end_date = date_type2str(end_date)
 
         category = '指数日线行情'
         db_table_name = '指数日行情'
         basic_category = '大盘指数每日指标'
         table_name = '输出参数'
         desc = self._factor_param[category][table_name]
+        price_fields = ['ts_code', 'trade_date', 'open', 'high', 'low', 'close', 'vol', 'amount']
         basic_desc = self._factor_param[basic_category][table_name]
+        basic_fields = ['ts_code', 'trade_date', 'total_mv', 'float_mv',
+                        'total_share', 'float_share', 'free_share',
+                        'pe', 'pe_ttm', 'pb']
 
         logging.debug('开始下载指数日数据.')
         storage = []
         indexes = list(self.STOCK_INDEXES.values())
         for index in indexes:
-            storage.append(self._pro.index_daily(ts_code=index, start_date=start_date, end_date=end_date))
+            storage.append(self._pro.index_daily(ts_code=index, start_date=start_date, end_date=end_date,
+                                                 fields=','.join(price_fields)))
         df = pd.concat(storage)
+        df['vol'] = df['vol'] * 100
+        df['amount'] = df['amount'] * 1000
         df = self._standardize_df(df, desc)
         self.mysql_writer.update_df(df, db_table_name)
 
         storage.clear()
         for index in indexes:
-            storage.append(self._pro.index_dailybasic(ts_code=index, start_date=start_date, end_date=end_date))
+            storage.append(self._pro.index_dailybasic(ts_code=index, start_date=start_date, end_date=end_date,
+                                                      fields=','.join(basic_fields)))
         df = pd.concat(storage)
         df = self._standardize_df(df, basic_desc)
         self.mysql_writer.update_df(df, db_table_name)
@@ -377,7 +387,7 @@ class Tushare2MySQL(object):
         cashflow_desc = self._factor_param[cashflow][output_desc]
 
         def download_data(api_func: Callable, report_type_list: Sequence[str],
-                          column_name_dict: Dict[str, str], table_name: str) -> None:
+                          column_name_dict: Mapping[str, str], table_name: str) -> None:
             storage = []
             for i in report_type_list:
                 storage.append(api_func(ts_code=ticker, start_date='19900101', report_type=i))
@@ -413,19 +423,11 @@ class Tushare2MySQL(object):
     # utilities
     # ------------------------------------------
     @staticmethod
-    def _str2datetime(date: str) -> Optional[dt.datetime]:
-        if date not in ['', 'nan']:
-            return dt.datetime.strptime(date, '%Y%m%d')
-
-    @staticmethod
-    def _datetime2str(date: DateType) -> str:
-        return date.strftime('%Y%m%d') if not isinstance(date, str) else date
-
-    def _standardize_df(self, df: pd.DataFrame, parameter_info: Dict,
+    def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str],
                         index: Sequence[str] = None) -> pd.DataFrame:
         dates_columns = [it for it in df.columns if 'date' in it]
         for it in dates_columns:
-            df[it] = df[it].apply(self._str2datetime)
+            df[it] = df[it].apply(date_type2datetime)
         if not index:
             index = sorted(list({'trade_date', 'ts_code'} & set(df.columns)))
         if len(index) > 2:
@@ -456,9 +458,10 @@ class Tushare2MySQL(object):
             storage_dict[list_status] = self._pro.stock_basic(exchange='', list_status=symbol, fields='ts_code')
             storage.append(storage_dict[list_status])
         output = pd.concat(storage)
+        output.name = '证券代码'
         if self.mysql_writer:
             output.to_sql('股票列表', self.mysql_writer.engine, if_exists='replace')
-        self._listed_stocks = storage_dict['listed'].ts_code.values.to_list()
+        self._listed_stocks = storage_dict['listed'].ts_code.values.tolist()
         self._all_stocks = output.ts_code.values.tolist()
         return self._all_stocks
 
@@ -467,21 +470,8 @@ class Tushare2MySQL(object):
         df = self._pro.query('trade_cal', is_open=1)
         cal_date = df.cal_date
         cal_date.name = '交易日期'
-        cal_date = cal_date.map(self._str2datetime)
+        cal_date = cal_date.map(date_type2datetime)
         self._calendar = cal_date.values.tolist()
         if self.mysql_writer:
             cal_date.to_sql('交易日历', self.mysql_writer.engine, if_exists='replace')
         return self._calendar
-
-    def select_dates(self, start: DateType, end: DateType):
-        """返回区间内的所有交易日(包含start和end)"""
-        if not self._calendar:
-            self.get_calendar()
-
-        if isinstance(start, str):
-            start = self._str2datetime(start)
-
-        if isinstance(end, str):
-            end = self._str2datetime(end)
-
-        return [it for it in self._calendar if (start <= it <= end)]

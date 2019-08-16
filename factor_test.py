@@ -1,6 +1,7 @@
-import unittest
 import json
-from Factor import SQLDBReader, Factor
+import unittest
+
+from Factor import SQLDBReader
 
 
 class TestSQLDBReader(unittest.TestCase):
@@ -20,6 +21,10 @@ class TestSQLDBReader(unittest.TestCase):
         hfq_close = close * adj_factor
         # todo: wind gives 928.16!!!
         self.assertAlmostEqual(hfq_close.data.loc['2009-08-03', '000001.SZ'], 928.17, delta=0.01)
+
+    def test_name_factor(self):
+        name = self.db.get_factor('股票曾用名', '证券名称')
+        print(name.data.fillna('ffill').tail())
 
     def test_excess_return_factor(self):
         self.fail()
