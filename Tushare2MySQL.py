@@ -64,7 +64,7 @@ class DataFrameMySQLWriter(object):
         meta.reflect()
         col_names = list(table_info.keys())
         col_types = [self.type_mapper[it] for it in table_info.values()]
-        primary_keys = list({'DateTime', 'ID'} & set(col_names))
+        primary_keys = [it for it in ['DateTime', 'ID', '报告期'] if it in col_names]
         existing_tables = [it.lower() for it in meta.tables]
         if table_name.lower() in existing_tables:
             logging.debug(f'表 {table_name} 已存在.')
@@ -165,6 +165,27 @@ class Tushare2MySQL(object):
 
         self.mysql_writer = None
 
+    @property
+    def all_stocks(self) -> List[str]:
+        """ 获取所有股票列表"""
+        if not self._all_stocks:
+            self._get_all_stocks()
+        return self._all_stocks
+
+    @property
+    def listed_stocks(self) -> List[str]:
+        """获取现上市的股票列表"""
+        if not self._listed_stocks:
+            self._get_all_stocks()
+        return self._listed_stocks
+
+    @property
+    def calendar(self) -> List[dt.datetime]:
+        """获取交易日历"""
+        if not self._calendar:
+            self._get_calendar()
+        return self._calendar
+
     def initialize_db_table(self):
         for table_name, type_info in self._db_parameters.items():
             self.mysql_writer.create_table(table_name, type_info)
@@ -190,7 +211,7 @@ class Tushare2MySQL(object):
         self.get_index_daily(latest_time)
 
         if not self._all_stocks:
-            self.get_all_stocks()
+            self._get_all_stocks()
         try:
             _, stock = self.mysql_writer.get_progress('合并资产负债表')
         except AssertionError:
@@ -289,7 +310,7 @@ class Tushare2MySQL(object):
     def get_all_past_names(self):
         """获取所有股票的曾用名"""
         if not self._all_stocks:
-            self.get_all_stocks()
+            self._get_all_stocks()
         with tqdm(self._all_stocks) as pbar:
             for stock in self._all_stocks:
                 pbar.set_description(f'下载股票名称: {stock}')
@@ -395,9 +416,7 @@ class Tushare2MySQL(object):
             df = pd.concat(storage)
             df = self._standardize_df(df, column_name_dict, index=['f_ann_date', 'ts_code'])
 
-            # 将公布时间稍作区分, 避免数据库中被覆盖
             df = df.reset_index()
-            df['DateTime'] = df['DateTime'] - df['报表类型'].map(lambda x: dt.timedelta(seconds=int(x)))
             df.replace({'报表类型': report_type_desc, '公司类型': company_type_desc}, inplace=True)
             df.set_index(['DateTime', 'ID'], drop=True, inplace=True)
 
@@ -405,7 +424,7 @@ class Tushare2MySQL(object):
 
         # 分 合并/母公司, 单季/年
         if not stock_list:
-            self.get_all_stocks()
+            self._get_all_stocks()
             stock_list = self._all_stocks
         with tqdm(stock_list) as pbar:
             loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cashflow_desc, cashflow)]
@@ -445,7 +464,7 @@ class Tushare2MySQL(object):
         df.index.names = index_names
         return df
 
-    def get_all_stocks(self) -> List[str]:
+    def _get_all_stocks(self) -> List[str]:
         """ 获取所有股票列表, 包括上市, 退市和暂停上市的股票
 
         ref: https://tushare.pro/document/2?doc_id=25
@@ -458,14 +477,15 @@ class Tushare2MySQL(object):
             storage_dict[list_status] = self._pro.stock_basic(exchange='', list_status=symbol, fields='ts_code')
             storage.append(storage_dict[list_status])
         output = pd.concat(storage)
+        output = output.ts_code
         output.name = '证券代码'
         if self.mysql_writer:
             output.to_sql('股票列表', self.mysql_writer.engine, if_exists='replace')
         self._listed_stocks = storage_dict['listed'].ts_code.values.tolist()
-        self._all_stocks = output.ts_code.values.tolist()
+        self._all_stocks = output.values.tolist()
         return self._all_stocks
 
-    def get_calendar(self) -> List[dt.datetime]:
+    def _get_calendar(self) -> List[dt.datetime]:
         """返回上交所交易日历"""
         df = self._pro.query('trade_cal', is_open=1)
         cal_date = df.cal_date

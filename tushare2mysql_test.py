@@ -24,10 +24,13 @@ class Tushare2MySQLTest(unittest.TestCase):
         self.downloader.initialize_db_table()
 
     def test_calendar(self):
-        self.downloader.get_calendar()
+        print(self.downloader.calendar)
+
+    def test_all_stocks(self):
+        print(self.downloader.all_stocks)
 
     def test_financial(self):
-        self.downloader.get_financial(['300146.SZ'])
+        self.downloader.get_financial(['300146.SZ', '000001.SZ'])
 
     def test_index(self):
         self.downloader.get_index_daily()

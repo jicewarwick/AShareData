@@ -24,7 +24,12 @@ class TestSQLDBReader(unittest.TestCase):
 
     def test_name_factor(self):
         name = self.db.get_factor('股票曾用名', '证券名称')
-        print(name.data.fillna('ffill').tail())
+        print(name.data.fillna(method='ffill').tail())
+
+    def test_latest_year_equity(self):
+        output = self.db.get_financial_factor('合并资产负债表', '股东权益合计(不含少数股东权益)',
+                                              agg_func=lambda x: x.tail(1), yearly=True)
+        print(output.data.fillna(method='ffill').tail())
 
     def test_excess_return_factor(self):
         self.fail()
