@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from Factor import SQLDBReader
+from SQLDBReader import SQLDBReader
 
 
 class TestSQLDBReader(unittest.TestCase):
@@ -51,7 +51,6 @@ class TestSQLDBReader(unittest.TestCase):
 
     def test_expanding_func(self):
         self.fail()
-
 
 
 if __name__ == '__main__':

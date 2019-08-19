@@ -21,7 +21,7 @@ class Tushare2MySQLTest(unittest.TestCase):
         self.downloader.add_mysql_db(ip, port, username, password, db_name=db_name)
 
     def test_db_initializer(self):
-        self.downloader.initialize_db_table()
+        self.downloader._initialize_db_table()
 
     def test_calendar(self):
         print(self.downloader.calendar)

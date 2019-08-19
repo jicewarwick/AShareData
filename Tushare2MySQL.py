@@ -70,7 +70,6 @@ class DataFrameMySQLWriter(object):
             logging.debug(f'表 {table_name} 已存在.')
             return
 
-        # todo: add index
         new_table = Table(table_name, meta,
                           *(Column(col_name, col_type) for col_name, col_type in zip(col_names, col_types)),
                           sa.PrimaryKeyConstraint(*primary_keys))
@@ -117,15 +116,13 @@ class DataFrameMySQLWriter(object):
         metadata.reflect()
         assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = metadata.tables[table_name]
+        session_maker = sessionmaker(bind=self.engine)
+        session = session_maker()
         if 'DateTime' in table.columns.keys():
             logging.debug(f'{table_name} 表中找到时间列')
-            session_maker = sessionmaker(bind=self.engine)
-            session = session_maker()
             latest_time = session.query(func.max(table.c.DateTime)).one()[0]
         if 'ID' in table.columns.keys():
             logging.debug(f'{table_name} 表中找到ID列')
-            session_maker = sessionmaker(bind=self.engine)
-            session = session_maker()
             latest_id = session.query(func.max(table.c.ID)).one()[0]
 
         return latest_time, latest_id
@@ -186,37 +183,36 @@ class Tushare2MySQL(object):
             self._get_calendar()
         return self._calendar
 
-    def initialize_db_table(self):
+    def _initialize_db_table(self):
         for table_name, type_info in self._db_parameters.items():
             self.mysql_writer.create_table(table_name, type_info)
 
     def add_mysql_db(self, ip: str, port: int, username: str, password: str, db_name='tushare_db') -> None:
         """添加MySQLWriter"""
         self.mysql_writer = DataFrameMySQLWriter(ip, port, username, password, db_name)
+        self._initialize_db_table()
 
     # get data
     # ------------------------------------------
     def update_routine(self) -> None:
-        self.get_company_info()
-        self.get_ipo_info()
+        # self.get_company_info()
+        # self.get_ipo_info()
 
-        date = dt.date.today()
-        latest_time, _ = self.mysql_writer.get_progress('股票日行情')
-        self.get_daily_hq(start_date=latest_time, end_date=date)
-
-        try:
-            latest_time, _ = self.mysql_writer.get_progress('指数日行情')
-        except AssertionError:
+        latest_time, _ = self.mysql_writer.get_progress('指数日行情')
+        if not latest_time:
             latest_time = dt.date(2008, 1, 1)
         self.get_index_daily(latest_time)
 
-        if not self._all_stocks:
-            self._get_all_stocks()
-        try:
-            _, stock = self.mysql_writer.get_progress('合并资产负债表')
-        except AssertionError:
+        date = dt.date.today()
+        latest_time, _ = self.mysql_writer.get_progress('股票日行情')
+        if not latest_time:
+            latest_time = dt.date(2008, 1, 1)
+        self.get_daily_hq(start_date=latest_time, end_date=date)
+
+        _, stock = self.mysql_writer.get_progress('合并资产负债表')
+        if not stock:
             stock = '000001.SZ'
-        stock_list = [it for it in self._all_stocks if it >= stock]
+        stock_list = [it for it in self.all_stocks if it >= stock]
         self.get_financial(stock_list)
 
     def get_company_info(self) -> pd.DataFrame:
@@ -253,7 +249,7 @@ class Tushare2MySQL(object):
         """
         if (not trade_date) & (not start_date):
             raise ValueError('trade_date 和 start_date 必填一个!')
-        dates = [trade_date] if trade_date else select_dates(self._calendar, start_date, end_date)
+        dates = [trade_date] if trade_date else select_dates(self.calendar, start_date, end_date)
 
         price_category = '日线行情'
         adj_factor_category = '复权因子'
@@ -309,10 +305,8 @@ class Tushare2MySQL(object):
 
     def get_all_past_names(self):
         """获取所有股票的曾用名"""
-        if not self._all_stocks:
-            self._get_all_stocks()
-        with tqdm(self._all_stocks) as pbar:
-            for stock in self._all_stocks:
+        with tqdm(self.all_stocks) as pbar:
+            for stock in self.all_stocks:
                 pbar.set_description(f'下载股票名称: {stock}')
                 df = self.get_past_names(stock)
                 self.mysql_writer.update_df(df, '股票曾用名')
@@ -424,8 +418,7 @@ class Tushare2MySQL(object):
 
         # 分 合并/母公司, 单季/年
         if not stock_list:
-            self._get_all_stocks()
-            stock_list = self._all_stocks
+            stock_list = self.all_stocks
         with tqdm(stock_list) as pbar:
             loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cashflow_desc, cashflow)]
             for ticker in stock_list:
@@ -491,7 +484,7 @@ class Tushare2MySQL(object):
         cal_date = df.cal_date
         cal_date.name = '交易日期'
         cal_date = cal_date.map(date_type2datetime)
-        self._calendar = cal_date.values.tolist()
+        self._calendar = cal_date.dt.to_pydatetime().tolist()
         if self.mysql_writer:
             cal_date.to_sql('交易日历', self.mysql_writer.engine, if_exists='replace')
         return self._calendar

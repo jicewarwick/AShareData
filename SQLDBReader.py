@@ -7,26 +7,6 @@ from sqlalchemy.engine.url import URL
 from utils import DateType, select_dates
 
 
-class Factor(object):
-    def __init__(self, df: pd.DataFrame, name: str = None) -> None:
-        self._name = name
-        self._data = df
-
-    @property
-    def data(self) -> pd.DataFrame:
-        return self._data
-
-    def __mul__(self, other):
-        return Factor(self.data * other.data)
-
-    # def fill_na(self):
-
-
-class FinancialFactor(Factor):
-    def __init__(self, df: pd.DataFrame, name: str = None) -> None:
-        super().__init__(df, name)
-
-
 class SQLDBReader(object):
     def __init__(self, ip: str, port: int, username: str, password: str, db_name: str,
                  driver: str = 'mysql+pymysql') -> None:
@@ -50,7 +30,7 @@ class SQLDBReader(object):
 
     def get_factor(self, table_name: str, factor_name: str,
                    start_date: DateType = None, end_date: DateType = None,
-                   stock_list: Sequence[str] = None) -> Factor:
+                   stock_list: Sequence[str] = None) -> pd.DataFrame:
         primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
 
         query_columns = primary_keys + [factor_name]
@@ -58,12 +38,13 @@ class SQLDBReader(object):
         df = series.unstack().droplevel(None, axis=1)
 
         df = self._conform_df(df, start_date, end_date, stock_list)
-        factor = Factor(df, factor_name)
-        return factor
+        # name may not survive pickling
+        df.name = factor_name
+        return df
 
     def get_financial_factor(self, table_name: str, factor_name: str, agg_func: Callable,
                              start_date: DateType = None, end_date: DateType = None,
-                             stock_list: Sequence[str] = None, yearly: bool = True) -> Factor:
+                             stock_list: Sequence[str] = None, yearly: bool = True) -> pd.DataFrame:
         primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
         query_columns = primary_keys + [factor_name]
 
@@ -90,8 +71,9 @@ class SQLDBReader(object):
         df = pd.concat(storage)
         df = df.unstack().droplevel(None, axis=1)
         df = self._conform_df(df, start_date, end_date, stock_list)
-        factor = Factor(df, factor_name)
-        return factor
+        # name may not survive pickling
+        df.name = factor_name
+        return df
 
     # helper functions
     def _check_args_and_get_primary_keys(self, table_name: str, factor_name: str) -> List[str]:
