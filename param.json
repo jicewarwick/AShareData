@@ -2255,6 +2255,11 @@
             "募集资金": "double",
             "中签率": "float"
         },
+		"申万一级行业": {
+			"DateTime": "datetime",
+			"ID": "varchar",
+			"行业名称": "str"
+		},
         "合并资产负债表": {
             "DateTime": "datetime",
             "ID": "varchar",
