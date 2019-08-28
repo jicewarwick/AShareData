@@ -1,42 +1,40 @@
+import logging
 from typing import Sequence, List, Callable
 
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy.engine.url import URL
 
 from utils import DateType, select_dates
 
 
 class SQLDBReader(object):
-    def __init__(self, ip: str, port: int, username: str, password: str, db_name: str,
-                 driver: str = 'mysql+pymysql') -> None:
+    def __init__(self, engine: sa.engine.Engine) -> None:
         """
         SQL Database Reader
 
-        :param ip: server ip
-        :param port: server port
-        :param username: username
-        :param password: password
-        :param db_name: database name
-        :param driver: MySQL driver
+        :param engine: sqlalchemy engine
         """
-        url = URL(drivername=driver, username=username, password=password, host=ip, port=port, database=db_name)
-        self.engine = sa.create_engine(url)
+        self.engine = engine
 
         calendar_df = pd.read_sql_table('交易日历', self.engine)
         self._calendar = calendar_df['交易日期'].dt.to_pydatetime().tolist()
         stock_list_df = pd.read_sql_table('股票列表', self.engine)
         self._stock_list = stock_list_df['证券代码'].values.tolist()
 
-    def get_factor(self, table_name: str, factor_name: str,
-                   start_date: DateType = None, end_date: DateType = None,
+    def get_factor(self, table_name: str, factor_name: str, ffill: bool = False,
+                   start_date: DateType = '2008-01-01', end_date: DateType = None,
                    stock_list: Sequence[str] = None) -> pd.DataFrame:
         primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
 
         query_columns = primary_keys + [factor_name]
-        series = pd.read_sql_table(table_name, self.engine, index_col=primary_keys, columns=query_columns).sort_index()
+        logging.debug('开始读取数据.')
+        # todo: this takes way too long for a large db
+        series = pd.read_sql_table(table_name, self.engine, index_col=primary_keys, columns=query_columns)
+        logging.debug('数据读取完成.')
+        series.sort_index()
         df = series.unstack().droplevel(None, axis=1)
-
+        if ffill:
+            df.ffill(inplace=True)
         df = self._conform_df(df, start_date, end_date, stock_list)
         # name may not survive pickling
         df.name = factor_name
@@ -91,7 +89,7 @@ class SQLDBReader(object):
     def _conform_df(self, df, start_date: DateType = None, end_date: DateType = None,
                     stock_list: Sequence[str] = None) -> pd.DataFrame:
         date_list = select_dates(self._calendar, start_date, end_date)
-        df = df.reindex(date_list)
+        df = df.reindex(date_list[:-1])
 
         if not stock_list:
             stock_list = self._stock_list

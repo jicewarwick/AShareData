@@ -144,7 +144,7 @@ class TushareData(object):
         with tqdm(dates) as pbar:
             for date in dates:
                 current_date_str = date_type2str(date)
-                pbar.set_description(f'下载股票日行情: {current_date_str}')
+                pbar.set_description(f'下载{current_date_str}的日行情: ')
 
                 # price data
                 df = self._pro.daily(trade_date=current_date_str, fields=','.join(price_fields))
@@ -184,12 +184,43 @@ class TushareData(object):
 
     def get_all_past_names(self):
         """获取所有股票的曾用名"""
+        interval = 60.0 / 100.0
         with tqdm(self.all_stocks) as pbar:
             for stock in self.all_stocks:
-                pbar.set_description(f'下载股票名称: {stock}')
+                pbar.set_description(f'下载{stock}的股票名称: ')
                 df = self.get_past_names(stock)
                 self.mysql_writer.update_df(df, '股票曾用名')
+                sleep(interval)
                 pbar.update(1)
+
+    def get_dividend(self) -> None:
+        """
+        获取上市公司分红送股信息
+
+        ref: https://tushare.pro/document/2?doc_id=103
+        :return: 上市公司分红送股信息df
+        """
+        interval = 60.0 / 100.0
+        data_category = '分红送股'
+        table_name = '输出参数'
+        column_desc = self._factor_param[data_category][table_name]
+        fields = ['ts_code', 'end_date', 'ann_date', 'div_proc', 'stk_div', 'cash_div_tax', 'record_date', 'ex_date',
+                  'pay_date', 'imp_ann_date']
+
+        with tqdm(self.all_stocks) as pbar:
+            for stock in self.all_stocks:
+                pbar.set_description(f'下载{stock}的分红送股数据: ')
+                df = self._pro.dividend(ts_code=stock, fields=fields)
+                df = df.loc[df['div_proc'] == '实施', :]
+                # 无公布时间的权宜之计
+                df['ann_date'].where(df['ann_date'].notnull(), df['imp_ann_date'], inplace=True)
+                df.drop(['div_proc', 'imp_ann_date'], axis=1, inplace=True)
+                df = self._standardize_df(df, column_desc, index=['ann_date', 'ts_code'])
+                self.mysql_writer.update_df(df, data_category)
+                sleep(interval)
+                pbar.update(1)
+
+        logging.info('市公司分红送股信息下载完成.')
 
     def get_ipo_info(self, end_date: DateType = None) -> pd.DataFrame:
         """
@@ -301,7 +332,7 @@ class TushareData(object):
         with tqdm(stock_list) as pbar:
             loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cashflow_desc, cashflow)]
             for ticker in stock_list:
-                pbar.set_description(f'下载财报: {ticker}')
+                pbar.set_description(f'下载{ticker}的财报: ')
                 download_data(self._pro.balancesheet, ['1', '4', '5', '11'], balance_sheet_desc, '合并' + balance_sheet)
                 download_data(self._pro.balancesheet, ['6', '9', '10', '12'], balance_sheet_desc, '母公司' + balance_sheet)
                 for f, desc, table in loop_vars:

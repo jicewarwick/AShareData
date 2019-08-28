@@ -3,8 +3,10 @@ import json
 
 import pandas as pd
 import requests
+import sqlalchemy as sa
 
 from DataFrameMySQLWriter import DataFrameMySQLWriter
+from utils import stock_code2ts_code
 
 
 class WebDataCrawler(object):
@@ -14,12 +16,12 @@ class WebDataCrawler(object):
         'User-Agent': "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36",
     }
 
-    def __init__(self, param_json: str, ip: str, port: int, username: str, password: str, db_name='tushare_db') -> None:
+    def __init__(self, engine: sa.engine.Engine, param_json: str) -> None:
         with open(param_json, 'r', encoding='utf-8') as f:
             parameters = json.load(f)
         self._db_parameters = parameters['数据库参数']
 
-        self.mysql_writer = DataFrameMySQLWriter(ip, port, username, password, db_name)
+        self.mysql_writer = DataFrameMySQLWriter(engine)
         for table_name, type_info in self._db_parameters.items():
             self.mysql_writer.create_table(table_name, type_info)
 
@@ -38,7 +40,7 @@ class WebDataCrawler(object):
             return ret
 
         raw_data['DateTime'] = raw_data['起始日期'].map(convert_dt)
-        raw_data['ID'] = raw_data['股票代码'].map(lambda x: f'{x:06}.SH' if x >= 600000 else f'{x:06d}.SZ')
+        raw_data['ID'] = raw_data['股票代码'].map(stock_code2ts_code)
 
         raw_data.set_index(['DateTime', 'ID'], inplace=True)
         self.mysql_writer.update_df(raw_data[['行业名称']], '申万一级行业')

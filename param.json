@@ -2209,6 +2209,16 @@
             "主要业务及产品": "str",
             "经营范围": "str"
         },
+		"分红送股": {
+			"DateTime": "datetime",
+			"ID": "varchar",
+			"分红年度": "datetime",
+			"每股送转": "float",
+			"税前每股分红": "float",
+			"股权登记日": "datetime",
+			"除权除息日": "datetime",
+			"派息日": "datetime"
+		},
         "股票日行情": {
             "DateTime": "datetime",
             "ID": "varchar",

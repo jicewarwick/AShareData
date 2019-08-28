@@ -7,7 +7,6 @@ import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import DateTime, Float, Text, Integer, VARCHAR, Table, Column, func
 from sqlalchemy.dialects.mysql import DOUBLE, insert
-from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 
 
@@ -38,8 +37,7 @@ class DataFrameMySQLWriter(DBWriter):
         'varchar': VARCHAR(20)
     }
 
-    def __init__(self, ip: str, port: int, username: str, password: str, db_name: str,
-                 driver: str = 'mysql+pymysql') -> None:
+    def __init__(self, engine: sa.engine.Engine) -> None:
         """ DataFrame to MySQL Database Writer
 
         Write pd.DataFrame to MySQL server. Feature:
@@ -49,17 +47,11 @@ class DataFrameMySQLWriter(DBWriter):
         - Handle nan insertion
         - Insert new or update old records using on_duplicate_key_update()
 
-        :param ip: server ip
-        :param port: server port
-        :param username: username
-        :param password: password
-        :param db_name: database name
-        :param driver: MySQL driver
+        :param engine: sqlalchemy engine
         """
         super().__init__()
-        assert 'mysql' in driver, 'This class is MySQL database ONLY!!!'
-        url = URL(drivername=driver, username=username, password=password, host=ip, port=port, database=db_name)
-        self.engine = sa.create_engine(url)
+        # assert 'mysql' in driver, 'This class is MySQL database ONLY!!!'
+        self.engine = engine
 
     def create_table(self, table_name: str, table_info: Mapping[str, str]) -> None:
         """
