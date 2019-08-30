@@ -1,5 +1,5 @@
 import logging
-from typing import Sequence, List, Callable
+from typing import Sequence, List, Callable, Union
 
 import pandas as pd
 import sqlalchemy as sa
@@ -22,27 +22,30 @@ class SQLDBReader(object):
         self._stock_list = stock_list_df['证券代码'].values.tolist()
 
     def get_factor(self, table_name: str, factor_name: str, ffill: bool = False,
-                   start_date: DateType = '2008-01-01', end_date: DateType = None,
-                   stock_list: Sequence[str] = None) -> pd.DataFrame:
+                   start_date: DateType = '20080101', end_date: DateType = None,
+                   stock_list: Sequence[str] = None) -> Union[pd.DataFrame, pd.Series]:
+        table_name = table_name.lower()
         primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
 
         query_columns = primary_keys + [factor_name]
         logging.debug('开始读取数据.')
         # todo: this takes way too long for a large db
-        series = pd.read_sql_table(table_name, self.engine, index_col=primary_keys, columns=query_columns)
+        df = pd.read_sql_table(table_name, self.engine, index_col=primary_keys, columns=query_columns)
         logging.debug('数据读取完成.')
-        series.sort_index()
-        df = series.unstack().droplevel(None, axis=1)
-        if ffill:
-            df.ffill(inplace=True)
-        df = self._conform_df(df, start_date, end_date, stock_list)
-        # name may not survive pickling
-        df.name = factor_name
+        df.sort_index()
+        if isinstance(df.index, pd.MultiIndex):
+            df = df.unstack().droplevel(None, axis=1)
+            if ffill:
+                df.ffill(inplace=True)
+            # name may not survive pickling
+            df = self._conform_df(df, start_date, end_date, stock_list)
+            df.name = factor_name
         return df
 
     def get_financial_factor(self, table_name: str, factor_name: str, agg_func: Callable,
                              start_date: DateType = None, end_date: DateType = None,
                              stock_list: Sequence[str] = None, yearly: bool = True) -> pd.DataFrame:
+        table_name = table_name.lower()
         primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
         query_columns = primary_keys + [factor_name]
 
@@ -78,7 +81,7 @@ class SQLDBReader(object):
         meta = sa.MetaData(bind=self.engine)
         meta.reflect()
 
-        assert table_name.lower() in meta.tables.keys(), f'数据库中不存在表 {table_name}'
+        assert table_name in meta.tables.keys(), f'数据库中不存在表 {table_name}'
 
         columns = [it.name for it in meta.tables[table_name].c]
         assert factor_name in columns, f'表 {table_name} 中不存在 {factor_name} 列'

@@ -7,6 +7,13 @@ from sqlalchemy.engine.url import URL
 
 DateType = Union[str, dt.datetime, dt.date]
 
+STOCK_EXCHANGES = ['SSE', 'SZSE']
+FUTURE_EXCHANGES = ['CFFEX', 'DCE', 'CZCE', 'SHFE', 'INE']
+ALL_EXCHANGES = STOCK_EXCHANGES + FUTURE_EXCHANGES
+STOCK_INDEXES = {'上证指数': '000001.SH', '深证成指': '399001.SZ', '中小板指': '399005.SZ', '创业板指': '399006.SZ',
+                 '上证50': '000016.SH', '沪深300': '000300.SH', '中证500': '000905.SH'}
+DAYS_IN_YEAR = 252
+
 
 def date_type2str(date: DateType) -> str:
     return date.strftime('%Y%m%d') if not isinstance(date, str) else date

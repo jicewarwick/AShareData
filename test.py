@@ -35,6 +35,9 @@ class FactorZooTest(TestCase):
                                               agg_func=lambda x: x.tail(1), yearly=True)
         print(output.data.fillna(method='ffill').tail())
 
+    def test_shibor(self):
+        print(self.factor_zoo.shibor_rate())
+
     def test_excess_return_factor(self):
         self.fail()
 
@@ -64,12 +67,12 @@ class Tushare2MySQLTest(TestCase):
             config = json.load(f)
 
         tushare_token = config['tushare_token']
-        ip, port, db_name = config['ip'], config['port'], config['db_name']
-        username, password = config['username'], config['password']
 
         tushare_parameters_db = 'param.json'
-        self.downloader = TushareData(tushare_token, param_json=tushare_parameters_db)
-        self.downloader.add_mysql_db(ip, port, username, password, db_name=db_name)
+        db_schema = 'db_schema.json'
+        self.downloader = TushareData(tushare_token,
+                                      param_json=tushare_parameters_db, db_schema=db_schema,
+                                      engine=prepare_engine(config_loc))
 
     def test_db_initializer(self):
         self.downloader._initialize_db_table()
@@ -103,6 +106,12 @@ class Tushare2MySQLTest(TestCase):
 
     def test_routine(self):
         self.downloader.update_routine()
+
+    def test_hs_const(self):
+        self.downloader.get_hs_const()
+
+    def test_shibor(self):
+        self.downloader.get_shibor(end_date='20111010')
 
 
 class WebDataSourceTest(TestCase):

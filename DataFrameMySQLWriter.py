@@ -1,11 +1,11 @@
 import datetime as dt
 import logging
-from typing import Mapping, Tuple, Optional
+from typing import Mapping, Tuple, Optional, List
 
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy import DateTime, Float, Text, Integer, VARCHAR, Table, Column, func
+from sqlalchemy import DateTime, Float, Text, Integer, VARCHAR, Boolean, Table, Column, func
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.orm import sessionmaker
 
@@ -34,7 +34,8 @@ class DataFrameMySQLWriter(DBWriter):
         'double': DOUBLE,
         'str': Text,
         'int': Integer,
-        'varchar': VARCHAR(20)
+        'varchar': VARCHAR(20),
+        'boolean': Boolean
     }
 
     def __init__(self, engine: sa.engine.Engine) -> None:
@@ -96,7 +97,7 @@ class DataFrameMySQLWriter(DBWriter):
         # replace nan to None so that insert will not error out
         # it seems that this operation changes dtypes. so do it last
         for col in flat_df.columns:
-            flat_df[col] = np.where(flat_df[col].isnull(), None, flat_df[col])
+            flat_df[col].where(flat_df[col].notnull(), other=None, inplace=True)
         for _, row in flat_df.iterrows():
             insert_statement = insert(table).values(**row.to_dict())
             statement = insert_statement.on_duplicate_key_update(**row.to_dict())
@@ -126,6 +127,24 @@ class DataFrameMySQLWriter(DBWriter):
             latest_id = session.query(func.max(table.c.ID)).one()[0]
 
         return latest_time, latest_id
+
+    def get_all_id(self, table_name: str) -> Optional[List[str]]:
+        """
+        返回数据库中的所有股票代码
+
+        :param table_name: 表名
+        :return: 证券代码列表
+        """
+        metadata = sa.MetaData(self.engine)
+        metadata.reflect()
+        assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        table = metadata.tables[table_name]
+        session_maker = sessionmaker(bind=self.engine)
+        session = session_maker()
+        if 'ID' in table.columns.keys():
+            logging.debug(f'{table_name} 表中找到ID列')
+            cache = session.query(table.c.ID).all()
+            return sorted(list(set([it[0] for it in cache])))
 
     @staticmethod
     def date2str(date) -> Optional[str]:
