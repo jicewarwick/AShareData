@@ -3,33 +3,44 @@ import json
 import logging
 from time import sleep
 from typing import Sequence, List, Callable, Mapping
+from importlib.resources import open_text
 
 import pandas as pd
 import sqlalchemy as sa
 import tushare as ts
 from tqdm import tqdm
 
-from DataFrameMySQLWriter import DataFrameMySQLWriter
-from utils import date_type2str, date_type2datetime, DateType, select_dates, STOCK_EXCHANGES, STOCK_INDEXES
+from AShareData.DataFrameMySQLWriter import DataFrameMySQLWriter
+from AShareData.utils import date_type2str, date_type2datetime, DateType, select_dates, STOCK_EXCHANGES, STOCK_INDEXES
 
 
 class TushareData(object):
-
-    def __init__(self, tushare_token: str, param_json: str, db_schema: str, engine: sa.engine.Engine) -> None:
+    def __init__(self, tushare_token: str, engine: sa.engine.Engine,
+                 param_json_loc: str = None, db_schema_loc: str = None) -> None:
         """
         Tushare to MySQL. 将tushare下载的数据写入MySQL中
 
         :param tushare_token: tushare token
-        :param param_json: tushare 返回df的列名信息
+        :param engine: sqlalchemy engine
+        :param param_json_loc: tushare 返回df的列名信息
+        :param db_schema_loc: MySQL database quasi-schema
         """
         self._tushare_token = tushare_token
         self._pro = ts.pro_api(self._tushare_token)
 
-        with open(param_json, 'r', encoding='utf-8') as f:
-            self._factor_param = json.load(f)
+        if param_json_loc is None:
+            from AShareData import data
+            self._factor_param = json.load(open_text(data, 'param.json'))
+        else:
+            with open(param_json_loc, 'r', encoding='utf-8') as f:
+                self._factor_param = json.load(f)
 
-        with open(db_schema, 'r', encoding='utf-8') as f:
-            self._db_parameters = json.load(f)
+        if db_schema_loc is None:
+            from AShareData import data
+            self._db_parameters = json.load(open_text(data, 'db_schema.json'))
+        else:
+            with open(db_schema_loc, 'r', encoding='utf-8') as f:
+                self._db_parameters = json.load(f)
 
         self._listed_stocks = None
         self._all_stocks = None
@@ -67,7 +78,7 @@ class TushareData(object):
     # get data
     # ------------------------------------------
     def update_routine(self) -> None:
-        self.get_company_info()
+        # self.get_company_info()
         self.get_ipo_info()
 
         latest_time, _ = self.mysql_writer.get_progress('指数日行情')
@@ -83,7 +94,8 @@ class TushareData(object):
 
         stocks = self.mysql_writer.get_all_id('合并资产负债表')
         stocks = list(set(self._all_stocks) - set(stocks)) if stocks else self.all_stocks
-        self.get_financial(stocks)
+        if stocks:
+            self.get_financial(stocks)
 
         latest_time, _ = self.mysql_writer.get_progress('沪深港股通持股明细')
         if latest_time is None:
@@ -142,7 +154,7 @@ class TushareData(object):
         with tqdm(dates, ascii=True) as pbar:
             for date in dates:
                 current_date_str = date_type2str(date)
-                pbar.set_description(f'下载{current_date_str}的日行情: ')
+                pbar.set_description(f'下载{current_date_str}的日行情')
 
                 # price data
                 df = self._pro.daily(trade_date=current_date_str, fields=','.join(price_fields))
@@ -167,6 +179,15 @@ class TushareData(object):
 
                 pbar.update(1)
 
+    def get_financial_index(self, ticker: str, period: str) -> pd.DataFrame:
+        data_category = '财务指标数据'
+        table_name = '输出参数'
+        column_desc = self._factor_param[data_category][table_name]
+
+        df = self._pro.query('fina_indicator', ts_code=ticker, period=period, fields=list(column_desc.keys()))
+        df = self._standardize_df(df, column_desc, index=['DateTime', 'ID', '报告期'])
+        return df
+
     def get_past_names(self, ticker: str = None, start_date: DateType = None) -> pd.DataFrame:
         """获取曾用名
         ref: https://tushare.pro/document/2?doc_id=100
@@ -185,7 +206,7 @@ class TushareData(object):
         interval = 60.0 / 100.0
         with tqdm(self.all_stocks, ascii=True) as pbar:
             for stock in self.all_stocks:
-                pbar.set_description(f'下载{stock}的股票名称: ')
+                pbar.set_description(f'下载{stock}的股票名称')
                 df = self.get_past_names(stock)
                 self.mysql_writer.update_df(df, '股票曾用名')
                 sleep(interval)
@@ -207,7 +228,7 @@ class TushareData(object):
 
         with tqdm(self.all_stocks) as pbar:
             for stock in self.all_stocks:
-                pbar.set_description(f'下载{stock}的分红送股数据: ')
+                pbar.set_description(f'下载{stock}的分红送股数据')
                 df = self._pro.dividend(ts_code=stock, fields=fields)
                 df = df.loc[df['div_proc'] == '实施', :]
                 # 无公布时间的权宜之计
@@ -280,7 +301,7 @@ class TushareData(object):
         with tqdm(dates, ascii=True) as pbar:
             for date in dates:
                 current_date_str = date_type2str(date)
-                pbar.set_description(f'下载{current_date_str}的沪深港股通持股明细: ')
+                pbar.set_description(f'下载{current_date_str}的沪深港股通持股明细')
                 df = self._pro.hk_hold(trade_date=current_date_str, fields=fields)
                 df = self._standardize_df(df, desc)
                 self.mysql_writer.update_df(df, category)
@@ -376,7 +397,7 @@ class TushareData(object):
         with tqdm(stock_list, ascii=True) as pbar:
             loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cash_flow_desc, cash_flow)]
             for ticker in stock_list:
-                pbar.set_description(f'下载{ticker}的财报: ')
+                pbar.set_description(f'下载{ticker}的财报')
                 download_data(self._pro.balancesheet, ['1', '4', '5', '11'], balance_sheet_desc, '合并' + balance_sheet)
                 download_data(self._pro.balancesheet, ['6', '9', '10', '12'], balance_sheet_desc, '母公司' + balance_sheet)
                 for f, desc, table in loop_vars:
@@ -404,24 +425,14 @@ class TushareData(object):
     @staticmethod
     def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str],
                         index: Sequence[str] = None) -> pd.DataFrame:
-        dates_columns = [it for it in df.columns if 'date' in it]
+        dates_columns = [it for it in df.columns if it.endswith('_date')]
         for it in dates_columns:
             df[it] = df[it].apply(date_type2datetime)
         if index is None:
-            index = sorted(list({'trade_date', 'ts_code'} & set(df.columns)))
-        if len(index) > 2:
-            raise RuntimeError('index 的个数不能超过 2 !')
-        if len(index) == 2:
-            index_names = ['DateTime', 'ID']
-        else:
-            if 'date' in index[0]:
-                index_names = ['DateTime']
-            else:
-                index_names = ['ID']
+            index = sorted(list({'trade_date', 'ts_code', '报告期'} & set(df.columns)))
 
-        df = df.set_index(index, drop=True)
         df.rename(parameter_info, axis=1, inplace=True)
-        df.index.names = index_names
+        df = df.set_index(index, drop=True)
         return df
 
     def _get_all_stocks(self) -> List[str]:
@@ -430,18 +441,29 @@ class TushareData(object):
         ref: https://tushare.pro/document/2?doc_id=25
 
         """
+
+        data_category = '股票列表'
+        table_name = '输出参数'
+        desc = self._factor_param[data_category][table_name]
+
         storage = []
-        lookup_dict = {'listed': 'L', 'de-listed': 'D', 'paused': 'P'}
-        storage_dict = {}
-        for list_status, symbol in lookup_dict.items():
-            storage_dict[list_status] = self._pro.stock_basic(exchange='', list_status=symbol, fields='ts_code')
-            storage.append(storage_dict[list_status])
+        list_status = ['L', 'D', 'P']
+        fields = ['ts_code', 'list_date', 'delist_date']
+        for status in list_status:
+            storage.append(self._pro.stock_basic(exchange='', list_status=status, fields=fields))
         output = pd.concat(storage)
-        output = output.ts_code
-        output.name = '证券代码'
-        output.to_sql('股票列表', self.mysql_writer.engine, if_exists='replace')
-        self._listed_stocks = storage_dict['listed'].ts_code.values.tolist()
-        self._all_stocks = output.values.tolist()
+        listed = output.loc[:, ['ts_code', 'list_date']]
+        listed['list_status'] = True
+        unlisted = output.loc[:, ['ts_code', 'delist_date']].dropna().rename({'delist_date': 'list_date'}, axis=1)
+        unlisted['list_status'] = False
+        output = pd.concat([listed, unlisted])
+
+        self._listed_stocks = output.loc[output.list_status, :].ts_code.values.tolist()
+        self._all_stocks = output.ts_code.values.tolist()
+
+        output = self._standardize_df(output, desc, index=['list_date', 'ts_code'])
+        self.mysql_writer.update_df(output, '股票上市退市')
+
         return self._all_stocks
 
     def _get_calendar(self) -> List[dt.datetime]:

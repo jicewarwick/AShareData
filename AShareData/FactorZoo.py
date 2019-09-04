@@ -1,12 +1,12 @@
-from functools import lru_cache
+from functools import lru_cache, reduce
 
 import numpy as np
 import pandas as pd
 # todo: import from functools from 3.9
 from cached_property import cached_property
 
-from SQLDBReader import SQLDBReader
-from utils import STOCK_INDEXES, DAYS_IN_YEAR
+from AShareData.SQLDBReader import SQLDBReader
+from AShareData.utils import STOCK_INDEXES, TRADING_DAYS_IN_YEAR
 
 
 class FactorZoo(object):
@@ -25,12 +25,12 @@ class FactorZoo(object):
         return self.market_cap.log()
 
     @cached_property
-    def cap_wight(self) -> pd.DataFrame:
+    def cap_weight(self) -> pd.DataFrame:
         return self.market_cap.div(self.market_cap.sum(axis=1, skipna=True), axis=0, skipna=True)
 
     @cached_property
     def cap_wighted_return(self) -> pd.Series:
-        return (self.equity_daily_return * self.cap_wight).sum(axis=1, skipna=True)
+        return (self.equity_daily_return * self.cap_weight).sum(axis=1, skipna=True)
 
     @cached_property
     def close(self) -> pd.DataFrame:
@@ -50,11 +50,17 @@ class FactorZoo(object):
 
     def qfq_close(self) -> pd.DataFrame:
         close = self._db_reader.get_factor('股票日行情', '收盘价')
-        adj_factor = self.adj_factor
+        adj_factor = self.adj_factor()
         max_adj_factor = adj_factor.max()
         adj_factor_ratio = adj_factor.div(max_adj_factor, axis=1)
         qfq_close = (close * adj_factor_ratio).ffill()
         return qfq_close
+
+    def daily_return(self) -> pd.DataFrame:
+        return self.hfq_close.pct_change()
+
+    def log_return(self) -> pd.DataFrame:
+        return self.hfq_close.log().diff()
 
     @cached_property
     def equity_daily_return(self) -> pd.DataFrame:
@@ -86,8 +92,12 @@ class FactorZoo(object):
     def index_return(self, ts_code: str) -> pd.Series:
         return self.index_close(ts_code).pct_change()
 
+    @lru_cache(None)
     def shibor_rate(self, maturity: str = '1年') -> pd.Series:
-        return self._db_reader.get_factor('Shibor利率数据', maturity).div(DAYS_IN_YEAR)
+        return self._db_reader.get_factor('Shibor利率数据', maturity).div(TRADING_DAYS_IN_YEAR)
+
+    def log_shibor_return(self, maturity: str = '1年'):
+        return self.shibor_rate(maturity).add(1).log()
 
     def excess_market_return(self, index_name: str = '沪深300') -> pd.DataFrame:
         assert index_name in STOCK_INDEXES, f'支持的指数为[{", ".join(list(STOCK_INDEXES.keys()))}]'
@@ -97,3 +107,20 @@ class FactorZoo(object):
 
     def excess_return(self) -> pd.DataFrame:
         return self.equity_daily_return.sub(self.shibor_rate(), axis=0)
+
+    @staticmethod
+    def exponential_weight(n: int, half_life: int) -> np.array:
+        series = range(-(n-1), 1)
+        return np.exp(np.log(2) * series / half_life)
+
+    def estimation_universe_bool(self) -> pd.DataFrame:
+        return reduce(np.bitwise_and, [self.listed_more_than_n_days(30), self.trading_status(), self.is_st()])
+
+    def list_status(self) -> pd.DataFrame:
+        return self._db_reader.get_factor('股票上市退市', '上市状态', ffill=True)
+
+    def listed_more_than_n_days(self, n: int) -> pd.DataFrame:
+        return self.list_status().shift(n)
+
+    def zx_industry(self, level: int = 1):
+        return self._db_reader.get_zx_industry(level=level, translation_json_loc='citic_code_to_name.json')

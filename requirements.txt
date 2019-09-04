@@ -1,0 +1,6 @@
+requests
+tqdm
+tushare
+sqlalchemy
+pandas
+numpy

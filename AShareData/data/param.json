@@ -1,12 +1,12 @@
 {
 	"股票曾用名": {
 		"输入参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"name": "证券名称",
 			"start_date": "开始日期",
 			"end_date": "结束日期",
@@ -16,14 +16,14 @@
 	},
 	"分红送股": {
 		"输入参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"ann_date": "公告日",
 			"record_date": "股权登记日期",
 			"ex_date": "除权除息日",
 			"imp_ann_date": "实施公告日"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"end_date": "分红年度",
 			"ann_date": "预案公告日",
 			"div_proc": "实施进度",
@@ -47,7 +47,7 @@
 			"is_new": "是否最新1是0否(默认1)"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"hs_type": "沪深港通类型SH沪SZ深",
 			"in_date": "纳入日期",
 			"out_date": "剔除日期",
@@ -56,12 +56,12 @@
 	},
 	"龙虎榜每日明细": {
 		"输入参数": {
-			"trade_date": "交易日期",
-			"ts_code": "股票代码"
+			"trade_date": "DateTime",
+			"ts_code": "ID"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
-			"ts_code": "TS代码",
+			"trade_date": "DateTime",
+			"ts_code": "ID",
 			"name": "名称",
 			"close": "收盘价",
 			"pct_change": "涨跌幅",
@@ -79,12 +79,12 @@
 	},
 	"龙虎榜机构明细": {
 		"输入参数": {
-			"trade_date": "交易日期",
-			"ts_code": "TS代码"
+			"trade_date": "DateTime",
+			"ts_code": "ID"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
-			"ts_code": "TS代码",
+			"trade_date": "DateTime",
+			"ts_code": "ID",
 			"exalter": "营业部名称",
 			"buy": "买入额（万）",
 			"buy_rate": "买入比例",
@@ -109,10 +109,10 @@
 	},
 	"股权质押统计数据": {
 		"输入参数": {
-			"ts_code": "股票代码"
+			"ts_code": "ID"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"end_date": "截至日期",
 			"pledge_count": "质押次数",
 			"unrest_pledge": "无限售股质押数量（万）",
@@ -123,10 +123,10 @@
 	},
 	"股权质押明细": {
 		"输入参数": {
-			"ts_code": "股票代码"
+			"ts_code": "ID"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"holder_name": "股东名称",
 			"pledge_amount": "质押数量",
@@ -147,7 +147,7 @@
 			"exchange": "交易所代码，SSE上交所SZSE深交所，默认SSE"
 		},
 		"输出参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"exchange": "交易所代码",
 			"chairman": "法人代表",
 			"manager": "总经理",
@@ -260,7 +260,7 @@
 			"end_date": "净值日期（二选一）"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"end_date": "截止日期",
 			"unit_nav": "单位净值",
@@ -279,7 +279,7 @@
 			"ts_code": "基金代码"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"imp_anndate": "分红实施公告日",
 			"base_date": "分配收益基准日",
@@ -305,7 +305,7 @@
 			"ts_code": "TS基金代码",
 			"ann_date": "公告日期",
 			"end_date": "截止日期",
-			"symbol": "股票代码",
+			"symbol": "ID",
 			"mkv": "持有股票市值",
 			"amount": "持有股票数量",
 			"stk_mkv_ratio": "占股票市值比",
@@ -318,7 +318,7 @@
 			"end_date": "上网发行结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"sub_code": "申购代码",
 			"name": "名称",
 			"ipo_date": "上网发行日期",
@@ -339,7 +339,7 @@
 			"end_date": "公告结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"end_date": "截止日期",
 			"proc": "进度",
@@ -363,12 +363,12 @@
 	"概念股列表": {
 		"输入参数": {
 			"id": "概念分类ID（id来自概念股分类接口）",
-			"ts_code": "股票代码（以上参数二选一）"
+			"ts_code": "ID（以上参数二选一）"
 		},
 		"输出参数": {
 			"id": "概念代码",
 			"concept_name": "概念名称",
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"name": "股票名称",
 			"in_date": "纳入日期",
 			"out_date": "剔除日期"
@@ -377,13 +377,13 @@
 	"场内基金日线行情": {
 		"输入参数": {
 			"ts_code": "基金代码（二选一）",
-			"trade_date": "交易日期（二选一）",
+			"trade_date": "DateTime（二选一）",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"open": "开盘价",
 			"high": "最高价",
 			"low": "最低价",
@@ -397,14 +397,14 @@
 	},
 	"大盘指数每日指标": {
 		"输入参数": {
-			"trade_date": "交易日期",
-			"ts_code": "TS代码",
+			"trade_date": "DateTime",
+			"ts_code": "ID",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"total_mv": "总市值",
 			"float_mv": "流通市值",
 			"total_share": "总股本",
@@ -423,7 +423,7 @@
 			"fut_type": "合约类型(1普通合约2主力与连续合约默认取全部)"
 		},
 		"输出参数": {
-			"ts_code": "合约代码",
+			"ts_code": "ID",
 			"symbol": "交易标识",
 			"exchange": "交易市场",
 			"name": "中文简称",
@@ -435,7 +435,7 @@
 			"quote_unit_desc": "最小报价单位说明",
 			"d_mode_desc": "交割方式说明",
 			"list_date": "上市日期",
-			"delist_date": "最后交易日期",
+			"delist_date": "最后DateTime",
 			"d_month": "交割月份",
 			"last_ddate": "最后交割日",
 			"trade_time_desc": "交易时间说明"
@@ -457,15 +457,15 @@
 	},
 	"期货日线行情": {
 		"输入参数": {
-			"trade_date": "交易日期",
-			"ts_code": "合约代码",
+			"trade_date": "DateTime",
+			"ts_code": "ID",
 			"exchange": "交易所代码",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS合约代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"pre_close": "昨收盘价",
 			"pre_settle": "昨结算价",
 			"open": "开盘价",
@@ -484,15 +484,15 @@
 	},
 	"每日成交持仓排名": {
 		"输入参数": {
-			"trade_date": "交易日期（trade_date/symbol至少输入一个参数）",
+			"trade_date": "DateTime（trade_date/symbol至少输入一个参数）",
 			"symbol": "合约或产品代码",
 			"start_date": "开始日期",
 			"end_date": "结束日期",
 			"exchange": "交易所代码"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
-			"symbol": "合约代码或类型",
+			"trade_date": "DateTime",
+			"symbol": "ID或类型",
 			"broker": "期货公司会员简称",
 			"vol": "成交量",
 			"vol_chg": "成交量变化",
@@ -505,14 +505,14 @@
 	},
 	"仓单日报": {
 		"输入参数": {
-			"trade_date": "交易日期",
+			"trade_date": "DateTime",
 			"symbol": "产品代码",
 			"start_date": "开始日期",
 			"end_date": "结束日期",
 			"exchange": "交易所代码"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
+			"trade_date": "DateTime",
 			"symbol": "产品代码",
 			"fut_name": "产品名称",
 			"warehouse": "仓库名称",
@@ -533,15 +533,15 @@
 	},
 	"结算参数": {
 		"输入参数": {
-			"trade_date": "交易日期（trade_date/ts_code至少需要输入一个参数）",
-			"ts_code": "合约代码",
+			"trade_date": "DateTime（trade_date/ts_code至少需要输入一个参数）",
+			"ts_code": "ID",
 			"start_date": "开始日期",
 			"end_date": "结束日期",
 			"exchange": "交易所代码"
 		},
 		"输出参数": {
-			"ts_code": "合约代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"settle": "结算价",
 			"trading_fee_rate": "交易手续费率",
 			"trading_fee": "交易手续费",
@@ -569,14 +569,14 @@
 	},
 	"周线行情": {
 		"输入参数": {
-			"ts_code": "TS代码（ts_code,trade_date两个参数任选一）",
-			"trade_date": "交易日期（每周五日期）",
+			"ts_code": "ID（ts_code,trade_date两个参数任选一）",
+			"trade_date": "DateTime（每周五日期）",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "股票代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"close": "周收盘价",
 			"open": "周开盘价",
 			"high": "周最高价",
@@ -590,14 +590,14 @@
 	},
 	"月线行情": {
 		"输入参数": {
-			"ts_code": "TS代码（ts_code,trade_date两个参数任选一）",
-			"trade_date": "交易日期（每月最后一个交易日日期）",
+			"ts_code": "ID（ts_code,trade_date两个参数任选一）",
+			"trade_date": "DateTime（每月最后一个交易日日期）",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "股票代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"close": "月收盘价",
 			"open": "月开盘价",
 			"high": "月最高价",
@@ -611,7 +611,7 @@
 	},
 	"A股复权行情": {
 		"接口说明": {
-			"ts_code": "证券代码",
+			"ts_code": "ID",
 			"pro_api": "pro版api对象",
 			"start_date": "开始日期",
 			"end_date": "结束日期",
@@ -647,7 +647,7 @@
 			"bank": "银行名称（中文名称，例如农业银行）"
 		},
 		"输出参数": {
-			"date": "日期",
+			"date": "DateTime",
 			"bank": "报价银行",
 			"on_b": "隔夜_Bid",
 			"on_a": "隔夜_Ask",
@@ -686,7 +686,7 @@
 			"curr_type": "货币代码(USD美元EUR欧元JPY日元GBP英镑CHF瑞郎，默认是USD)"
 		},
 		"输出参数": {
-			"date": "日期",
+			"date": "DateTime",
 			"curr_type": "货币",
 			"on": "隔夜",
 			"1w": "1周",
@@ -704,7 +704,7 @@
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"date": "日期",
+			"date": "DateTime",
 			"on": "隔夜",
 			"1w": "1周",
 			"2w": "2周",
@@ -728,13 +728,13 @@
 	"南华期货指数日线行情": {
 		"输入参数": {
 			"ts_code": "指数代码（南华期货指数以.NH结尾，具体请参考本文最下方）",
-			"trade_date": "交易日期",
+			"trade_date": "DateTime",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS指数代码",
-			"trade_date": "交易日",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"close": "收盘点位",
 			"open": "开盘点位",
 			"high": "最高点位",
@@ -770,11 +770,11 @@
 			"call_put": "期权类型"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"exchange": "交易市场",
 			"name": "合约名称",
 			"per_unit": "合约单位",
-			"opt_code": "标准合约代码",
+			"opt_code": "标准ID",
 			"opt_type": "合约类型",
 			"call_put": "期权类型",
 			"exercise_type": "行权方式",
@@ -782,8 +782,8 @@
 			"s_month": "结算月",
 			"maturity_date": "到期日",
 			"list_price": "挂牌基准价",
-			"list_date": "开始交易日期",
-			"delist_date": "最后交易日期",
+			"list_date": "开始DateTime",
+			"delist_date": "最后DateTime",
 			"last_edate": "最后行权日期",
 			"last_ddate": "最后交割日期",
 			"quote_unit": "报价单位",
@@ -792,15 +792,15 @@
 	},
 	"期权日线行情": {
 		"输入参数": {
-			"ts_code": "TS合约代码（输入代码或时间至少任意一个参数）",
-			"trade_date": "交易日期",
+			"ts_code": "ID（输入代码或时间至少任意一个参数）",
+			"trade_date": "DateTime",
 			"start_date": "开始日期",
 			"end_date": "结束日期",
 			"exchange": "交易所"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"exchange": "交易市场",
 			"pre_settle": "昨结算价",
 			"pre_close": "前收盘价",
@@ -816,14 +816,14 @@
 	},
 	"限售股解禁": {
 		"输入参数": {
-			"ts_code": "TS股票代码（至少输入一个参数）",
+			"ts_code": "ID（至少输入一个参数）",
 			"ann_date": "公告日期",
 			"float_date": "解禁日期",
 			"start_date": "解禁开始日期",
 			"end_date": "解禁结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"float_date": "解禁日期",
 			"float_share": "流通股份",
@@ -834,13 +834,13 @@
 	},
 	"大宗交易": {
 		"输入参数": {
-			"ts_code": "TS代码（股票代码和日期至少输入一个参数）",
-			"trade_date": "交易日期",
+			"ts_code": "ID（ID和日期至少输入一个参数）",
+			"trade_date": "DateTime",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"trade_date": "交易日历",
 			"price": "成交价",
 			"vol": "成交量（万股）",
@@ -851,13 +851,13 @@
 	},
 	"财报披露计划": {
 		"输入参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"end_date": "财报周期（比如20181231表示2018年年报，20180630表示中报)",
 			"pre_date": "计划披露日期",
 			"actual_date": "实际披露日期"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"ann_date": "最新披露公告日",
 			"end_date": "报告期",
 			"pre_date": "预计披露日期",
@@ -898,13 +898,13 @@
 	},
 	"股东人数": {
 		"输入参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"enddate": "截止日期",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"end_date": "截止日期",
 			"holder_num": "股东户数"
@@ -912,14 +912,14 @@
 	},
 	"个股资金流向": {
 		"输入参数": {
-			"ts_code": "股票代码（股票和时间参数至少输入一个）",
-			"trade_date": "交易日期",
+			"ts_code": "ID（股票和时间参数至少输入一个）",
+			"trade_date": "DateTime",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"buy_sm_vol": "小单买入量",
 			"buy_sm_amount": "小单买入金额（万元）",
 			"sell_sm_vol": "小单卖出量",
@@ -942,14 +942,14 @@
 	},
 	"指数周线行情": {
 		"输入参数": {
-			"ts_code": "TS代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS指数代码",
-			"trade_date": "交易日",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"close": "收盘点位",
 			"open": "开盘点位",
 			"high": "最高点位",
@@ -963,14 +963,14 @@
 	},
 	"指数月线行情": {
 		"输入参数": {
-			"ts_code": "TS代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS指数代码",
-			"trade_date": "交易日",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"close": "收盘点位",
 			"open": "开盘点位",
 			"high": "最高点位",
@@ -1022,7 +1022,7 @@
 	},
 	"股东增减持": {
 		"输入参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期",
@@ -1030,7 +1030,7 @@
 			"holder_type": "股东类型C公司P个人G高管"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"holder_name": "股东名称",
 			"holder_type": "股东类型G高管P个人C公司",
@@ -1047,14 +1047,14 @@
 	},
 	"上市公司公告(信息地雷)": {
 		"输入参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期",
 			"year": "年度，目前接口不能跨年获取，设定一个年份即可，比如2019"
 		},
 		"输出参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"ann_type": "公告类型",
 			"title": "公告标题",
@@ -1066,7 +1066,7 @@
 		"输入参数": {
 			"exchange": "交易商",
 			"classify": "分类",
-			"ts_code": "TS代码"
+			"ts_code": "ID"
 		},
 		"输出参数": {
 			"ts_code": "外汇代码",
@@ -1085,15 +1085,15 @@
 	},
 	"外汇日线行情": {
 		"输入参数": {
-			"ts_code": "TS代码",
-			"trade_date": "交易日期（GMT，日期是格林尼治时间，比北京时间晚一天）",
+			"ts_code": "ID",
+			"trade_date": "DateTime（GMT，日期是格林尼治时间，比北京时间晚一天）",
 			"start_date": "开始日期（GMT）",
 			"end_date": "结束日期（GMT）",
 			"exchange": "交易商，目前只有FXCM"
 		},
 		"输出参数": {
 			"ts_code": "外汇代码",
-			"trade_date": "交易日期",
+			"trade_date": "DateTime",
 			"bid_open": "买入开盘价",
 			"bid_close": "买入收盘价",
 			"bid_high": "买入最高价",
@@ -1147,13 +1147,13 @@
 	"申万行业成分构成": {
 		"输入参数": {
 			"index_code": "指数代码",
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"is_new": "是否最新（默认为“Y是”）"
 		},
 		"输出参数": {
 			"index_code": "指数代码",
 			"index_name": "指数名称",
-			"con_code": "成分股票代码",
+			"con_code": "成分ID",
 			"con_name": "成分股票名称",
 			"in_date": "纳入日期",
 			"out_date": "剔除日期",
@@ -1162,14 +1162,14 @@
 	},
 	"每日涨跌停价格": {
 		"输入参数": {
-			"ts_code": "股票代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
-			"ts_code": "TS股票代码",
+			"trade_date": "DateTime",
+			"ts_code": "ID",
 			"pre_close": "昨日收盘价",
 			"up_limit": "涨停价",
 			"down_limit": "跌停价"
@@ -1214,8 +1214,8 @@
 			"exchange": "交易所SSE上交所SZSE深交所HKEX港交所(未上线)"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
-			"symbol": "股票代码",
+			"ts_code": "ID",
+			"symbol": "ID",
 			"name": "股票名称",
 			"area": "所在地域",
 			"industry": "所属行业",
@@ -1224,7 +1224,7 @@
 			"market": "市场类型（主板/中小板/创业板）",
 			"exchange": "交易所代码",
 			"curr_type": "交易货币",
-			"list_status": "上市状态：L上市D退市P暂停上市",
+			"list_status": "上市状态",
 			"list_date": "上市日期",
 			"delist_date": "退市日期",
 			"is_hs": "是否沪深港通标的，N否H沪股通S深股通"
@@ -1232,14 +1232,14 @@
 	},
 	"日线行情": {
 		"输入参数": {
-			"ts_code": "股票代码（二选一）",
-			"trade_date": "交易日期（二选一）",
+			"ts_code": "ID（二选一）",
+			"trade_date": "DateTime（二选一）",
 			"start_date": "开始日期(YYYYMMDD)",
 			"end_date": "结束日期(YYYYMMDD)"
 		},
 		"输出参数": {
-			"ts_code": "股票代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"open": "开盘价",
 			"high": "最高价",
 			"low": "最低价",
@@ -1253,25 +1253,25 @@
 	},
 	"复权因子": {
 		"输入参数": {
-			"ts_code": "股票代码",
-			"trade_date": "交易日期(YYYYMMDD，下同)",
+			"ts_code": "ID",
+			"trade_date": "DateTime(YYYYMMDD，下同)",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "股票代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"adj_factor": "复权因子"
 		}
 	},
 	"停复牌信息": {
 		"输入参数": {
-			"ts_code": "股票代码(三选一)",
+			"ts_code": "ID(三选一)",
 			"suspend_date": "停牌日期(三选一)",
 			"resume_date": "复牌日期(三选一)"
 		},
 		"输出参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"suspend_date": "停牌日期",
 			"resume_date": "复牌日期",
 			"ann_date": "公告日期",
@@ -1281,14 +1281,14 @@
 	},
 	"每日指标": {
 		"输入参数": {
-			"ts_code": "股票代码（二选一）",
-			"trade_date": "交易日期（二选一）",
+			"ts_code": "ID（二选一）",
+			"trade_date": "DateTime（二选一）",
 			"start_date": "开始日期(YYYYMMDD)",
 			"end_date": "结束日期(YYYYMMDD)"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"close": "当日收盘价",
 			"turnover_rate": "换手率",
 			"turnover_rate_f": "流通股换手率",
@@ -1307,7 +1307,7 @@
 	},
 	"利润表": {
 		"输入参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期",
@@ -1316,9 +1316,9 @@
 			"comp_type": "公司类型：1一般工商业2银行3保险4证券"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
-			"f_ann_date": "实际公告日期",
+			"f_ann_date": "DateTime",
 			"end_date": "报告期",
 			"report_type": "报表类型",
 			"comp_type": "公司类型",
@@ -1405,7 +1405,7 @@
 	},
 	"资产负债表": {
 		"输入参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期",
@@ -1414,9 +1414,9 @@
 			"comp_type": "公司类型：1一般工商业2银行3保险4证券"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
-			"f_ann_date": "实际公告日期",
+			"f_ann_date": "DateTime",
 			"end_date": "报告期",
 			"report_type": "报表类型",
 			"comp_type": "公司类型",
@@ -1576,7 +1576,7 @@
 	},
 	"现金流量表": {
 		"输入参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期",
@@ -1585,9 +1585,9 @@
 			"comp_type": "公司类型：1一般工商业2银行3保险4证券"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
-			"f_ann_date": "实际公告日期",
+			"f_ann_date": "DateTime",
 			"end_date": "报告期",
 			"comp_type": "报表类型",
 			"report_type": "公司类型",
@@ -1679,7 +1679,7 @@
 	},
 	"业绩预告": {
 		"输入参数": {
-			"ts_code": "股票代码(二选一)",
+			"ts_code": "ID(二选一)",
 			"ann_date": "公告日期(二选一)",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期",
@@ -1687,7 +1687,7 @@
 			"type": "预告类型(预增/预减/扭亏/首亏/续亏/续盈/略增/略减)"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"end_date": "报告期",
 			"type": "业绩预告类型(预增/预减/扭亏/首亏/续亏/续盈/略增/略减)",
@@ -1703,14 +1703,14 @@
 	},
 	"业绩快报": {
 		"输入参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期",
 			"period": "报告期(每个季度最后一天的日期,比如20171231表示年报)"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"end_date": "报告期",
 			"revenue": "营业收入",
@@ -1746,12 +1746,12 @@
 	},
 	"沪深港通资金流向": {
 		"输入参数": {
-			"trade_date": "交易日期(二选一)",
+			"trade_date": "DateTime(二选一)",
 			"start_date": "开始日期(二选一)",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
+			"trade_date": "DateTime",
 			"ggt_ss": "港股通（上海）",
 			"ggt_sz": "港股通（深圳）",
 			"hgt": "沪股通（百万元）",
@@ -1762,15 +1762,15 @@
 	},
 	"沪深股通十大成交股": {
 		"输入参数": {
-			"ts_code": "股票代码（二选一）",
-			"trade_date": "交易日期（二选一）",
+			"ts_code": "ID（二选一）",
+			"trade_date": "DateTime（二选一）",
 			"start_date": "开始日期",
 			"end_date": "结束日期",
 			"market_type": "市场类型（1：沪市3：深市）"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
-			"ts_code": "股票代码",
+			"trade_date": "DateTime",
+			"ts_code": "ID",
 			"name": "股票名称",
 			"close": "收盘价",
 			"change": "涨跌额",
@@ -1785,16 +1785,16 @@
 	"沪深港股通持股明细": {
 		"输入参数": {
 			"code": "交易所代码",
-			"ts_code": "TS股票代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"start_date": "开始日期",
 			"end_date": "结束日期",
 			"exchange": "类型：SH沪股通SZ深港通HK港股通"
 		},
 		"输出参数": {
 			"code": "交易所代码",
-			"ts_code": "TS股票代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"name": "股票名称",
 			"vol": "持股数量",
 			"ratio": "持股占比（%）",
@@ -1803,15 +1803,15 @@
 	},
 	"港股通十大成交股": {
 		"输入参数": {
-			"ts_code": "股票代码（二选一）",
-			"trade_date": "交易日期（二选一）",
+			"ts_code": "ID（二选一）",
+			"trade_date": "DateTime（二选一）",
 			"start_date": "开始日期",
 			"end_date": "结束日期",
 			"market_type": "市场类型2：港股通（沪）4：港股通（深）"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
-			"ts_code": "股票代码",
+			"trade_date": "DateTime",
+			"ts_code": "ID",
 			"name": "股票名称",
 			"close": "收盘价",
 			"p_change": "涨跌幅",
@@ -1831,13 +1831,13 @@
 	},
 	"融资融券交易汇总": {
 		"输入参数": {
-			"trade_date": "交易日期",
+			"trade_date": "DateTime",
 			"exchange_id": "交易所代码",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
+			"trade_date": "DateTime",
 			"exchange_id": "交易所代码（SSE上交所SZSE深交所）",
 			"rzye": "融资余额",
 			"rzmre": "融资买入额",
@@ -1849,14 +1849,14 @@
 	},
 	"融资融券交易明细": {
 		"输入参数": {
-			"trade_date": "交易日期",
-			"ts_code": "TS代码",
+			"trade_date": "DateTime",
+			"ts_code": "ID",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"trade_date": "交易日期",
-			"ts_code": "TS股票代码",
+			"trade_date": "DateTime",
+			"ts_code": "ID",
 			"rzye": "融资余额",
 			"rqye": "融券余额",
 			"rzmre": "融资买入额",
@@ -1869,14 +1869,14 @@
 	},
 	"前十大股东": {
 		"输入参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"period": "报告期",
 			"ann_date": "公告日期",
 			"start_date": "报告期开始日期",
 			"end_date": "报告期结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"end_date": "报告期",
 			"holder_name": "股东名称",
@@ -1886,14 +1886,14 @@
 	},
 	"前十大流通股东": {
 		"输入参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"period": "报告期",
 			"ann_date": "公告日期",
 			"start_date": "报告期开始日期",
 			"end_date": "报告期结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"end_date": "报告期",
 			"holder_name": "股东名称",
@@ -1902,15 +1902,15 @@
 	},
 	"财务指标数据": {
 		"输入参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"start_date": "报告期开始日期",
 			"end_date": "报告期结束日期",
 			"period": "报告期(每个季度最后一天的日期,比如20171231表示年报)"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
-			"ann_date": "公告日期",
+			"ts_code": "ID",
+			"ann_date": "DateTime",
 			"end_date": "报告期",
 			"eps": "基本每股收益",
 			"dt_eps": "稀释每股收益",
@@ -2080,14 +2080,14 @@
 	},
 	"财务审计意见": {
 		"输入参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"start_date": "公告开始日期",
 			"end_date": "公告结束日期",
 			"period": "报告期(每个季度最后一天的日期,比如20171231表示年报)"
 		},
 		"输出参数": {
-			"ts_code": "TS股票代码",
+			"ts_code": "ID",
 			"ann_date": "公告日期",
 			"end_date": "报告期",
 			"audit_result": "审计结果",
@@ -2098,14 +2098,14 @@
 	},
 	"主营业务构成": {
 		"输入参数": {
-			"ts_code": "股票代码",
+			"ts_code": "ID",
 			"period": "报告期(每个季度最后一天的日期,比如20171231表示年报)",
 			"type": "类型：P按产品D按地区（请输入大写字母P或者D）",
 			"start_date": "报告期开始日期",
 			"end_date": "报告期结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"end_date": "报告期",
 			"bz_item": "主营业务来源",
 			"bz_sales": "主营业务收入",
@@ -2152,7 +2152,7 @@
 			"category": "指数类别"
 		},
 		"输出参数": {
-			"ts_code": "TS代码",
+			"ts_code": "ID",
 			"name": "简称",
 			"fullname": "指数全称",
 			"market": "市场",
@@ -2169,14 +2169,14 @@
 	},
 	"指数日线行情": {
 		"输入参数": {
-			"ts_code": "指数代码",
-			"trade_date": "交易日期",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS指数代码",
-			"trade_date": "交易日",
+			"ts_code": "ID",
+			"trade_date": "DateTime",
 			"close": "收盘点位",
 			"open": "开盘点位",
 			"high": "最高点位",
@@ -2191,14 +2191,14 @@
 	"指数成分和权重": {
 		"输入参数": {
 			"index_code": "指数代码(二选一)",
-			"trade_date": "交易日期（二选一）",
+			"trade_date": "DateTime（二选一）",
 			"start_date": "开始日期",
 			"end_date": "结束日期"
 		},
 		"输出参数": {
 			"index_code": "指数代码",
 			"con_code": "成分代码",
-			"trade_date": "交易日期",
+			"trade_date": "DateTime",
 			"weight": "权重"
 		}
 	}

@@ -12,11 +12,12 @@ FUTURE_EXCHANGES = ['CFFEX', 'DCE', 'CZCE', 'SHFE', 'INE']
 ALL_EXCHANGES = STOCK_EXCHANGES + FUTURE_EXCHANGES
 STOCK_INDEXES = {'上证指数': '000001.SH', '深证成指': '399001.SZ', '中小板指': '399005.SZ', '创业板指': '399006.SZ',
                  '上证50': '000016.SH', '沪深300': '000300.SH', '中证500': '000905.SH'}
-DAYS_IN_YEAR = 252
+TRADING_DAYS_IN_YEAR = 252
 
 
-def date_type2str(date: DateType) -> str:
-    return date.strftime('%Y%m%d') if not isinstance(date, str) else date
+def date_type2str(date: DateType, delimiter: str = '') -> str:
+    formatter = delimiter.join(['%Y', '%m', '%d'])
+    return date.strftime(formatter) if not isinstance(date, str) else date
 
 
 def date_type2datetime(date: str) -> Optional[dt.datetime]:
@@ -41,7 +42,7 @@ def select_dates(date_list: Sequence[dt.datetime],
 
 def stock_code2ts_code(stock_code: Union[int, str]) -> str:
     stock_code = int(stock_code)
-    return f'{stock_code:06}.SH' if stock_code >= 600000 else f'{stock_code:06d}.SZ'
+    return f'{stock_code:06}.SH' if stock_code >= 600000 else f'{stock_code:06}.SZ'
 
 
 def ts_code2stock_code(ts_code: str) -> str:
@@ -65,4 +66,4 @@ def _prepare_example_json(config_loc, example_config_loc) -> None:
     with open(example_config_loc, 'w') as fh:
         json.dump(config, fh, indent=4)
 
-# _prepare_example_json('config.json', 'config_example.json')
+# _prepare_example_json('data.json', 'config_example.json')

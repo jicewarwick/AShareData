@@ -1,4 +1,9 @@
 {
+	"股票上市退市": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"上市状态": "boolean"
+	},
 	"股票曾用名": {
 		"DateTime": "datetime",
 		"ID": "varchar",
@@ -82,6 +87,11 @@
 		"DateTime": "datetime",
 		"ID": "varchar",
 		"行业名称": "str"
+	},
+	"中信四级行业": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"中证行业四级代码": "int"
 	},
 	"沪深股通成份股": {
 		"DateTime": "datetime",

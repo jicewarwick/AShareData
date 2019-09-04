@@ -17,6 +17,8 @@ Dependencies:
 - tushare
 - sqlalchemy
 - tqdm: 展示下载进度
+- requests
 
 Optional:
 - pymysql: 数据库驱动
+- pymysqldb

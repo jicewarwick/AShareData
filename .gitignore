@@ -3,3 +3,5 @@ param_raw.json
 *.xls
 .idea/
 __pycache__/
+*.egg-info/
+AShareData/complimentary_code/
