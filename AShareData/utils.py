@@ -1,7 +1,8 @@
 import datetime as dt
 import json
-from typing import Union, Optional, Sequence
+from typing import Union, Optional, Sequence, List
 
+import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy.engine.url import URL
 
@@ -67,3 +68,18 @@ def _prepare_example_json(config_loc, example_config_loc) -> None:
         json.dump(config, fh, indent=4)
 
 # _prepare_example_json('data.json', 'config_example.json')
+
+
+def trading_days_offset(calendar: Sequence[dt.datetime], date: DateType, days: int) -> dt.datetime:
+    date = date_type2datetime(date)
+    return calendar[calendar.index(date) + days]
+
+
+def get_calendar(engine: sa.engine) -> List[dt.datetime]:
+    calendar_df = pd.read_sql_table('交易日历', engine)
+    return calendar_df['交易日期'].dt.to_pydatetime().tolist()
+
+
+def get_stocks(engine: sa.engine) -> List[str]:
+    stock_list_df = pd.read_sql_table('股票上市退市', engine)
+    return sorted(stock_list_df['ID'].unique().tolist())

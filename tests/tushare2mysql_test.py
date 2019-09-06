@@ -10,7 +10,7 @@ logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', 
 
 class Tushare2MySQLTest(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = '../config.json'
+        config_loc = 'config.json'
         with open(config_loc, 'r') as f:
             config = json.load(f)
 

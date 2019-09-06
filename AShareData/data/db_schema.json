@@ -93,6 +93,26 @@
 		"ID": "varchar",
 		"中证行业四级代码": "int"
 	},
+	"中信行业": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"行业名称": "str"
+	},
+	"申万行业": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"行业名称": "str"
+	},
+	"Wind行业": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"行业名称": "str"
+	},
+	"中证行业": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"行业名称": "str"
+	},
 	"沪深股通成份股": {
 		"DateTime": "datetime",
 		"ID": "varchar",

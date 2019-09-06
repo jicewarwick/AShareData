@@ -10,7 +10,7 @@ logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', 
 
 class WebDataSourceTest(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = '../config.json'
+        config_loc = 'config.json'
         self.web_crawler = WebDataCrawler(prepare_engine(config_loc))
 
     def test_sw_industry(self):

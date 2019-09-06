@@ -146,6 +146,16 @@ class DataFrameMySQLWriter(DBWriter):
             cache = session.query(table.c.ID).all()
             return sorted(list(set([it[0] for it in cache])))
 
+    # todo: TBD
+    def clean_db(self, table_name: str) -> None:
+        metadata = sa.MetaData(self.engine)
+        metadata.reflect()
+        assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        table = metadata.tables[table_name]
+        session_maker = sessionmaker(bind=self.engine)
+        session = session_maker()
+        data = pd.read_sql_table(table_name, self.engine).unstack()
+
     @staticmethod
     def date2str(date) -> Optional[str]:
         if isinstance(date, pd.Timestamp):

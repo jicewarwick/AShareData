@@ -1,13 +1,14 @@
-import logging
+import datetime as dt
 import json
-from typing import Sequence, List, Callable, Union
+import logging
 from importlib.resources import open_text
+from typing import Sequence, List, Callable, Union
 
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 
-from AShareData.utils import DateType, select_dates
+from AShareData.utils import DateType, select_dates, date_type2datetime
 
 
 class SQLDBReader(object):
@@ -23,6 +24,13 @@ class SQLDBReader(object):
         self._calendar = calendar_df['交易日期'].dt.to_pydatetime().tolist()
         stock_list_df = pd.read_sql_table('股票上市退市', self.engine)
         self._stock_list = sorted(stock_list_df['ID'].unique().tolist())
+
+    def get_listed_stock(self, date: DateType = dt.date.today()) -> List[str]:
+        date = date_type2datetime(date)
+        raw_data = pd.read_sql_table('股票上市退市', self.engine)
+        data = raw_data.loc[raw_data.DateTime <= date, :]
+        return sorted(list(set(data.loc[data['上市状态'] == 1, 'ID'].values.tolist()) -
+                           set(data.loc[data['上市状态'] == 0, 'ID'].values.tolist())))
 
     def get_factor(self, table_name: str, factor_name: str, ffill: bool = False,
                    start_date: DateType = None, end_date: DateType = None,

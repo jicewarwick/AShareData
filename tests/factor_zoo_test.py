@@ -10,9 +10,13 @@ logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', 
 
 class FactorZooTest(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = '../config.json'
-        db = SQLDBReader(prepare_engine(config_loc))
-        self.factor_zoo = FactorZoo(db)
+        config_loc = 'config.json'
+        self.db = SQLDBReader(prepare_engine(config_loc))
+        self.factor_zoo = FactorZoo(self.db)
+
+    def test_listed_stock(self):
+        # print(self.db.get_listed_stock())
+        print(self.db.get_listed_stock('20040102'))
 
     def test_close_bfq(self):
         factor = self.factor_zoo.close

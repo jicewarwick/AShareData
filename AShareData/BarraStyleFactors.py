@@ -17,7 +17,7 @@ class BarraStyleFactors(object):
         return self.descriptors.relative_strength()
 
     def residual_volatility(self):
-        return 0.74 * self.descriptors.daily_standard_deviation() +\
+        return 0.74 * self.descriptors.daily_standard_deviation() + \
                0.16 * self.descriptors.cumulative_range() + \
                0.1 * self.descriptors.historical_sigma()
 
