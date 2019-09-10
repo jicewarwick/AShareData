@@ -4,7 +4,7 @@ import logging
 import pandas as pd
 from tqdm import tqdm
 
-import AShareData.constants
+import AShareData.constants as constants
 import AShareData.utils as utils
 from AShareData.DataFrameMySQLWriter import DataFrameMySQLWriter
 from AShareData.WindWrapper import WindWrapper
@@ -14,14 +14,14 @@ class WindData(object):
     def __init__(self, engine):
         self.engine = engine
         self.mysql_writer = DataFrameMySQLWriter(engine)
-        self.calendar = utils.get_calendar(engine)
+        self.calendar = utils.TradingCalendar(utils.get_calendar(engine))
         self.stocks = utils.get_stocks(engine)
         self.w = WindWrapper()
         self.w.connect()
 
     def _get_industry_data(self, wind_code, provider, date):
-        wind_data = self.w.wsd(wind_code, f'industry_{AShareData.constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
-                               date, date, industryType=AShareData.constants.INDUSTRY_LEVEL[provider])
+        wind_data = self.w.wsd(wind_code, f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
+                               date, date, industryType=constants.INDUSTRY_LEVEL[provider])
         wind_data.reset_index(inplace=True)
         wind_data.columns = ['ID', '行业名称']
         wind_data['DateTime'] = date
@@ -37,15 +37,13 @@ class WindData(object):
         if start_data != end_data:
             logging.info(f'{wind_code} 的行业由 {start_date} 的 {start_data} 改为 {end_date} 的 {end_data}')
             while True:
-                start_index = self.calendar.index(start_date)
-                end_index = self.calendar.index(end_date)
-                if end_index - start_index < 2:
+                if self.calendar.days_count(start_date, end_date) < 2:
                     entry = pd.DataFrame({'DateTime': end_date, 'ID': wind_code, '行业名称': end_data}, index=[0])
                     entry.set_index(['DateTime', 'ID'], inplace=True)
                     logging.info(f'插入数据: {wind_code} 于 {end_date} 的行业为 {end_data}')
                     self.mysql_writer.update_df(entry, f'{provider}行业')
                     break
-                mid_date = self.calendar[int((start_index + end_index) / 2.0)]
+                mid_date = self.calendar.middle(start_date, end_date)
                 logging.debug(f'查询{wind_code} 在 {mid_date}的行业')
                 mid_data = self._get_industry_data(wind_code, provider, mid_date).iloc[0, 0]
                 if mid_data == start_data:
@@ -59,10 +57,10 @@ class WindData(object):
 
     def update_industry(self, provider: str):
         table_name = f'{provider}行业'
-        query_date = utils.trading_days_offset(self.calendar, dt.date.today(), -1)
+        query_date = self.calendar.offset(dt.date.today(), -1)
         latest, _ = self.mysql_writer.get_progress(table_name)
         if latest is None:
-            latest = utils.date_type2datetime(AShareData.constants.INDUSTRY_START_DATE[provider])
+            latest = utils.date_type2datetime(constants.INDUSTRY_START_DATE[provider])
             initial_data = self._get_industry_data(self.stocks, provider, latest).dropna()
             self.mysql_writer.update_df(initial_data, table_name)
         else:

@@ -6,9 +6,10 @@ from typing import Sequence, List, Callable, Union
 
 import pandas as pd
 import sqlalchemy as sa
+from cached_property import cached_property
 
+from AShareData import utils
 from AShareData.constants import INDUSTRY_LEVEL
-from AShareData.utils import DateType, select_dates, date_type2datetime
 
 
 class SQLDBReader(object):
@@ -20,20 +21,23 @@ class SQLDBReader(object):
         """
         self.engine = engine
 
-        calendar_df = pd.read_sql_table('交易日历', self.engine)
-        self._calendar = calendar_df['交易日期'].dt.to_pydatetime().tolist()
-        stock_list_df = pd.read_sql_table('股票上市退市', self.engine)
-        self._stock_list = sorted(stock_list_df['ID'].unique().tolist())
+    @cached_property
+    def calendar(self) -> List[dt.datetime]:
+        return utils.get_calendar(self.engine)
 
-    def get_listed_stock(self, date: DateType = dt.date.today()) -> List[str]:
-        date = date_type2datetime(date)
+    @cached_property
+    def stocks(self) -> List[str]:
+        return utils.get_stocks(self.engine)
+
+    def get_listed_stock(self, date: utils.DateType = dt.date.today()) -> List[str]:
+        date = utils.date_type2datetime(date)
         raw_data = pd.read_sql_table('股票上市退市', self.engine)
         data = raw_data.loc[raw_data.DateTime <= date, :]
         return sorted(list(set(data.loc[data['上市状态'] == 1, 'ID'].values.tolist()) -
                            set(data.loc[data['上市状态'] == 0, 'ID'].values.tolist())))
 
     def get_factor(self, table_name: str, factor_name: str, ffill: bool = False,
-                   start_date: DateType = None, end_date: DateType = None,
+                   start_date: utils.DateType = None, end_date: utils.DateType = None,
                    stock_list: Sequence[str] = None) -> Union[pd.DataFrame, pd.Series]:
         table_name = table_name.lower()
         primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
@@ -52,7 +56,7 @@ class SQLDBReader(object):
         return df
 
     def get_financial_factor(self, table_name: str, factor_name: str, agg_func: Callable,
-                             start_date: DateType = None, end_date: DateType = None,
+                             start_date: utils.DateType = None, end_date: utils.DateType = None,
                              stock_list: Sequence[str] = None, yearly: bool = True) -> pd.DataFrame:
         table_name = table_name.lower()
         primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
@@ -86,7 +90,7 @@ class SQLDBReader(object):
         return df
 
     def get_industry(self, provider: str, level: int, translation_json_loc: str = None,
-                     start_date: DateType = None, end_date: DateType = None,
+                     start_date: utils.DateType = None, end_date: utils.DateType = None,
                      stock_list: Sequence[str] = None) -> pd.DataFrame:
         assert 0 < level <= INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
 
@@ -138,18 +142,18 @@ class SQLDBReader(object):
         return primary_keys
 
     def _conform_df(self, df, ffill: bool = False,
-                    start_date: DateType = None, end_date: DateType = None,
+                    start_date: utils.DateType = None, end_date: utils.DateType = None,
                     stock_list: Sequence[str] = None) -> pd.DataFrame:
         if ffill:
             first_timestamp = df.index.get_level_values(0).min()
-            date_list = select_dates(self._calendar, first_timestamp, end_date)
+            date_list = utils.select_dates(self.calendar, first_timestamp, end_date)
             df = df.reindex(date_list[:-1]).ffill()
             df = df.loc[start_date:, :]
         else:
-            date_list = select_dates(self._calendar, start_date, end_date)
+            date_list = utils.select_dates(self.calendar, start_date, end_date)
             df = df.reindex(date_list[:-1])
 
         if not stock_list:
-            stock_list = self._stock_list
+            stock_list = self.stocks
         df = df.reindex(stock_list, axis=1)
         return df

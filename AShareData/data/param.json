@@ -2196,8 +2196,8 @@
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"index_code": "指数代码",
-			"con_code": "成分代码",
+			"index_code": "IndexCode",
+			"con_code": "ID",
 			"trade_date": "DateTime",
 			"weight": "权重"
 		}

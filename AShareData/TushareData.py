@@ -8,11 +8,12 @@ from typing import Sequence, List, Callable, Mapping
 import pandas as pd
 import sqlalchemy as sa
 import tushare as ts
+from cached_property import cached_property
 from tqdm import tqdm
 
 from AShareData.DataFrameMySQLWriter import DataFrameMySQLWriter
-from AShareData.constants import STOCK_EXCHANGES, STOCK_INDEXES
-from AShareData.utils import date_type2str, date_type2datetime, DateType, select_dates
+from AShareData.constants import STOCK_EXCHANGES, STOCK_INDEXES, BOARD_INDEXES
+from AShareData.utils import date_type2str, date_type2datetime, DateType, TradingCalendar
 
 
 class TushareData(object):
@@ -64,12 +65,10 @@ class TushareData(object):
             self._get_all_stocks()
         return self._listed_stocks
 
-    @property
-    def calendar(self) -> List[dt.datetime]:
+    @cached_property
+    def calendar(self) -> TradingCalendar:
         """获取交易日历"""
-        if self._calendar is None:
-            self._get_calendar()
-        return self._calendar
+        return TradingCalendar(self._get_calendar())
 
     # get data
     # ------------------------------------------
@@ -81,6 +80,10 @@ class TushareData(object):
         self.get_index_daily(self._check_db_timestamp('指数日行情', dt.date(2008, 1, 1)))
         self.get_daily_hq(start_date=self._check_db_timestamp('股票日行情', dt.date(2008, 1, 1)), end_date=dt.date.today())
         self.get_past_names(start_date=self._check_db_timestamp('股票曾用名', dt.datetime(1990, 1, 1)))
+
+        latest = self._check_db_timestamp('指数成分股权重', '20050101')
+        if latest < dt.datetime.now() - dt.timedelta(days=20):
+            self.get_index_weight(start_date=latest)
 
         self.get_hs_const()
         self.get_hs_holding(start_date=self._check_db_timestamp('沪深港股通持股明细', dt.date(2016, 6, 29)))
@@ -124,7 +127,7 @@ class TushareData(object):
         """
         if (not trade_date) & (not start_date):
             raise ValueError('trade_date 和 start_date 必填一个!')
-        dates = [trade_date] if trade_date else select_dates(self.calendar, start_date, end_date)
+        dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
 
         price_category = '日线行情'
         adj_factor_category = '复权因子'
@@ -154,8 +157,8 @@ class TushareData(object):
 
                 # indicator data
                 df = self._pro.query('daily_basic', trade_date=current_date_str, fields=indicator_fields)
-                df[['total_share', 'float_share', 'free_share']] = df[['total_share', 'float_share',
-                                                                       'free_share']] * 10000
+                df[['total_share', 'float_share', 'free_share']] = \
+                    df[['total_share', 'float_share', 'free_share']] * 10000
                 indicator_df = self._standardize_df(df, indicator_desc)
 
                 # combine all dfs
@@ -277,7 +280,7 @@ class TushareData(object):
             start_date = date_type2str(start_date)
         if end_date:
             end_date = date_type2str(end_date)
-        dates = [trade_date] if trade_date else select_dates(self.calendar, start_date, end_date)
+        dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
 
         category = '沪深港股通持股明细'
         table_name = '输出参数'
@@ -405,6 +408,31 @@ class TushareData(object):
         df = self._standardize_df(df, desc)
         self.mysql_writer.update_df(df, data_category)
 
+    def get_index_weight(self, indexes: Sequence[str] = None,
+                         start_date: DateType = None, end_date: DateType = dt.date.today()) -> None:
+        interval = 60.0 / 70.0
+        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
+        dates = self.calendar.get_last_day_of_month(start_date, end_date)
+        dates = sorted(list(set([start_date] + dates + [end_date])))
+        if indexes is None:
+            indexes = BOARD_INDEXES
+
+        data_category = '指数成分和权重'
+        table_name = '输出参数'
+        column_desc = self._factor_param[data_category][table_name]
+        with tqdm(dates) as pbar:
+            for i in range(len(dates) - 1):
+                storage = []
+                for index in indexes:
+                    pbar.set_description(f'下载{dates[i]} 到 {dates[i + 1]} 的 {index} 的 成分股权重')
+                    storage.append(self._pro.index_weight(index_code=index,
+                                                          start_date=date_type2str(dates[i]),
+                                                          end_date=date_type2str(dates[i + 1])))
+                    sleep(interval)
+                df = self._standardize_df(pd.concat(storage), column_desc)
+                self.mysql_writer.update_df(df, '指数成分股权重')
+                pbar.update(1)
+
     # utilities
     # ------------------------------------------
     def _initialize_db_table(self):
@@ -421,7 +449,7 @@ class TushareData(object):
 
         df.rename(parameter_info, axis=1, inplace=True)
         if index is None:
-            index = sorted(list({'DateTime', 'ID', '报告期'} & set(df.columns)))
+            index = sorted(list({'DateTime', 'ID', '报告期', 'IndexCode'} & set(df.columns)))
 
         df = df.set_index(index, drop=True)
         return df

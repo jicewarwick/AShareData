@@ -5,3 +5,5 @@ param_raw.json
 __pycache__/
 *.egg-info/
 AShareData/complimentary_code/
+docs/build
+docs/source/_.*/

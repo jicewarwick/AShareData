@@ -53,6 +53,9 @@ class Tushare2MySQLTest(unittest.TestCase):
     def test_shibor(self):
         self.downloader.get_shibor(end_date='20111010')
 
+    def test_index_weight(self):
+        self.downloader.get_index_weight(start_date='20050101')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -137,7 +137,7 @@
 	"指数成分股权重": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"Index": "varchar",
+		"IndexCode": "varchar",
 		"权重": "float"
 	},
 	"合并资产负债表": {
