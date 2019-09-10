@@ -4,15 +4,10 @@ import logging
 import pandas as pd
 from tqdm import tqdm
 
+import AShareData.constants
 import AShareData.utils as utils
 from AShareData.DataFrameMySQLWriter import DataFrameMySQLWriter
 from AShareData.WindWrapper import WindWrapper
-
-logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', level=logging.DEBUG)
-
-provider_dict = {'中信': 'citic', '申万': 'sw', '中证': 'csi', 'Wind': 'gics'}
-level_dict = {'中信': 3, '申万': 3, '中证': 4, 'Wind': 4}
-start_date_dict = {'中信': 'citic', '申万': '20050527', '中证': '20161212', 'Wind': 'gics'}
 
 
 class WindData(object):
@@ -25,14 +20,13 @@ class WindData(object):
         self.w.connect()
 
     def _get_industry_data(self, wind_code, provider, date):
-        wind_data = self.w.wsd(wind_code, f'industry_{provider_dict[provider]}',
-                               date, date, industryType=level_dict[provider])
+        wind_data = self.w.wsd(wind_code, f'industry_{AShareData.constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
+                               date, date, industryType=AShareData.constants.INDUSTRY_LEVEL[provider])
         wind_data.reset_index(inplace=True)
         wind_data.columns = ['ID', '行业名称']
         wind_data['DateTime'] = date
         wind_data = wind_data.set_index(['DateTime', 'ID'])
-        wind_data['行业名称'] = wind_data['行业名称'].str.replace('Ⅳ', '')
-        wind_data['行业名称'] = wind_data['行业名称'].str.replace('IV', '')
+        wind_data['行业名称'] = wind_data['行业名称'].str.replace('[III|Ⅲ|IV|Ⅳ]', '')
         return wind_data
 
     def _find_industry(self, wind_code: str, provider: str,
@@ -68,12 +62,12 @@ class WindData(object):
         query_date = utils.trading_days_offset(self.calendar, dt.date.today(), -1)
         latest, _ = self.mysql_writer.get_progress(table_name)
         if latest is None:
-            latest = start_date_dict[provider]
+            latest = utils.date_type2datetime(AShareData.constants.INDUSTRY_START_DATE[provider])
             initial_data = self._get_industry_data(self.stocks, provider, latest).dropna()
             self.mysql_writer.update_df(initial_data, table_name)
         else:
-            initial_data = pd.read_sql_table(table_name, self.engine,
-                                             index_col=['DateTime', 'ID']).unstack().ffill().tail(1).stack()
+            initial_data = pd.read_sql_table(table_name, self.engine, index_col=['DateTime', 'ID'])
+            initial_data = initial_data.unstack().ffill().tail(1).stack()
 
         new_data = self._get_industry_data(self.stocks, provider, query_date).dropna()
 

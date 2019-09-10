@@ -8,13 +8,6 @@ from sqlalchemy.engine.url import URL
 
 DateType = Union[str, dt.datetime, dt.date]
 
-STOCK_EXCHANGES = ['SSE', 'SZSE']
-FUTURE_EXCHANGES = ['CFFEX', 'DCE', 'CZCE', 'SHFE', 'INE']
-ALL_EXCHANGES = STOCK_EXCHANGES + FUTURE_EXCHANGES
-STOCK_INDEXES = {'上证指数': '000001.SH', '深证成指': '399001.SZ', '中小板指': '399005.SZ', '创业板指': '399006.SZ',
-                 '上证50': '000016.SH', '沪深300': '000300.SH', '中证500': '000905.SH'}
-TRADING_DAYS_IN_YEAR = 252
-
 
 def date_type2str(date: DateType, delimiter: str = '') -> str:
     formatter = delimiter.join(['%Y', '%m', '%d'])
@@ -83,3 +76,8 @@ def get_calendar(engine: sa.engine) -> List[dt.datetime]:
 def get_stocks(engine: sa.engine) -> List[str]:
     stock_list_df = pd.read_sql_table('股票上市退市', engine)
     return sorted(stock_list_df['ID'].unique().tolist())
+
+
+def get_last_trading_day_of_month(calendar: Sequence[dt.datetime],
+                                  start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+    pass

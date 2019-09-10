@@ -2,7 +2,6 @@ import json
 import logging
 
 from AShareData.TushareData import TushareData
-from AShareData.WindData import WindData
 from AShareData.utils import prepare_engine
 
 if __name__ == '__main__':
@@ -17,5 +16,14 @@ if __name__ == '__main__':
     downloader = TushareData(tushare_token, engine=engine)
     downloader.update_routine()
 
-    wind_data = WindData(engine)
-    wind_data.update_industry('中证')
+    # update industry
+    # db_reader = DataFrameMySQLWriter(engine)
+    # needed_update_provider = []
+    # for provider in INDUSTRY_DATA_PROVIDER:
+    #     timestamp, _ = db_reader.get_progress(f'{provider}行业')
+    #     if timestamp > dt.datetime.now() - dt.timedelta(days=30):
+    #         needed_update_provider.append(provider)
+    # if needed_update_provider:
+    #     wind_data = WindData(engine)
+    #     for provider in needed_update_provider:
+    #         wind_data.update_industry(provider)

@@ -6,7 +6,7 @@ import pandas as pd
 from cached_property import cached_property
 
 from AShareData.SQLDBReader import SQLDBReader
-from AShareData.utils import STOCK_INDEXES, TRADING_DAYS_IN_YEAR
+from AShareData.constants import STOCK_INDEXES, TRADING_DAYS_IN_YEAR
 
 
 class FactorZoo(object):
@@ -122,5 +122,5 @@ class FactorZoo(object):
     def listed_more_than_n_days(self, n: int) -> pd.DataFrame:
         return self.list_status().shift(n)
 
-    def zx_industry(self, level: int = 1):
-        return self._db_reader.get_zx_industry(level=level, translation_json_loc='citic_code_to_name.json')
+    def industry(self, provider: str, level: int = 1):
+        return self._db_reader.get_industry(provider=provider, level=level)

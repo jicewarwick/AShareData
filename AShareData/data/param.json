@@ -8,7 +8,7 @@
 		"输出参数": {
 			"ts_code": "ID",
 			"name": "证券名称",
-			"start_date": "开始日期",
+			"start_date": "DateTime",
 			"end_date": "结束日期",
 			"ann_date": "公告日期",
 			"change_reason": "变更原因"
@@ -25,7 +25,7 @@
 		"输出参数": {
 			"ts_code": "ID",
 			"end_date": "分红年度",
-			"ann_date": "预案公告日",
+			"ann_date": "DateTime",
 			"div_proc": "实施进度",
 			"stk_div": "每股送转",
 			"stk_bo_rate": "每股送股比例",
@@ -49,7 +49,7 @@
 		"输出参数": {
 			"ts_code": "ID",
 			"hs_type": "沪深港通类型SH沪SZ深",
-			"in_date": "纳入日期",
+			"in_date": "DateTime",
 			"out_date": "剔除日期",
 			"is_new": "是否最新1是0否"
 		}
@@ -628,7 +628,7 @@
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"date": "日期",
+			"date": "DateTime",
 			"on": "隔夜",
 			"1w": "1周",
 			"2w": "2周",
@@ -1215,7 +1215,7 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"symbol": "ID",
+			"symbol": "股票代码",
 			"name": "股票名称",
 			"area": "所在地域",
 			"industry": "所属行业",
@@ -1225,7 +1225,7 @@
 			"exchange": "交易所代码",
 			"curr_type": "交易货币",
 			"list_status": "上市状态",
-			"list_date": "上市日期",
+			"list_date": "DateTime",
 			"delist_date": "退市日期",
 			"is_hs": "是否沪深港通标的，N否H沪股通S深股通"
 		}

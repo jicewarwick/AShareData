@@ -4,10 +4,10 @@ import logging
 from importlib.resources import open_text
 from typing import Sequence, List, Callable, Union
 
-import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 
+from AShareData.constants import INDUSTRY_LEVEL
 from AShareData.utils import DateType, select_dates, date_type2datetime
 
 
@@ -85,28 +85,32 @@ class SQLDBReader(object):
         df.name = factor_name
         return df
 
-    def get_zx_industry(self, level: int, translation_json_loc: str = None,
-                        start_date: DateType = None, end_date: DateType = None,
-                        stock_list: Sequence[str] = None) -> pd.DataFrame:
-        if translation_json_loc is None:
-            from AShareData import data
-            translation = json.load(open_text(data, 'citic_code_to_name.json'))
-        else:
-            with open(translation_json_loc, 'r', encoding='utf-8') as f:
-                translation = json.load(f)
+    def get_industry(self, provider: str, level: int, translation_json_loc: str = None,
+                     start_date: DateType = None, end_date: DateType = None,
+                     stock_list: Sequence[str] = None) -> pd.DataFrame:
+        assert 0 < level <= INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
 
-        new_translation = {}
-        for key, value in translation.items():
-            new_translation[int(key)] = value
-
+        table_name = f'{provider}行业'
+        industry_col_name = '行业名称'
         primary_keys = ['DateTime', 'ID']
-        query_columns = primary_keys + ['中证行业四级代码']
+        query_columns = primary_keys + [industry_col_name]
         logging.debug('开始读取数据.')
-        df = pd.read_sql_table('中信四级行业', self.engine, index_col=primary_keys, columns=query_columns)
+        df = pd.read_sql_table(table_name, self.engine, index_col=primary_keys, columns=query_columns)
         logging.debug('数据读取完成.')
 
-        df = df.floordiv(np.power(100, 4-level))
-        df = df['中证行业四级代码'].map(new_translation)
+        if level != INDUSTRY_LEVEL[provider]:
+            if translation_json_loc is None:
+                from AShareData import data
+                translation = json.load(open_text(data, 'industry.json'))
+            else:
+                with open(translation_json_loc, 'r', encoding='utf-8') as f:
+                    translation = json.load(f)
+
+            new_translation = {}
+            for key, value in translation[table_name].items():
+                new_translation[key] = value[f'level_{level}']
+            df = df[industry_col_name].map(new_translation)
+
         df = df.unstack()
         df = self._conform_df(df, True, start_date, end_date, stock_list)
         return df

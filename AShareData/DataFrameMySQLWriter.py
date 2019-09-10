@@ -65,7 +65,7 @@ class DataFrameMySQLWriter(DBWriter):
         meta.reflect()
         col_names = list(table_info.keys())
         col_types = [self.type_mapper[it] for it in table_info.values()]
-        primary_keys = [it for it in ['DateTime', 'ID', '报告期'] if it in col_names]
+        primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'Index'] if it in col_names]
         existing_tables = [it.lower() for it in meta.tables]
         if table_name.lower() in existing_tables:
             logging.debug(f'表 {table_name} 已存在.')
@@ -110,6 +110,7 @@ class DataFrameMySQLWriter(DBWriter):
         :param table_name: 表名
         :return: (最新时间, 最大证券代码)
         """
+        table_name = table_name.lower()
         latest_time = None
         latest_id = None
 

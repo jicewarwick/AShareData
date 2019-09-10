@@ -36,8 +36,8 @@ class FactorZooTest(unittest.TestCase):
                                               agg_func=lambda x: x.tail(1), yearly=True)
         print(output.data.fillna(method='ffill').tail())
 
-    def test_zx_industry(self):
-        output = self.factor_zoo.zx_industry(4)
+    def test_industry(self):
+        output = self.factor_zoo.industry('中证', 1)
         print(output.tail(1).T)
 
     def test_shibor(self):

@@ -134,6 +134,12 @@
 		"9个月": "float",
 		"1年": "float"
 	},
+	"指数成分股权重": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"Index": "varchar",
+		"权重": "float"
+	},
 	"合并资产负债表": {
 		"DateTime": "datetime",
 		"ID": "varchar",
