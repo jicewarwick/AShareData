@@ -8,10 +8,7 @@
 		"输出参数": {
 			"ts_code": "ID",
 			"name": "证券名称",
-			"start_date": "DateTime",
-			"end_date": "结束日期",
-			"ann_date": "公告日期",
-			"change_reason": "变更原因"
+			"start_date": "DateTime"
 		}
 	},
 	"分红送股": {
@@ -28,17 +25,11 @@
 			"ann_date": "DateTime",
 			"div_proc": "实施进度",
 			"stk_div": "每股送转",
-			"stk_bo_rate": "每股送股比例",
-			"stk_co_rate": "每股转增比例",
-			"cash_div": "税后每股分红",
 			"cash_div_tax": "税前每股分红",
 			"record_date": "股权登记日",
 			"ex_date": "除权除息日",
 			"pay_date": "派息日",
-			"div_listdate": "红股上市日",
-			"imp_ann_date": "实施公告日",
-			"base_date": "基准日",
-			"base_share": "基准股本（万）"
+			"imp_ann_date": "实施公告日"
 		}
 	},
 	"沪深股通成份股": {
@@ -410,8 +401,6 @@
 			"total_share": "总股本",
 			"float_share": "流通股本",
 			"free_share": "自由流通股本",
-			"turnover_rate": "换手率",
-			"turnover_rate_f": "流通股换手率",
 			"pe": "市盈率",
 			"pe_ttm": "市盈率TTM",
 			"pb": "市净率"
@@ -1244,9 +1233,6 @@
 			"high": "最高价",
 			"low": "最低价",
 			"close": "收盘价",
-			"pre_close": "昨收价",
-			"change": "涨跌额",
-			"pct_chg": "未复权涨跌幅",
 			"vol": "成交量",
 			"amount": "成交额"
 		}
@@ -1289,20 +1275,9 @@
 		"输出参数": {
 			"ts_code": "ID",
 			"trade_date": "DateTime",
-			"close": "当日收盘价",
-			"turnover_rate": "换手率",
-			"turnover_rate_f": "流通股换手率",
-			"volume_ratio": "量比",
-			"pe": "市盈率",
-			"pe_ttm": "市盈率TTM",
-			"pb": "市净率",
-			"ps": "市销率",
-			"ps_ttm": "市销率TTM",
 			"total_share": "总股本",
 			"float_share": "流通股本",
-			"free_share": "自由流通股本",
-			"total_mv": "总市值",
-			"circ_mv": "流通市值"
+			"free_share": "自由流通股本"
 		}
 	},
 	"利润表": {
@@ -1792,13 +1767,9 @@
 			"exchange": "类型：SH沪股通SZ深港通HK港股通"
 		},
 		"输出参数": {
-			"code": "交易所代码",
 			"ts_code": "ID",
 			"trade_date": "DateTime",
-			"name": "股票名称",
-			"vol": "持股数量",
-			"ratio": "持股占比（%）",
-			"exchange": "类型：SH沪股通SZ深港通HK港股通"
+			"vol": "持股数量"
 		}
 	},
 	"港股通十大成交股": {
@@ -2181,9 +2152,6 @@
 			"open": "开盘点位",
 			"high": "最高点位",
 			"low": "最低点位",
-			"pre_close": "昨日收盘点",
-			"change": "涨跌点",
-			"pct_chg": "涨跌幅",
 			"vol": "成交量",
 			"amount": "成交额"
 		}

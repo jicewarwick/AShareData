@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 import sys
 import tempfile
 from typing import List
@@ -19,10 +20,14 @@ class WindWrapper(object):
             out2 = sys.stderr
             sys.stdout = log_file
             sys.stderr = log_file
-            self._w = WindPy.w
-            self._w.start()
-            sys.stdout = out
-            sys.stderr = out2
+            try:
+                self._w = WindPy.w
+                self._w.start()
+            except:
+                logging.error('Wind API fail to start')
+            finally:
+                sys.stdout = out
+                sys.stderr = out2
 
     def disconnect(self):
         if self._w:

@@ -12,13 +12,14 @@ from cached_property import cached_property
 from tqdm import tqdm
 
 from AShareData.DataFrameMySQLWriter import DataFrameMySQLWriter
+from AShareData.TradingCalendar import TradingCalendar
 from AShareData.constants import STOCK_EXCHANGES, STOCK_INDEXES, BOARD_INDEXES
-from AShareData.utils import date_type2str, date_type2datetime, DateType, TradingCalendar
+from AShareData.utils import date_type2str, date_type2datetime, DateType
 
 
 class TushareData(object):
     def __init__(self, tushare_token: str, engine: sa.engine.Engine,
-                 param_json_loc: str = None, db_schema_loc: str = None) -> None:
+                 param_json_loc: str = None, db_schema_loc: str = None, init: bool = False) -> None:
         """
         Tushare to MySQL. 将tushare下载的数据写入MySQL中
 
@@ -27,8 +28,7 @@ class TushareData(object):
         :param param_json_loc: tushare 返回df的列名信息
         :param db_schema_loc: MySQL database quasi-schema
         """
-        self._tushare_token = tushare_token
-        self._pro = ts.pro_api(self._tushare_token)
+        self._pro = ts.pro_api(tushare_token)
 
         if param_json_loc is None:
             from AShareData import data
@@ -44,31 +44,27 @@ class TushareData(object):
             with open(db_schema_loc, 'r', encoding='utf-8') as f:
                 self._db_parameters = json.load(f)
 
-        self._listed_stocks = None
-        self._all_stocks = None
-        self._calendar = None
-
+        self.engine = engine
         self.mysql_writer = DataFrameMySQLWriter(engine)
-        self._initialize_db_table()
+
+        self._all_stocks = None
+        self._get_all_stocks()
+
+        if init:
+            self.update_calendar()
+            logging.debug('检查数据库完整性.')
+            for table_name, type_info in self._db_parameters.items():
+                self.mysql_writer.create_table(table_name, type_info)
 
     @property
     def all_stocks(self) -> List[str]:
         """ 获取所有股票列表"""
-        if self._all_stocks is None:
-            self._get_all_stocks()
         return self._all_stocks
-
-    @property
-    def listed_stocks(self) -> List[str]:
-        """获取现上市的股票列表"""
-        if self._listed_stocks is None:
-            self._get_all_stocks()
-        return self._listed_stocks
 
     @cached_property
     def calendar(self) -> TradingCalendar:
         """获取交易日历"""
-        return TradingCalendar(self._get_calendar())
+        return TradingCalendar(self.engine)
 
     # get data
     # ------------------------------------------
@@ -77,10 +73,10 @@ class TushareData(object):
         self.get_shibor(start_date=self._check_db_timestamp('Shibor利率数据', dt.date(2006, 10, 8)))
         self.get_ipo_info(start_date=self._check_db_timestamp('IPO新股列表', dt.datetime(1990, 1, 1)))
 
-        self.get_index_daily(self._check_db_timestamp('指数日行情', dt.date(2008, 1, 1)))
         self.get_daily_hq(start_date=self._check_db_timestamp('股票日行情', dt.date(2008, 1, 1)), end_date=dt.date.today())
         self.get_past_names(start_date=self._check_db_timestamp('股票曾用名', dt.datetime(1990, 1, 1)))
 
+        self.get_index_daily(self._check_db_timestamp('指数日行情', dt.date(2008, 1, 1)))
         latest = self._check_db_timestamp('指数成分股权重', '20050101')
         if latest < dt.datetime.now() - dt.timedelta(days=20):
             self.get_index_weight(start_date=latest)
@@ -101,17 +97,17 @@ class TushareData(object):
         :return: 上市公司基础信息df
         """
         data_category = '上市公司基本信息'
-        table_name = '输出参数'
-        column_desc = self._factor_param[data_category][table_name]
-        fields = ','.join(list(column_desc.keys()))
+        column_desc = self._factor_param[data_category]['输出参数']
+        fields = list(column_desc.keys())
 
+        logging.debug(f'开始下载{data_category}.')
         storage = []
         for exchange in STOCK_EXCHANGES:
             storage.append(self._pro.stock_company(exchange=exchange, fields=fields))
         df = pd.concat(storage)
         df = self._standardize_df(df, column_desc)
         self.mysql_writer.update_df(df, data_category)
-        logging.info('上市公司基本信息下载完成.')
+        logging.info(f'{data_category}下载完成.')
         return df
 
     def get_daily_hq(self, trade_date: DateType = None,
@@ -129,16 +125,13 @@ class TushareData(object):
             raise ValueError('trade_date 和 start_date 必填一个!')
         dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
 
-        price_category = '日线行情'
-        adj_factor_category = '复权因子'
-        indicator_category = '每日指标'
-        table_name = '输出参数'
+        output_fields = '输出参数'
 
-        price_desc = self._factor_param[price_category][table_name]
-        price_fields = ['ts_code', 'trade_date', 'open', 'high', 'low', 'close', 'vol', 'amount']
-        adj_factor_desc = self._factor_param[adj_factor_category][table_name]
-        indicator_desc = self._factor_param[indicator_category][table_name]
-        indicator_fields = ['ts_code', 'trade_date', 'total_share', 'float_share', 'free_share']
+        price_desc = self._factor_param['日线行情'][output_fields]
+        price_fields = list(price_desc.keys())
+        adj_factor_desc = self._factor_param['复权因子'][output_fields]
+        indicator_desc = self._factor_param['每日指标'][output_fields]
+        indicator_fields = list(indicator_desc.keys())
 
         with tqdm(dates) as pbar:
             for date in dates:
@@ -146,7 +139,7 @@ class TushareData(object):
                 pbar.set_description(f'下载{current_date_str}的日行情')
 
                 # price data
-                df = self._pro.daily(trade_date=current_date_str, fields=','.join(price_fields))
+                df = self._pro.daily(trade_date=current_date_str, fields=price_fields)
                 df['vol'] = df['vol'] * 100
                 df['amount'] = df['amount'] * 1000
                 price_df = self._standardize_df(df, price_desc)
@@ -156,7 +149,7 @@ class TushareData(object):
                 adj_df = self._standardize_df(df, adj_factor_desc)
 
                 # indicator data
-                df = self._pro.query('daily_basic', trade_date=current_date_str, fields=indicator_fields)
+                df = self._pro.daily_basic(trade_date=current_date_str, fields=indicator_fields)
                 df[['total_share', 'float_share', 'free_share']] = \
                     df[['total_share', 'float_share', 'free_share']] * 10000
                 indicator_df = self._standardize_df(df, indicator_desc)
@@ -168,12 +161,12 @@ class TushareData(object):
 
                 pbar.update(1)
 
+    # todo: select index
     def get_financial_index(self, ticker: str, period: str) -> pd.DataFrame:
         data_category = '财务指标数据'
-        table_name = '输出参数'
-        column_desc = self._factor_param[data_category][table_name]
+        column_desc = self._factor_param[data_category]['输出参数']
 
-        df = self._pro.query('fina_indicator', ts_code=ticker, period=period, fields=list(column_desc.keys()))
+        df = self._pro.fina_indicator(ts_code=ticker, period=period, fields=list(column_desc.keys()))
         df = self._standardize_df(df, column_desc)
         return df
 
@@ -182,13 +175,15 @@ class TushareData(object):
         ref: https://tushare.pro/document/2?doc_id=100
         """
         data_category = '股票曾用名'
-        table_name = '输出参数'
-        column_desc = self._factor_param[data_category][table_name]
-        fields = ['ts_code', 'name', 'start_date']
+        column_desc = self._factor_param[data_category]['输出参数']
+        fields = list(column_desc.keys())
         start_date = date_type2str(start_date)
 
+        logging.debug(f'开始下载{ticker if ticker else ""}{data_category}.')
         df = self._pro.namechange(ts_code=ticker, start_date=start_date, fields=fields)
         df = self._standardize_df(df, column_desc)
+        self.mysql_writer.update_df(df, data_category)
+        logging.debug(f'{ticker if ticker else ""}{data_category}下载完成.')
         return df
 
     def get_all_past_names(self):
@@ -197,10 +192,9 @@ class TushareData(object):
         with tqdm(self.all_stocks) as pbar:
             for stock in self.all_stocks:
                 pbar.set_description(f'下载{stock}的股票名称')
-                df = self.get_past_names(stock)
-                self.mysql_writer.update_df(df, '股票曾用名')
-                sleep(interval)
+                self.get_past_names(stock)
                 pbar.update(1)
+                sleep(interval)
 
     def get_dividend(self) -> None:
         """
@@ -211,11 +205,10 @@ class TushareData(object):
         """
         interval = 60.0 / 100.0
         data_category = '分红送股'
-        table_name = '输出参数'
-        column_desc = self._factor_param[data_category][table_name]
-        fields = ['ts_code', 'end_date', 'ann_date', 'div_proc', 'stk_div', 'cash_div_tax', 'record_date', 'ex_date',
-                  'pay_date', 'imp_ann_date']
+        column_desc = self._factor_param[data_category]['输出参数']
+        fields = list(column_desc.keys())
 
+        logging.debug(f'开始下载{data_category}.')
         with tqdm(self.all_stocks) as pbar:
             for stock in self.all_stocks:
                 pbar.set_description(f'下载{stock}的分红送股数据')
@@ -229,7 +222,7 @@ class TushareData(object):
                 sleep(interval)
                 pbar.update(1)
 
-        logging.info('市公司分红送股信息下载完成.')
+        logging.info(f'{data_category}信息下载完成.')
 
     def get_ipo_info(self, start_date: DateType = None) -> pd.DataFrame:
         """
@@ -238,66 +231,61 @@ class TushareData(object):
         ref: https://tushare.pro/document/2?doc_id=123
         :return: IPO新股列表df
         """
-        data_category = 'IPO新股列表'
-        table_name = '输出参数'
-        column_desc = self._factor_param[data_category][table_name]
+        start_date = date_type2str(start_date)
 
-        if start_date:
-            start_date = date_type2str(start_date)
+        data_category = 'IPO新股列表'
+        column_desc = self._factor_param[data_category]['输出参数']
+
+        logging.debug(f'开始下载{data_category}.')
         df = self._pro.new_share(start_date=start_date)
         df[['amount', 'market_amount', 'limit_amount']] = df[['amount', 'market_amount', 'limit_amount']] * 10000
         df['funds'] = df['funds'] * 100000000
         df = self._standardize_df(df, column_desc)
         self.mysql_writer.update_df(df, data_category)
-        logging.info('IPO新股列表下载完成.')
+        logging.info(f'{data_category}下载完成.')
         return df
 
     def get_hs_const(self) -> None:
         """
         返回沪深股通成分股进出记录. 月末更新.
         """
-        table_name = '沪深股通成份股'
+        data_category = '沪深股通成份股'
+        logging.debug(f'开始下载{data_category}.')
         storage = []
         for hs_type in ['SH', 'SZ']:
             for is_new in ['0', '1']:
                 storage.append(self._pro.hs_const(hs_type=hs_type, is_new=is_new))
         df = pd.concat(storage)
         in_part = df.loc[:, ['in_date', 'ts_code']]
-        in_part[table_name] = True
+        in_part[data_category] = True
         out_part = df.loc[:, ['out_date', 'ts_code']].dropna()
-        out_part[table_name] = False
+        out_part[data_category] = False
         out_part.rename({'out_date': 'in_date'}, axis=1, inplace=True)
         stacked_df = pd.concat([in_part, out_part])
-        stacked_df.rename({'in_date': 'DateTime', 'ts_code': 'ID'}, axis=1, inplace=True)
-        stacked_df = self._standardize_df(stacked_df, {})
-        self.mysql_writer.update_df(stacked_df, table_name)
-        logging.info(f'{table_name}数据下载完成')
+        stacked_df = self._standardize_df(stacked_df, {'in_date': 'DateTime', 'ts_code': 'ID'})
+        self.mysql_writer.update_df(stacked_df, data_category)
+        logging.info(f'{data_category}数据下载完成')
 
     def get_hs_holding(self, trade_date: DateType = None,
                        start_date: DateType = None, end_date: DateType = None) -> None:
         interval = 60
-        if start_date:
-            start_date = date_type2str(start_date)
-        if end_date:
-            end_date = date_type2str(end_date)
         dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
 
-        category = '沪深港股通持股明细'
-        table_name = '输出参数'
-        desc = self._factor_param[category][table_name]
-        fields = ['trade_date', 'ts_code', 'vol']
+        data_category = '沪深港股通持股明细'
+        desc = self._factor_param[data_category]['输出参数']
+        fields = list(desc.keys())
 
-        logging.debug('开始下载沪深港股通持股明细.')
-
+        logging.debug(f'开始下载{data_category}.')
         with tqdm(dates) as pbar:
             for date in dates:
                 current_date_str = date_type2str(date)
                 pbar.set_description(f'下载{current_date_str}的沪深港股通持股明细')
                 df = self._pro.hk_hold(trade_date=current_date_str, fields=fields)
                 df = self._standardize_df(df, desc)
-                self.mysql_writer.update_df(df, category)
+                self.mysql_writer.update_df(df, data_category)
                 pbar.update(1)
                 sleep(interval)
+        logging.info(f'{data_category}下载完成.')
 
     def get_index_daily(self, start_date: DateType = None, end_date: DateType = None) -> None:
         """
@@ -309,25 +297,17 @@ class TushareData(object):
         :param end_date: 结束时间
         :return: 指数行情信息
         """
-        if start_date:
-            start_date = date_type2str(start_date)
-        if end_date:
-            end_date = date_type2str(end_date)
-
-        category = '指数日线行情'
         db_table_name = '指数日行情'
-        basic_category = '大盘指数每日指标'
         table_name = '输出参数'
-        desc = self._factor_param[category][table_name]
-        price_fields = ['ts_code', 'trade_date', 'open', 'high', 'low', 'close', 'vol', 'amount']
-        basic_desc = self._factor_param[basic_category][table_name]
-        basic_fields = ['ts_code', 'trade_date', 'total_mv', 'float_mv',
-                        'total_share', 'float_share', 'free_share',
-                        'pe', 'pe_ttm', 'pb']
+        desc = self._factor_param['指数日线行情'][table_name]
+        price_fields = list(desc.keys())
+        basic_desc = self._factor_param['大盘指数每日指标'][table_name]
+        basic_fields = list(basic_desc.keys())
 
-        logging.debug('开始下载指数日数据.')
+        logging.debug(f'开始下载{db_table_name}.')
         storage = []
         indexes = list(STOCK_INDEXES.values())
+        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         for index in indexes:
             storage.append(self._pro.index_daily(ts_code=index, start_date=start_date, end_date=end_date,
                                                  fields=price_fields))
@@ -344,7 +324,7 @@ class TushareData(object):
         df = pd.concat(storage)
         df = self._standardize_df(df, basic_desc)
         self.mysql_writer.update_df(df, db_table_name)
-        logging.info('指数日数据下载完成')
+        logging.info(f'{db_table_name}下载完成')
 
     def get_financial(self, stock_list: Sequence[str] = None, start_date: DateType = '19900101') -> None:
         """
@@ -357,16 +337,13 @@ class TushareData(object):
         balance_sheet = '资产负债表'
         income = '利润表'
         cash_flow = '现金流量表'
-        output_desc = '输出参数'
-        report_type_info = '主要报表类型说明'
-        company_type_info = '公司类型'
         start_date = date_type2str(start_date)
 
-        balance_sheet_desc = self._factor_param[balance_sheet][output_desc]
-        report_type_desc = self._factor_param[balance_sheet][report_type_info]
-        company_type_desc = self._factor_param[balance_sheet][company_type_info]
-        income_desc = self._factor_param[income][output_desc]
-        cash_flow_desc = self._factor_param[cash_flow][output_desc]
+        balance_sheet_desc = self._factor_param[balance_sheet]['输出参数']
+        income_desc = self._factor_param[income]['输出参数']
+        cash_flow_desc = self._factor_param[cash_flow]['输出参数']
+        report_type_desc = self._factor_param[balance_sheet]['主要报表类型说明']
+        company_type_desc = self._factor_param[balance_sheet]['公司类型']
 
         def download_data(api_func: Callable, report_type_list: Sequence[str],
                           column_name_dict: Mapping[str, str], table_name: str) -> None:
@@ -382,6 +359,7 @@ class TushareData(object):
         # 分 合并/母公司, 单季/年
         if stock_list is None:
             stock_list = self.all_stocks
+        logging.debug(f'开始下载财报.')
         with tqdm(stock_list) as pbar:
             loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cash_flow_desc, cash_flow)]
             for ticker in stock_list:
@@ -394,32 +372,32 @@ class TushareData(object):
                     download_data(f, ['2', '3'], desc, f'合并单季度{table}')
                     download_data(f, ['1', '4', '5'], desc, f'合并{table}')
                 pbar.update(1)
+        logging.info(f'财报下载完成')
 
-    def get_shibor(self, start_date: DateType = None, end_date: DateType = None) -> None:
-        if start_date:
-            start_date = date_type2str(start_date)
-        if end_date:
-            end_date = date_type2str(end_date)
-
+    def get_shibor(self, start_date: DateType = None, end_date: DateType = None) -> pd.DataFrame:
         data_category = 'Shibor利率数据'
-        table_name = '输出参数'
-        desc = self._factor_param[data_category][table_name]
+        desc = self._factor_param[data_category]['输出参数']
+
+        logging.debug(f'开始下载{data_category}.')
+        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         df = self._pro.shibor(start_date=start_date, end_date=end_date)
         df = self._standardize_df(df, desc)
         self.mysql_writer.update_df(df, data_category)
+        logging.info(f'{data_category}下载完成.')
+        return df
 
     def get_index_weight(self, indexes: Sequence[str] = None,
                          start_date: DateType = None, end_date: DateType = dt.date.today()) -> None:
         interval = 60.0 / 70.0
+        if indexes is None:
+            indexes = BOARD_INDEXES
         start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         dates = self.calendar.get_last_day_of_month(start_date, end_date)
         dates = sorted(list(set([start_date] + dates + [end_date])))
-        if indexes is None:
-            indexes = BOARD_INDEXES
 
         data_category = '指数成分和权重'
-        table_name = '输出参数'
-        column_desc = self._factor_param[data_category][table_name]
+        column_desc = self._factor_param[data_category]['输出参数']
+        logging.debug(f'开始下载{data_category}.')
         with tqdm(dates) as pbar:
             for i in range(len(dates) - 1):
                 storage = []
@@ -432,25 +410,18 @@ class TushareData(object):
                 df = self._standardize_df(pd.concat(storage), column_desc)
                 self.mysql_writer.update_df(df, '指数成分股权重')
                 pbar.update(1)
+        logging.info(f'{data_category}下载完成.')
 
     # utilities
     # ------------------------------------------
-    def _initialize_db_table(self):
-        logging.debug('检查数据库完整性.')
-        for table_name, type_info in self._db_parameters.items():
-            self.mysql_writer.create_table(table_name, type_info)
-
     @staticmethod
-    def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str],
-                        index: Sequence[str] = None) -> pd.DataFrame:
+    def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str]) -> pd.DataFrame:
         dates_columns = [it for it in df.columns if it.endswith('date')]
         for it in dates_columns:
             df[it] = df[it].apply(date_type2datetime)
 
         df.rename(parameter_info, axis=1, inplace=True)
-        if index is None:
-            index = sorted(list({'DateTime', 'ID', '报告期', 'IndexCode'} & set(df.columns)))
-
+        index = sorted(list({'DateTime', 'ID', '报告期', 'IndexCode'} & set(df.columns)))
         df = df.set_index(index, drop=True)
         return df
 
@@ -460,11 +431,10 @@ class TushareData(object):
         ref: https://tushare.pro/document/2?doc_id=25
 
         """
-
         data_category = '股票列表'
-        table_name = '输出参数'
-        desc = self._factor_param[data_category][table_name]
+        desc = self._factor_param[data_category]['输出参数']
 
+        logging.debug(f'开始下载{data_category}.')
         storage = []
         list_status = ['L', 'D', 'P']
         fields = ['ts_code', 'list_date', 'delist_date']
@@ -476,24 +446,20 @@ class TushareData(object):
         unlisted = output.loc[:, ['ts_code', 'delist_date']].dropna().rename({'delist_date': 'list_date'}, axis=1)
         unlisted['list_status'] = False
         output = pd.concat([listed, unlisted])
-
-        self._listed_stocks = output.loc[output.list_status, :].ts_code.values.tolist()
-        self._all_stocks = output.ts_code.values.tolist()
-
+        self._all_stocks = sorted(list(set(output['ts_code'].values.tolist())))
         output = self._standardize_df(output, desc)
         self.mysql_writer.update_df(output, '股票上市退市')
 
+        logging.info(f'{data_category}下载完成.')
         return self._all_stocks
 
-    def _get_calendar(self) -> List[dt.datetime]:
+    def update_calendar(self) -> None:
         """返回上交所交易日历"""
-        df = self._pro.query('trade_cal', is_open=1)
+        df = self._pro.trade_cal(is_open=1)
         cal_date = df.cal_date
         cal_date.name = '交易日期'
         cal_date = cal_date.map(date_type2datetime)
-        self._calendar = cal_date.dt.to_pydatetime().tolist()
         cal_date.to_sql('交易日历', self.mysql_writer.engine, if_exists='replace')
-        return self._calendar
 
     def _check_db_timestamp(self, table_name: str, default_timestamp: DateType) -> dt.datetime:
         latest_time, _ = self.mysql_writer.get_progress(table_name)

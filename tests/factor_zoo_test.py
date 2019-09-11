@@ -16,7 +16,7 @@ class FactorZooTest(unittest.TestCase):
 
     def test_listed_stock(self):
         # print(self.db.get_listed_stock())
-        print(self.db.get_listed_stock('20040102'))
+        print(self.db.listed_stock('20040102'))
 
     def test_close_bfq(self):
         factor = self.factor_zoo.close

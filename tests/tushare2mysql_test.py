@@ -15,10 +15,10 @@ class Tushare2MySQLTest(unittest.TestCase):
             config = json.load(f)
 
         tushare_token = config['tushare_token']
-        self.downloader = TushareData(tushare_token, engine=prepare_engine(config_loc))
+        self.downloader = TushareData(tushare_token, engine=prepare_engine(config_loc), init=True)
 
     def test_calendar(self):
-        print(self.downloader.calendar)
+        print(self.downloader.calendar.calendar)
 
     def test_all_stocks(self):
         print(self.downloader.all_stocks)
@@ -45,7 +45,8 @@ class Tushare2MySQLTest(unittest.TestCase):
         self.downloader.get_dividend()
 
     def test_routine(self):
-        self.downloader.update_routine()
+        # self.downloader.update_routine()
+        pass
 
     def test_hs_const(self):
         self.downloader.get_hs_const()

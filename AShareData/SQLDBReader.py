@@ -9,6 +9,7 @@ import sqlalchemy as sa
 from cached_property import cached_property
 
 from AShareData import utils
+from AShareData.TradingCalendar import TradingCalendar
 from AShareData.constants import INDUSTRY_LEVEL
 
 
@@ -22,14 +23,15 @@ class SQLDBReader(object):
         self.engine = engine
 
     @cached_property
-    def calendar(self) -> List[dt.datetime]:
-        return utils.get_calendar(self.engine)
+    def calendar(self) -> TradingCalendar:
+        return TradingCalendar(self.engine)
 
     @cached_property
     def stocks(self) -> List[str]:
         return utils.get_stocks(self.engine)
 
-    def get_listed_stock(self, date: utils.DateType = dt.date.today()) -> List[str]:
+    @property
+    def listed_stock(self, date: utils.DateType = dt.date.today()) -> List[str]:
         date = utils.date_type2datetime(date)
         raw_data = pd.read_sql_table('股票上市退市', self.engine)
         data = raw_data.loc[raw_data.DateTime <= date, :]
@@ -146,11 +148,11 @@ class SQLDBReader(object):
                     stock_list: Sequence[str] = None) -> pd.DataFrame:
         if ffill:
             first_timestamp = df.index.get_level_values(0).min()
-            date_list = utils.select_dates(self.calendar, first_timestamp, end_date)
+            date_list = self.calendar.select_dates(first_timestamp, end_date)
             df = df.reindex(date_list[:-1]).ffill()
             df = df.loc[start_date:, :]
         else:
-            date_list = utils.select_dates(self.calendar, start_date, end_date)
+            date_list = self.calendar.select_dates(start_date, end_date)
             df = df.reindex(date_list[:-1])
 
         if not stock_list:

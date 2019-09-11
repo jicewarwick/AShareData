@@ -7,6 +7,7 @@ from tqdm import tqdm
 import AShareData.constants as constants
 import AShareData.utils as utils
 from AShareData.DataFrameMySQLWriter import DataFrameMySQLWriter
+from AShareData.TradingCalendar import TradingCalendar
 from AShareData.WindWrapper import WindWrapper
 
 
@@ -14,7 +15,7 @@ class WindData(object):
     def __init__(self, engine):
         self.engine = engine
         self.mysql_writer = DataFrameMySQLWriter(engine)
-        self.calendar = utils.TradingCalendar(utils.get_calendar(engine))
+        self.calendar = TradingCalendar(engine)
         self.stocks = utils.get_stocks(engine)
         self.w = WindWrapper()
         self.w.connect()
