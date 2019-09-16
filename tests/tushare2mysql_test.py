@@ -2,8 +2,8 @@ import json
 import logging
 import unittest
 
+from AShareData.DBInterface import MySQLInterface, prepare_engine
 from AShareData.TushareData import TushareData
-from AShareData.utils import prepare_engine
 
 logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', level=logging.DEBUG)
 
@@ -15,7 +15,7 @@ class Tushare2MySQLTest(unittest.TestCase):
             config = json.load(f)
 
         tushare_token = config['tushare_token']
-        self.downloader = TushareData(tushare_token, engine=prepare_engine(config_loc), init=True)
+        self.downloader = TushareData(tushare_token, MySQLInterface(prepare_engine(config_loc)), init=False)
 
     def test_calendar(self):
         print(self.downloader.calendar.calendar)
@@ -34,6 +34,9 @@ class Tushare2MySQLTest(unittest.TestCase):
 
     def test_all_past_names(self):
         self.downloader.get_all_past_names()
+
+    def test_past_names(self):
+        self.downloader.get_past_names()
 
     def test_company_info(self):
         self.downloader.get_company_info()

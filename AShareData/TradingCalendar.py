@@ -1,15 +1,13 @@
 import datetime as dt
 from typing import List
 
-import pandas as pd
-import sqlalchemy as sa
-
-from AShareData.utils import DateType, date_type2datetime
+from AShareData.DBInterface import DBInterface
+from AShareData.utils import date_type2datetime, DateType
 
 
 class TradingCalendar(object):
-    def __init__(self, engine: sa.engine):
-        calendar_df = pd.read_sql_table('交易日历', engine)
+    def __init__(self, db_interface: DBInterface):
+        calendar_df = db_interface.read_table('交易日历')
         self.calendar = calendar_df['交易日期'].dt.to_pydatetime().tolist()
 
     def select_dates(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:

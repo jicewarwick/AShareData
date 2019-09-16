@@ -1,8 +1,8 @@
 import logging
 import unittest
 
+from AShareData.DBInterface import prepare_engine
 from AShareData.WindData import WindData
-from AShareData.utils import prepare_engine
 
 logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', level=logging.DEBUG)
 

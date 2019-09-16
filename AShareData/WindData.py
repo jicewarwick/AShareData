@@ -4,19 +4,18 @@ import logging
 import pandas as pd
 from tqdm import tqdm
 
-import AShareData.constants as constants
-import AShareData.utils as utils
-from AShareData.DataFrameMySQLWriter import DataFrameMySQLWriter
+from AShareData import constants, utils
+from AShareData.DataSource import DataSource
+from AShareData.DBInterface import DBInterface
 from AShareData.TradingCalendar import TradingCalendar
 from AShareData.WindWrapper import WindWrapper
 
 
-class WindData(object):
-    def __init__(self, engine):
-        self.engine = engine
-        self.mysql_writer = DataFrameMySQLWriter(engine)
-        self.calendar = TradingCalendar(engine)
-        self.stocks = utils.get_stocks(engine)
+class WindData(DataSource):
+    def __init__(self, db_interface: DBInterface):
+        super().__init__(db_interface)
+        self.calendar = TradingCalendar(db_interface)
+        self.stocks = utils.get_stocks(db_interface)
         self.w = WindWrapper()
         self.w.connect()
 
@@ -42,7 +41,7 @@ class WindData(object):
                     entry = pd.DataFrame({'DateTime': end_date, 'ID': wind_code, '行业名称': end_data}, index=[0])
                     entry.set_index(['DateTime', 'ID'], inplace=True)
                     logging.info(f'插入数据: {wind_code} 于 {end_date} 的行业为 {end_data}')
-                    self.mysql_writer.update_df(entry, f'{provider}行业')
+                    self.db_interface.update_df(entry, f'{provider}行业')
                     break
                 mid_date = self.calendar.middle(start_date, end_date)
                 logging.debug(f'查询{wind_code} 在 {mid_date}的行业')
@@ -59,13 +58,13 @@ class WindData(object):
     def update_industry(self, provider: str):
         table_name = f'{provider}行业'
         query_date = self.calendar.offset(dt.date.today(), -1)
-        latest, _ = self.mysql_writer.get_progress(table_name)
+        latest, _ = self.db_interface.get_progress(table_name)
         if latest is None:
             latest = utils.date_type2datetime(constants.INDUSTRY_START_DATE[provider])
             initial_data = self._get_industry_data(self.stocks, provider, latest).dropna()
-            self.mysql_writer.update_df(initial_data, table_name)
+            self.db_interface.update_df(initial_data, table_name)
         else:
-            initial_data = pd.read_sql_table(table_name, self.engine, index_col=['DateTime', 'ID'])
+            initial_data = self.db_interface.read_table(table_name, index_col=['DateTime', 'ID'])
             initial_data = initial_data.unstack().ffill().tail(1).stack()
 
         new_data = self._get_industry_data(self.stocks, provider, query_date).dropna()

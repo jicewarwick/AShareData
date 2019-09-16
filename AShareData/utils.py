@@ -1,17 +1,21 @@
 import datetime as dt
 import json
-from typing import Union, Optional, List
+from typing import List, Optional, Union
 
-import pandas as pd
-import sqlalchemy as sa
-from sqlalchemy.engine.url import URL
+from AShareData.DBInterface import DBInterface
 
 DateType = Union[str, dt.datetime, dt.date]
 
 
-def date_type2str(date: DateType, delimiter: str = '') -> str:
-    formatter = delimiter.join(['%Y', '%m', '%d'])
-    return date.strftime(formatter) if not isinstance(date, str) else date
+def get_stocks(db_interface: DBInterface) -> List[str]:
+    stock_list_df = db_interface.read_table('股票上市退市')
+    return sorted(stock_list_df['ID'].unique().tolist())
+
+
+def date_type2str(date: DateType, delimiter: str = '') -> Optional[str]:
+    if date is not None:
+        formatter = delimiter.join(['%Y', '%m', '%d'])
+        return date.strftime(formatter) if not isinstance(date, str) else date
 
 
 def date_type2datetime(date: str) -> Optional[dt.datetime]:
@@ -32,15 +36,6 @@ def ts_code2stock_code(ts_code: str) -> str:
     return ts_code.split()[0]
 
 
-def prepare_engine(config_loc: str) -> sa.engine.Engine:
-    with open(config_loc, 'r') as f:
-        config = json.load(f)
-    url = URL(drivername=config['driver'], host=config['host'], port=config['port'], database=config['database'],
-              username=config['username'], password=config['password'],
-              query={'charset': 'utf8mb4'})
-    return sa.create_engine(url)
-
-
 def _prepare_example_json(config_loc, example_config_loc) -> None:
     with open(config_loc, 'r') as f:
         config = json.load(f)
@@ -50,8 +45,3 @@ def _prepare_example_json(config_loc, example_config_loc) -> None:
         json.dump(config, fh, indent=4)
 
 # _prepare_example_json('data.json', 'config_example.json')
-
-
-def get_stocks(engine: sa.engine) -> List[str]:
-    stock_list_df = pd.read_sql_table('股票上市退市', engine)
-    return sorted(stock_list_df['ID'].unique().tolist())

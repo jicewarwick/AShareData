@@ -5,16 +5,19 @@ import pandas as pd
 # todo: import from functools from 3.9
 from cached_property import cached_property
 
-from AShareData.SQLDBReader import SQLDBReader
+from AShareData.AShareDataReader import AShareDataReader
 from AShareData.constants import STOCK_INDEXES, TRADING_DAYS_IN_YEAR
 
 
 class FactorZoo(object):
-    def __init__(self, db_reader: SQLDBReader):
+    def __init__(self, db_reader: AShareDataReader):
         self._db_reader = db_reader
 
     @cached_property
     def total_share(self) -> pd.DataFrame:
+        return self._db_reader.get_factor('股票日行情', '总股本')
+
+    def floating_share(self) -> pd.DataFrame:
         return self._db_reader.get_factor('股票日行情', '总股本')
 
     @cached_property
@@ -100,7 +103,7 @@ class FactorZoo(object):
         return self.shibor_rate(maturity).add(1).log()
 
     def excess_market_return(self, index_name: str = '沪深300') -> pd.DataFrame:
-        assert index_name in STOCK_INDEXES, f'支持的指数为[{", ".join(list(STOCK_INDEXES.keys()))}]'
+        assert index_name in STOCK_INDEXES, f'支持的指数为{list(STOCK_INDEXES)}'
         market_index_close = self.index_close(ts_code=STOCK_INDEXES[index_name])
         market_return = market_index_close.pct_change()
         return self.equity_daily_return.sub(market_return, axis=0)

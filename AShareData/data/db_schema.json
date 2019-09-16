@@ -1,4 +1,7 @@
 {
+	"交易日历": {
+		"交易日历": "datetime"
+	},
 	"股票上市退市": {
 		"DateTime": "datetime",
 		"ID": "varchar",
@@ -8,6 +11,26 @@
 		"DateTime": "datetime",
 		"ID": "varchar",
 		"证券名称": "str"
+	},
+	"复权因子": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"复权因子": "float"
+	},
+	"总股本": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"总股本": "double"
+	},
+	"流通股本": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"流通股本": "double"
+	},
+	"自由流通股本": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"自由流通股本": "double"
 	},
 	"上市公司基本信息": {
 		"ID": "varchar",
@@ -45,11 +68,7 @@
 		"最低价": "float",
 		"收盘价": "float",
 		"成交量": "float",
-		"成交额": "double",
-		"复权因子": "float",
-		"总股本": "double",
-		"流通股本": "double",
-		"自由流通股本": "double"
+		"成交额": "double"
 	},
 	"指数日行情": {
 		"DateTime": "datetime",

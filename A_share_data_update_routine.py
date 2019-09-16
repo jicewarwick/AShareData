@@ -1,8 +1,8 @@
 import json
 import logging
 
+from AShareData.DBInterface import MySQLInterface, prepare_engine
 from AShareData.TushareData import TushareData
-from AShareData.utils import prepare_engine
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     tushare_token = config['tushare_token']
     engine = prepare_engine(config_loc)
 
-    downloader = TushareData(tushare_token, engine=engine)
+    downloader = TushareData(tushare_token, db_interface=MySQLInterface(engine))
     downloader.update_routine()
 
     # update industry
