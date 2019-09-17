@@ -9,7 +9,7 @@ from cached_property import cached_property
 
 from AShareData import utils
 from AShareData.constants import INDUSTRY_LEVEL
-from AShareData.DBInterface import DBInterface
+from AShareData.DBInterface import DBInterface, get_stocks
 from AShareData.TradingCalendar import TradingCalendar
 
 
@@ -28,7 +28,7 @@ class AShareDataReader(object):
 
     @cached_property
     def stocks(self) -> List[str]:
-        return utils.get_stocks(self.db_interface)
+        return get_stocks(self.db_interface)
 
     def listed_stock(self, date: utils.DateType = dt.date.today()) -> List[str]:
         date = utils.date_type2datetime(date)

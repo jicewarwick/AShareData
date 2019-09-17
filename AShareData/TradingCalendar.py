@@ -46,4 +46,4 @@ class TradingCalendar(object):
     def days_count(self, start_date: DateType, end_date: DateType) -> int:
         start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         ind = 1 if start_date <= end_date else -1
-        return ind * abs(self.calendar.index(end_date) - self.calendar.index(start_date) + 1)
+        return ind * abs(self.calendar.index(end_date) - self.calendar.index(start_date))

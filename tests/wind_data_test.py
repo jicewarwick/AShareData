@@ -1,7 +1,7 @@
 import logging
 import unittest
 
-from AShareData.DBInterface import prepare_engine
+from AShareData.DBInterface import MySQLInterface, prepare_engine
 from AShareData.WindData import WindData
 
 logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', level=logging.DEBUG)
@@ -10,7 +10,8 @@ logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         config_loc = 'config.json'
-        self.wind_data = WindData(prepare_engine(config_loc))
+        engine = prepare_engine(config_loc)
+        self.wind_data = WindData(MySQLInterface(engine))
 
     def test_get_industry_func(self):
         wind_code = '000019.SZ'

@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+import logging
 from importlib.resources import open_text
 
 import pandas as pd
@@ -8,7 +9,7 @@ from tqdm import tqdm
 
 from AShareData import utils
 from AShareData.DataSource import DataSource
-from AShareData.DBInterface import DBInterface
+from AShareData.DBInterface import DBInterface, get_stocks
 
 
 class WebDataCrawler(DataSource):
@@ -19,18 +20,20 @@ class WebDataCrawler(DataSource):
     }
     ZX_INDUSTRY_URL = 'http://www.csindex.com.cn/zh-CN/downloads/industry-price-earnings-ratio-detail'
 
-    def __init__(self, db_interface: DBInterface, db_schema_loc: str = None) -> None:
+    def __init__(self, db_interface: DBInterface, db_schema_loc: str = None, init: bool = False) -> None:
         super().__init__(db_interface)
-        if db_schema_loc is None:
-            with open_text('AShareData.data', 'db_schema.json') as f:
+        if init:
+            logging.debug('检查数据库完整性.')
+            if db_schema_loc is None:
+                f = open_text('AShareData.data', 'db_schema.json')
+            else:
+                f = open(db_schema_loc, 'r', encoding='utf-8')
+            with f:
                 self._db_parameters = json.load(f)
-        else:
-            with open(db_schema_loc, 'r', encoding='utf-8') as f:
-                self._db_parameters = json.load(f)
+            for table_name, type_info in self._db_parameters.items():
+                self.db_interface.create_table(table_name, type_info)
 
-        self._stock_list = utils.get_stocks(db_interface)
-        for table_name, type_info in self._db_parameters.items():
-            self.db_interface.create_table(table_name, type_info)
+        self._stock_list = get_stocks(db_interface)
 
     def get_sw_industry(self) -> None:
         header = self.HEADER
@@ -70,7 +73,7 @@ class WebDataCrawler(DataSource):
         data = pd.concat(storage)
         data['股票代码'] = data['股票代码'].map(utils.stock_code2ts_code)
         data['trade_date'] = utils.date_type2datetime(date)
-        useful_data = data[['trade_date', '股票代码', '所属中证行业四级代码']]
-        useful_data.columns = ['DateTime', 'ID', '中证行业四级代码']
+        useful_data = data[['trade_date', '股票代码', '所属中证行业四级名称']]
+        useful_data.columns = ['DateTime', 'ID', '行业名称']
         useful_data.set_index(['DateTime', 'ID'], inplace=True)
-        self.db_interface.update_df(useful_data, '中信四级行业')
+        self.db_interface.update_df(useful_data, '中证行业')

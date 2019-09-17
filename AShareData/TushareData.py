@@ -31,21 +31,20 @@ class TushareData(DataSource):
         self._pro = ts.pro_api(tushare_token)
 
         if param_json_loc is None:
-            with open_text('AShareData.data', 'param.json') as f:
-                self._factor_param = json.load(f)
+            f = open_text('AShareData.data', 'param.json')
         else:
-            with open(param_json_loc, 'r', encoding='utf-8') as f:
-                self._factor_param = json.load(f)
-
-        if db_schema_loc is None:
-            with open_text('AShareData.data', 'db_schema.json') as f:
-                self._db_parameters = json.load(f)
-        else:
-            with open(db_schema_loc, 'r', encoding='utf-8') as f:
-                self._db_parameters = json.load(f)
+            f = open(param_json_loc, 'r', encoding='utf-8')
+        with f:
+            self._factor_param = json.load(f)
 
         if init:
             logging.debug('检查数据库完整性.')
+            if db_schema_loc is None:
+                f = open_text('AShareData.data', 'db_schema.json')
+            else:
+                f = open(db_schema_loc, 'r', encoding='utf-8')
+            with f:
+                self._db_parameters = json.load(f)
             for table_name, type_info in self._db_parameters.items():
                 self.db_interface.create_table(table_name, type_info)
             self.update_calendar()
@@ -150,10 +149,7 @@ class TushareData(DataSource):
                 # adj_factor data
                 df = self._pro.adj_factor(trade_date=current_date_str)
                 adj_df = self._standardize_df(df, adj_factor_desc)
-                current_data = self.db_interface.read_table('复权因子', index_col=['DateTime', 'ID'])
-                current_data = current_data.loc[current_data.index.get_level_values(0) < date, :]
-                new_info = self._compute_diff(adj_df, current_data)
-                self.db_interface.update_df(new_info, '复权因子')
+                self.db_interface.update_compact_df(adj_df, '复权因子')
 
                 # indicator data
                 df = self._pro.daily_basic(trade_date=current_date_str, fields=indicator_fields)
@@ -161,10 +157,7 @@ class TushareData(DataSource):
                     df[['total_share', 'float_share', 'free_share']] * 10000
                 indicator_df = self._standardize_df(df, indicator_desc)
                 for column in indicator_df.columns:
-                    current_data = self.db_interface.read_table(column, index_col=['DateTime', 'ID'])
-                    current_data = current_data.loc[current_data.index.get_level_values(0) < date, :]
-                    new_info = self._compute_diff(indicator_df[[column]], current_data)
-                    self.db_interface.update_df(new_info, column)
+                    self.db_interface.update_compact_df(indicator_df[column], column)
 
                 pbar.update(1)
 
@@ -485,13 +478,3 @@ class TushareData(DataSource):
         if latest_time is None:
             latest_time = utils.date_type2datetime(default_timestamp)
         return latest_time
-
-    @staticmethod
-    def _compute_diff(input_data: pd.DataFrame, db_data: pd.DataFrame) -> pd.DataFrame:
-        db_data = db_data.unstack().ffill().tail(1).stack()
-        tmp_data = pd.concat([input_data, db_data]).unstack().droplevel(None, axis=1)
-        tmp_data = tmp_data.where(tmp_data.notnull(), None)
-        diff = (tmp_data != tmp_data.shift())
-        diff_stock = diff.iloc[-1, :]
-        diff_stock = diff_stock.loc[diff_stock].index.tolist()
-        return input_data.loc[(slice(None), diff_stock), :]

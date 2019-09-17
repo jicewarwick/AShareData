@@ -11,6 +11,8 @@ from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 
+from AShareData.utils import compute_diff
+
 
 class DBInterface(object):
     def __init__(self):
@@ -26,6 +28,9 @@ class DBInterface(object):
         raise NotImplementedError()
 
     def update_df(self, df: pd.DataFrame, table_name: str) -> None:
+        raise NotImplementedError()
+
+    def update_compact_df(self, df, table_name: str) -> None:
         raise NotImplementedError()
 
     def get_progress(self, table_name: str) -> Tuple[Optional[dt.datetime], Optional[str]]:
@@ -144,6 +149,17 @@ class MySQLInterface(DBInterface):
             statement = insert_statement.on_duplicate_key_update(**row.to_dict())
             self.engine.execute(statement)
 
+    def update_compact_df(self, df, table_name: str) -> None:
+        current_data = self.read_table(table_name, index_col=['DateTime', 'ID'])
+        if current_data.shape[0] == 0:
+            self.update_df(df, table_name)
+        else:
+            # todo: TBC
+            current_date = df.index.get_level_values(0).to_pydatetime()[0]
+            current_data = current_data.loc[current_data.index.get_level_values(0) < current_date, :]
+            new_info = compute_diff(df, current_data)
+            self.update_df(new_info, table_name)
+
     def get_progress(self, table_name: str) -> Tuple[Optional[dt.datetime], Optional[str]]:
         """
         返回数据库中最新的时间和证券代码
@@ -225,3 +241,8 @@ class MySQLInterface(DBInterface):
         """ 数据库中表中的所有列"""
         table = sa.Table(table_name, self.meta)
         return [it.name for it in table.columns]
+
+
+def get_stocks(db_interface: DBInterface) -> List[str]:
+    stock_list_df = db_interface.read_table('股票上市退市')
+    return sorted(stock_list_df['ID'].unique().tolist())

@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from AShareData import constants, utils
 from AShareData.DataSource import DataSource
-from AShareData.DBInterface import DBInterface
+from AShareData.DBInterface import DBInterface, get_stocks
 from AShareData.TradingCalendar import TradingCalendar
 from AShareData.WindWrapper import WindWrapper
 
@@ -15,7 +15,7 @@ class WindData(DataSource):
     def __init__(self, db_interface: DBInterface):
         super().__init__(db_interface)
         self.calendar = TradingCalendar(db_interface)
-        self.stocks = utils.get_stocks(db_interface)
+        self.stocks = get_stocks(db_interface)
         self.w = WindWrapper()
         self.w.connect()
 
@@ -26,14 +26,12 @@ class WindData(DataSource):
         wind_data.columns = ['ID', '行业名称']
         wind_data['DateTime'] = date
         wind_data = wind_data.set_index(['DateTime', 'ID'])
-        wind_data['行业名称'] = wind_data['行业名称'].str.replace('[III|Ⅲ|IV|Ⅳ]', '')
+        wind_data['行业名称'] = wind_data['行业名称'].str.replace('III|Ⅲ|IV|Ⅳ$', '')
         return wind_data
 
     def _find_industry(self, wind_code: str, provider: str,
                        start_date: utils.DateType, start_data: str,
                        end_date: utils.DateType, end_data: str) -> None:
-        start_date = utils.date_type2datetime(start_date)
-        end_date = utils.date_type2datetime(end_date)
         if start_data != end_data:
             logging.info(f'{wind_code} 的行业由 {start_date} 的 {start_data} 改为 {end_date} 的 {end_data}')
             while True:
@@ -65,22 +63,16 @@ class WindData(DataSource):
             self.db_interface.update_df(initial_data, table_name)
         else:
             initial_data = self.db_interface.read_table(table_name, index_col=['DateTime', 'ID'])
-            initial_data = initial_data.unstack().ffill().tail(1).stack()
 
         new_data = self._get_industry_data(self.stocks, provider, query_date).dropna()
 
-        # find diff
-        tmp_data = pd.concat([initial_data, new_data]).unstack().droplevel(None, axis=1)
-        tmp_data = tmp_data.where(tmp_data.notnull(), None)
-        diff = (tmp_data != tmp_data.shift())
-        diff_stock = diff.iloc[-1, :]
-        diff_stock = diff_stock.loc[diff_stock].index.tolist()
-
-        data_storage = []
+        diff_stock = utils.compute_diff(new_data, initial_data)
         with tqdm(diff_stock) as pbar:
-            for stock in diff_stock:
+            for (_, stock), new_industry in diff_stock.iterrows():
                 pbar.set_description(f'获取{stock}的{provider}行业')
-                stock_slice = tmp_data.loc[:, stock]
-                data_storage.append(self._find_industry(stock, provider, latest, stock_slice[0],
-                                                        query_date, stock_slice[1]))
+                try:
+                    old_industry = initial_data.loc[(slice(None), stock), '行业名称'].values[-1]
+                except KeyError:
+                    old_industry = None
+                self._find_industry(stock, provider, latest, old_industry, query_date, new_industry['行业名称'])
                 pbar.update(1)
