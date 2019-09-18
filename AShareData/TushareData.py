@@ -401,7 +401,7 @@ class TushareData(DataSource):
         if indexes is None:
             indexes = constants.BOARD_INDEXES
         start_date, end_date = utils.date_type2str(start_date), utils.date_type2str(end_date)
-        dates = self.calendar.get_last_day_of_month(start_date, end_date)
+        dates = self.calendar.last_day_of_month(start_date, end_date)
         dates = sorted(list(set([start_date] + dates + [end_date])))
 
         data_category = '指数成分和权重'

@@ -119,6 +119,19 @@ class AShareDataReader(object):
         df = self._conform_df(df, True, start_date, end_date, stock_list)
         return df
 
+    def get_latest(self, table_name: str, factor_name: str) -> pd.DataFrame:
+        table_name = table_name.lower()
+        primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
+
+        query_columns = primary_keys + [factor_name]
+        logging.debug('开始读取数据.')
+        df = self.db_interface.read_table(table_name, columns=query_columns)
+        logging.debug('数据读取完成.')
+        content = df.groupby('ID').tail(1).loc[:, ['ID', factor_name]]
+        content['DateTime'] = df['DateTime'].max()
+        content = content.set_index(['DateTime', 'ID']).sort_index()
+        return content
+
     # helper functions
     def _check_args_and_get_primary_keys(self, table_name: str, factor_name: str) -> List[str]:
         table_name = table_name.lower()

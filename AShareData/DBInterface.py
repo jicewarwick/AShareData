@@ -150,11 +150,12 @@ class MySQLInterface(DBInterface):
             self.engine.execute(statement)
 
     def update_compact_df(self, df, table_name: str) -> None:
+        if df.shape[0] == 0:
+            return
         current_data = self.read_table(table_name, index_col=['DateTime', 'ID'])
         if current_data.shape[0] == 0:
             self.update_df(df, table_name)
         else:
-            # todo: TBC
             current_date = df.index.get_level_values(0).to_pydatetime()[0]
             current_data = current_data.loc[current_data.index.get_level_values(0) < current_date, :]
             new_info = compute_diff(df, current_data)
