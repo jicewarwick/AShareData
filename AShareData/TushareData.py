@@ -18,7 +18,7 @@ from AShareData.TradingCalendar import TradingCalendar
 
 class TushareData(DataSource):
     def __init__(self, tushare_token: str, db_interface: DBInterface,
-                 param_json_loc: str = None, db_schema_loc: str = None, init: bool = False) -> None:
+                 param_json_loc: str = None, init: bool = False) -> None:
         """
         Tushare to Database. 将tushare下载的数据写入数据库中
 
@@ -38,15 +38,6 @@ class TushareData(DataSource):
             self._factor_param = json.load(f)
 
         if init:
-            logging.debug('检查数据库完整性.')
-            if db_schema_loc is None:
-                f = open_text('AShareData.data', 'db_schema.json')
-            else:
-                f = open(db_schema_loc, 'r', encoding='utf-8')
-            with f:
-                self._db_parameters = json.load(f)
-            for table_name, type_info in self._db_parameters.items():
-                self.db_interface.create_table(table_name, type_info)
             self.update_calendar()
 
         self._all_stocks = None

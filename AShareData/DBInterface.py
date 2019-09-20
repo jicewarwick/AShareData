@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import logging
+from importlib.resources import open_text
 from typing import List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
@@ -11,7 +12,7 @@ from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 
-from AShareData.utils import compute_diff
+import AShareData.utils as utils
 
 
 class DBInterface(object):
@@ -70,7 +71,7 @@ class MySQLInterface(DBInterface):
         'boolean': Boolean
     }
 
-    def __init__(self, engine: sa.engine.Engine) -> None:
+    def __init__(self, engine: sa.engine.Engine, init: bool = False, db_schema_loc: str = None) -> None:
         """ DataFrame to MySQL Database Writer
 
         Write pd.DataFrame to MySQL server. Feature:
@@ -83,10 +84,31 @@ class MySQLInterface(DBInterface):
         :param engine: sqlalchemy engine
         """
         super().__init__()
+
+        if init:
+            self._create_db_schema_tables(db_schema_loc)
+
         assert engine.name == 'mysql', 'This class is MySQL database ONLY!!!'
         self.engine = engine
         self.meta = sa.MetaData(bind=self.engine)
         self.meta.reflect()
+
+    def _create_db_schema_tables(self, db_schema_loc):
+        if db_schema_loc is None:
+            f = open_text('AShareData.data', 'db_schema.json')
+        else:
+            f = open(db_schema_loc, 'r', encoding='utf-8')
+        with f:
+            self._db_parameters = json.load(f)
+        for special_item in ['资产负债表', '现金流量表', '利润表']:
+            tmp_item = self._db_parameters.pop(special_item)
+            for prefix in ['合并', '母公司']:
+                for yearly in ['', '单季度']:
+                    self._db_parameters[prefix + yearly + special_item] = tmp_item
+        for entry in ['合并单季度资产负债表', '母公司单季度资产负债表']:
+            del self._db_parameters[entry]
+        for table_name, type_info in self._db_parameters.items():
+            self.create_table(table_name, type_info)
 
     def create_table(self, table_name: str, table_info: Mapping[str, str]) -> None:
         """
@@ -158,7 +180,7 @@ class MySQLInterface(DBInterface):
         else:
             current_date = df.index.get_level_values(0).to_pydatetime()[0]
             current_data = current_data.loc[current_data.index.get_level_values(0) < current_date, :]
-            new_info = compute_diff(df, current_data)
+            new_info = utils.compute_diff(df, current_data)
             self.update_df(new_info, table_name)
 
     def get_progress(self, table_name: str) -> Tuple[Optional[dt.datetime], Optional[str]]:
@@ -244,6 +266,19 @@ class MySQLInterface(DBInterface):
         return [it.name for it in table.columns]
 
 
-def get_stocks(db_interface: DBInterface) -> List[str]:
+def get_stocks(db_interface: DBInterface, date: utils.DateType = None) -> List[str]:
     stock_list_df = db_interface.read_table('股票上市退市')
+    if date:
+        date = utils.date_type2datetime(date)
+        stock_list_df = stock_list_df.loc[stock_list_df['DateTime'] <= date, :]
     return sorted(stock_list_df['ID'].unique().tolist())
+
+
+def get_listed_stocks(db_interface: DBInterface, date: utils.DateType = None) -> List[str]:
+    stock_list_df = db_interface.read_table('股票上市退市')
+    if date:
+        date = utils.date_type2datetime(date)
+        stock_list_df = stock_list_df.loc[stock_list_df['DateTime'] <= date, :]
+
+    tmp = stock_list_df.groupby('ID').tail(1)
+    return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())

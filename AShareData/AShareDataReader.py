@@ -9,7 +9,7 @@ from cached_property import cached_property
 
 from AShareData import utils
 from AShareData.constants import INDUSTRY_LEVEL
-from AShareData.DBInterface import DBInterface, get_stocks
+from AShareData.DBInterface import DBInterface, get_listed_stocks, get_stocks
 from AShareData.TradingCalendar import TradingCalendar
 
 
@@ -31,11 +31,7 @@ class AShareDataReader(object):
         return get_stocks(self.db_interface)
 
     def listed_stock(self, date: utils.DateType = dt.date.today()) -> List[str]:
-        date = utils.date_type2datetime(date)
-        raw_data = self.db_interface.read_table('股票上市退市')
-        data = raw_data.loc[raw_data.DateTime <= date, :]
-        return sorted(list(set(data.loc[data['上市状态'] == 1, 'ID'].values.tolist()) -
-                           set(data.loc[data['上市状态'] == 0, 'ID'].values.tolist())))
+        return get_listed_stocks(self.db_interface, date)
 
     def get_factor(self, table_name: str, factor_name: str, ffill: bool = False,
                    start_date: utils.DateType = None, end_date: utils.DateType = None,
@@ -119,18 +115,28 @@ class AShareDataReader(object):
         df = self._conform_df(df, True, start_date, end_date, stock_list)
         return df
 
-    def get_latest(self, table_name: str, factor_name: str) -> pd.DataFrame:
+    def get_snapshot(self, table_name: str, factor_name: str, date: utils.DateType = dt.date.today()) -> pd.DataFrame:
         table_name = table_name.lower()
         primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
+        desired_keys = ['DateTime', 'ID']
+        assert set(desired_keys) <= set(primary_keys), f'{table_name} 表中必须有 {desired_keys}, 实际只有 {primary_keys}'
 
         query_columns = primary_keys + [factor_name]
         logging.debug('开始读取数据.')
         df = self.db_interface.read_table(table_name, columns=query_columns)
         logging.debug('数据读取完成.')
-        content = df.groupby('ID').tail(1).loc[:, ['ID', factor_name]]
-        content['DateTime'] = df['DateTime'].max()
-        content = content.set_index(['DateTime', 'ID']).sort_index()
-        return content
+
+        if date:
+            date = utils.date_type2datetime(date)
+            timestamp = date
+            df = df.loc[df['DateTime'] <= date, :]
+        else:
+            timestamp = df['DateTime'].max()
+
+        listed_stocks = get_listed_stocks(self.db_interface, timestamp)
+        content = df.groupby('ID').tail(1).loc[df['ID'].isin(listed_stocks), ['ID', factor_name]]
+        content['DateTime'] = timestamp
+        return content.set_index(desired_keys).sort_index()
 
     # helper functions
     def _check_args_and_get_primary_keys(self, table_name: str, factor_name: str) -> List[str]:
