@@ -56,7 +56,7 @@ class WindData(DataSource):
     def update_industry(self, provider: str):
         table_name = f'{provider}行业'
         query_date = self.calendar.offset(dt.date.today(), -1)
-        latest, _ = self.db_interface.get_progress(table_name)
+        latest = self.db_interface.get_latest_timestamp(table_name)
         if latest is None:
             latest = utils.date_type2datetime(constants.INDUSTRY_START_DATE[provider])
             initial_data = self._get_industry_data(self.stocks, provider, latest).dropna()

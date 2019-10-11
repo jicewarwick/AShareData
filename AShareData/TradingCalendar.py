@@ -31,7 +31,7 @@ class TradingCalendar(object):
         return storage
 
     def select_dates(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        start_date = date_type2datetime(start_date)
+        start_date = date_type2datetime(start_date) if start_date else self.calendar[0]
         end_date = date_type2datetime(end_date) if end_date else dt.datetime.now()
         return self._select_dates(self.calendar, start_date, end_date, lambda pre, curr, next_: True)
 

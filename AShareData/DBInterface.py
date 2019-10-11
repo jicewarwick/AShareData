@@ -2,7 +2,7 @@ import datetime as dt
 import json
 import logging
 from importlib.resources import open_text
-from typing import List, Mapping, Optional, Sequence, Tuple
+from typing import List, Mapping, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -34,11 +34,10 @@ class DBInterface(object):
     def update_compact_df(self, df, table_name: str) -> None:
         raise NotImplementedError()
 
-    def get_progress(self, table_name: str) -> Tuple[Optional[dt.datetime], Optional[str]]:
+    def get_latest_timestamp(self, table_name: str) -> Optional[dt.datetime]:
         raise NotImplementedError()
 
-    def read_table(self, table_name: str,
-                   index_col: Sequence[str] = None, columns: Sequence[str] = None) -> pd.DataFrame:
+    def read_table(self, table_name: str, columns: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
         raise NotImplementedError()
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
@@ -47,7 +46,10 @@ class DBInterface(object):
     def exist_table(self, table_name: str) -> bool:
         raise NotImplementedError()
 
-    def get_table_columns_names(self, table_name: str) -> List[str]:
+    def get_columns_names(self, table_name: str) -> List[str]:
+        raise NotImplementedError()
+
+    def get_table_primary_keys(self, table_name: str) -> Optional[List[str]]:
         raise NotImplementedError()
 
 
@@ -84,12 +86,11 @@ class MySQLInterface(DBInterface):
         :param engine: sqlalchemy engine
         """
         super().__init__()
+        assert engine.name == 'mysql', 'This class is MySQL database ONLY!!!'
+        self.engine = engine
 
         if init:
             self._create_db_schema_tables(db_schema_loc)
-
-        assert engine.name == 'mysql', 'This class is MySQL database ONLY!!!'
-        self.engine = engine
         self.meta = sa.MetaData(bind=self.engine)
         self.meta.reflect()
 
@@ -107,18 +108,18 @@ class MySQLInterface(DBInterface):
                     self._db_parameters[prefix + yearly + special_item] = tmp_item
         for entry in ['合并单季度资产负债表', '母公司单季度资产负债表']:
             del self._db_parameters[entry]
-        for table_name, type_info in self._db_parameters.items():
-            self.create_table(table_name, type_info)
+        for table_name, table_schema in self._db_parameters.items():
+            self.create_table(table_name, table_schema)
 
-    def create_table(self, table_name: str, table_info: Mapping[str, str]) -> None:
+    def create_table(self, table_name: str, table_schema: Mapping[str, str]) -> None:
         """
         创建表
 
         :param table_name: 表名
-        :param table_info: dict{字段名: 类型}
+        :param table_schema: dict{字段名: 类型}
         """
-        col_names = list(table_info.keys())
-        col_types = [self.type_mapper[it] for it in table_info.values()]
+        col_names = list(table_schema.keys())
+        col_types = [self.type_mapper[it] for it in table_schema.values()]
         primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'IndexCode'] if it in col_names]
         existing_tables = [it.lower() for it in self.meta.tables]
         if table_name.lower() in existing_tables:
@@ -141,18 +142,17 @@ class MySQLInterface(DBInterface):
 
     def purge_table(self, table_name: str) -> None:
         """删除表中的所有数据, 谨慎使用!!!"""
-        metadata = sa.MetaData(self.engine)
-        metadata.reflect()
-        assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
-        table = metadata.tables[table_name]
+        assert table_name in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        table = self.meta.tables[table_name]
         conn = self.engine.connect()
         conn.execute(table.delete())
         logging.info(f'table {table_name} purged')
 
     def update_df(self, df: pd.DataFrame, table_name: str) -> None:
         """ 将DataFrame写入数据库"""
-        if df.shape[0] == 0:
+        if df.empty:
             return
+
         metadata = sa.MetaData(self.engine)
         metadata.reflect()
         table = metadata.tables[table_name.lower()]
@@ -172,44 +172,39 @@ class MySQLInterface(DBInterface):
             self.engine.execute(statement)
 
     def update_compact_df(self, df, table_name: str) -> None:
-        if df.shape[0] == 0:
+        if df.empty:
             return
-        current_data = self.read_table(table_name, index_col=['DateTime', 'ID'])
-        if current_data.shape[0] == 0:
+
+        existing_data = self.read_table(table_name, index_col=['DateTime', 'ID'])
+        if existing_data.empty:
             self.update_df(df, table_name)
         else:
-            current_date = df.index.get_level_values(0).to_pydatetime()[0]
-            current_data = current_data.loc[current_data.index.get_level_values(0) < current_date, :]
-            new_info = utils.compute_diff(df, current_data)
+            current_date = df.index.get_level_values('DateTime').to_pydatetime()[0]
+            existing_data = existing_data.loc[existing_data.index.get_level_values('DateTime') < current_date, :]
+            new_info = utils.compute_diff(df, existing_data)
             self.update_df(new_info, table_name)
 
-    def get_progress(self, table_name: str) -> Tuple[Optional[dt.datetime], Optional[str]]:
+    def get_latest_timestamp(self, table_name: str) -> Optional[dt.datetime]:
         """
-        返回数据库中最新的时间和证券代码
+        返回数据库表中最新的时间戳
 
         :param table_name: 表名
-        :return: (最新时间, 最大证券代码)
+        :return: 最新时间
         """
         table_name = table_name.lower()
-        latest_time = None
-        latest_id = None
-
         assert table_name in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+
         table = self.meta.tables[table_name]
         session_maker = sessionmaker(bind=self.engine)
         session = session_maker()
         if 'DateTime' in table.columns.keys():
             logging.debug(f'{table_name} 表中找到时间列')
             latest_time = session.query(func.max(table.c.DateTime)).one()[0]
-        if 'ID' in table.columns.keys():
-            logging.debug(f'{table_name} 表中找到ID列')
-            latest_id = session.query(func.max(table.c.ID)).one()[0]
-
-        return latest_time, latest_id
+            return latest_time
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
         """
-        返回数据库中的所有股票代码
+        返回数据库表中的所有股票代码
 
         :param table_name: 表名
         :return: 证券代码列表
@@ -239,46 +234,58 @@ class MySQLInterface(DBInterface):
         if isinstance(date, pd.Timestamp):
             return date.strftime('%Y-%m-%d %H:%M:%S')
 
-    def read_table(self, table_name: str, index_col: Sequence[str] = None,
-                   columns: Sequence[str] = None, where_clause: str = None) -> pd.DataFrame:
+    def read_table(self, table_name: str, columns: Union[str, Sequence[str]] = None,
+                   where_clause: str = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
         :param table_name: 表名
-        :param index_col: 需设为输出的索引名
         :param columns: 所需的列名
         :param where_clause: 所需数据条件
         :return:
         """
+        if isinstance(columns, str):
+            columns = [columns]
+        index_col = self.get_table_primary_keys(table_name)
         if where_clause is None:
-            return pd.read_sql_table(table_name=table_name, con=self.engine, index_col=index_col, columns=columns)
+            ret = pd.read_sql_table(table_name=table_name, con=self.engine, index_col=index_col, columns=columns)
         else:
             # construct sql command
             sql = f'SELECT {", ".join(columns)} FROM {table_name} WHERE {where_clause}'
-            return pd.read_sql(sql, con=self.engine, index_col=index_col, columns=columns)
+            ret = pd.read_sql(sql, con=self.engine, index_col=index_col, columns=columns)
+        if ret.shape[1] == 1:
+            ret = ret.iloc[:, 0]
+        return ret
 
     def exist_table(self, table_name: str) -> bool:
         """ 数据库中是否存在该表"""
         return table_name in self.meta.tables.keys()
 
-    def get_table_columns_names(self, table_name: str) -> List[str]:
+    def get_columns_names(self, table_name: str) -> List[str]:
         """ 数据库中表中的所有列"""
         table = sa.Table(table_name, self.meta)
         return [it.name for it in table.columns]
 
+    def get_table_primary_keys(self, table_name: str) -> Optional[List[str]]:
+        table = self.meta.tables[table_name]
+        primary_key = [it.name for it in table.primary_key]
+        if primary_key:
+            return primary_key
 
-def get_stocks(db_interface: DBInterface, date: utils.DateType = None) -> List[str]:
+
+def _get_stock_list_info(db_interface: DBInterface, date: utils.DateType = None) -> pd.DataFrame:
     stock_list_df = db_interface.read_table('股票上市退市')
     if date:
         date = utils.date_type2datetime(date)
-        stock_list_df = stock_list_df.loc[stock_list_df['DateTime'] <= date, :]
-    return sorted(stock_list_df['ID'].unique().tolist())
+        stock_list_df = stock_list_df.loc[stock_list_df.index.get_level_values('DateTime') <= date, :]
+    return stock_list_df
+
+
+def get_stocks(db_interface: DBInterface, date: utils.DateType = None) -> List[str]:
+    stock_list_df = _get_stock_list_info(db_interface, date)
+    return sorted(stock_list_df.index.get_level_values('ID').unique().tolist())
 
 
 def get_listed_stocks(db_interface: DBInterface, date: utils.DateType = None) -> List[str]:
-    stock_list_df = db_interface.read_table('股票上市退市')
-    if date:
-        date = utils.date_type2datetime(date)
-        stock_list_df = stock_list_df.loc[stock_list_df['DateTime'] <= date, :]
-
-    tmp = stock_list_df.groupby('ID').tail(1)
+    stock_list_df = _get_stock_list_info(db_interface, date)
+    tmp = stock_list_df.reset_index().groupby('ID').tail(1)
     return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())

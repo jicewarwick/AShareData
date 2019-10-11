@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from AShareData import constants, utils
 from AShareData.DataSource import DataSource
-from AShareData.DBInterface import DBInterface
+from AShareData.DBInterface import DBInterface, get_stocks
 from AShareData.TradingCalendar import TradingCalendar
 
 
@@ -25,7 +25,6 @@ class TushareData(DataSource):
         :param tushare_token: tushare token
         :param db_interface: DBInterface
         :param param_json_loc: tushare 返回df的列名信息
-        :param db_schema_loc: database quasi-schema
         """
         super().__init__(db_interface)
         self._pro = ts.pro_api(tushare_token)
@@ -40,13 +39,13 @@ class TushareData(DataSource):
         if init:
             self.update_calendar()
 
-        self._all_stocks = None
-        self._get_all_stocks()
+        if self.db_interface.get_latest_timestamp('股票上市退市') < dt.datetime.today() - dt.timedelta(10):
+            self._get_all_stocks()
 
-    @property
+    @cached_property
     def all_stocks(self) -> List[str]:
-        """ 获取所有股票列表"""
-        return self._all_stocks
+        """获取所有股票列表"""
+        return get_stocks(self.db_interface)
 
     @cached_property
     def calendar(self) -> TradingCalendar:
@@ -190,12 +189,17 @@ class TushareData(DataSource):
     def get_all_past_names(self):
         """获取所有股票的曾用名"""
         interval = 60.0 / 100.0
-        with tqdm(self.all_stocks) as pbar:
-            for stock in self.all_stocks:
+        raw_df = self.get_past_names()
+        raw_df_start_dates = raw_df.index.get_level_values('DateTime').min()
+        uncovered_stocks = get_stocks(self.db_interface, raw_df_start_dates)
+
+        with tqdm(uncovered_stocks) as pbar:
+            for stock in uncovered_stocks:
                 pbar.set_description(f'下载{stock}的股票名称')
                 self.get_past_names(stock)
                 pbar.update(1)
                 sleep(interval)
+        logging.info('股票曾用名下载完成.')
 
     def get_dividend(self) -> None:
         """ 获取上市公司分红送股信息 """
@@ -425,7 +429,7 @@ class TushareData(DataSource):
         df = df.set_index(index, drop=True)
         return df
 
-    def _get_all_stocks(self) -> List[str]:
+    def _get_all_stocks(self) -> None:
         """ 获取所有股票列表, 包括上市, 退市和暂停上市的股票
 
         ref: https://tushare.pro/document/2?doc_id=25
@@ -446,12 +450,10 @@ class TushareData(DataSource):
         unlisted = output.loc[:, ['ts_code', 'delist_date']].dropna().rename({'delist_date': 'list_date'}, axis=1)
         unlisted['list_status'] = False
         output = pd.concat([listed, unlisted])
-        self._all_stocks = sorted(list(set(output['ts_code'].values.tolist())))
+
         output = self._standardize_df(output, desc)
         self.db_interface.update_df(output, '股票上市退市')
-
         logging.info(f'{data_category}下载完成.')
-        return self._all_stocks
 
     def update_calendar(self) -> None:
         """ 更新上交所交易日历 """
@@ -465,7 +467,7 @@ class TushareData(DataSource):
         self.db_interface.update_df(cal_date, table_name)
 
     def _check_db_timestamp(self, table_name: str, default_timestamp: utils.DateType) -> dt.datetime:
-        latest_time, _ = self.db_interface.get_progress(table_name)
+        latest_time = self.db_interface.get_latest_timestamp(table_name)
         if latest_time is None:
             latest_time = utils.date_type2datetime(default_timestamp)
         return latest_time

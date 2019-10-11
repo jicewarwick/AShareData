@@ -29,15 +29,16 @@ class FactorZooTest(unittest.TestCase):
 
     def test_name_factor(self):
         names = self.factor_zoo.names
-        print(names.data.fillna(method='ffill').tail())
+        print(names.fillna(method='ffill').tail())
 
     def test_latest_year_equity(self):
         output = self.db.get_financial_factor('合并资产负债表', '股东权益合计(不含少数股东权益)',
                                               agg_func=lambda x: x.tail(1), yearly=True)
-        print(output.data.fillna(method='ffill').tail())
+        print(output.fillna(method='ffill').tail())
 
     def test_industry(self):
-        output = self.factor_zoo.industry('中证', 1)
+        output = self.factor_zoo.industry('中证', 3)
+        # output = self.factor_zoo.industry('中信', 3)
         print(output.tail(1).T)
 
     def test_shibor(self):
