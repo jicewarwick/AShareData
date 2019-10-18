@@ -30,7 +30,7 @@ class TushareData(DataSource):
         self._pro = ts.pro_api(tushare_token)
 
         if param_json_loc is None:
-            f = open_text('AShareData.data', 'param.json')
+            f = open_text('AShareData.data', 'tushare_param.json')
         else:
             f = open(param_json_loc, 'r', encoding='utf-8')
         with f:
@@ -393,23 +393,24 @@ class TushareData(DataSource):
         :return: None
         """
         interval = 60.0 / 70.0
-        if indexes is None:
-            indexes = constants.BOARD_INDEXES
-        start_date, end_date = utils.date_type2str(start_date), utils.date_type2str(end_date)
+        data_category = '指数成分和权重'
+        column_desc = self._factor_param[data_category]['输出参数']
+        indexes = constants.BOARD_INDEXES if indexes is None else indexes
+
+        start_date, end_date = utils.date_type2datetime(start_date), utils.date_type2datetime(end_date)
         dates = self.calendar.last_day_of_month(start_date, end_date)
         dates = sorted(list(set([start_date] + dates + [end_date])))
 
-        data_category = '指数成分和权重'
-        column_desc = self._factor_param[data_category]['输出参数']
         logging.debug(f'开始下载{data_category}.')
         with tqdm(dates) as pbar:
             for i in range(len(dates) - 1):
                 storage = []
+                curr_date_str = utils.date_type2str(dates[i])
+                next_date_str = utils.date_type2str(dates[i + 1])
                 for index in indexes:
-                    pbar.set_description(f'下载{dates[i]} 到 {dates[i + 1]} 的 {index} 的 成分股权重')
+                    pbar.set_description(f'下载{curr_date_str} 到 {next_date_str} 的 {index} 的 成分股权重')
                     storage.append(self._pro.index_weight(index_code=index,
-                                                          start_date=utils.date_type2str(dates[i]),
-                                                          end_date=utils.date_type2str(dates[i + 1])))
+                                                          start_date=curr_date_str, end_date=next_date_str))
                     sleep(interval)
                 df = self._standardize_df(pd.concat(storage), column_desc)
                 self.db_interface.update_df(df, '指数成分股权重')

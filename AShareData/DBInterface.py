@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import logging
+import time
 from importlib.resources import open_text
 from typing import List, Mapping, Optional, Sequence, Union
 
@@ -28,6 +29,9 @@ class DBInterface(object):
     def purge_table(self, table_name: str) -> None:
         raise NotImplementedError()
 
+    def insert_df(self, df: pd.DataFrame, table_name: str) -> None:
+        raise NotImplementedError()
+
     def update_df(self, df: pd.DataFrame, table_name: str) -> None:
         raise NotImplementedError()
 
@@ -37,7 +41,8 @@ class DBInterface(object):
     def get_latest_timestamp(self, table_name: str) -> Optional[dt.datetime]:
         raise NotImplementedError()
 
-    def read_table(self, table_name: str, columns: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
+    def read_table(self, table_name: str, columns: Sequence[str] = None,
+                   where_clause: str = None) -> Union[pd.Series, pd.DataFrame]:
         raise NotImplementedError()
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
@@ -89,10 +94,10 @@ class MySQLInterface(DBInterface):
         assert engine.name == 'mysql', 'This class is MySQL database ONLY!!!'
         self.engine = engine
 
-        if init:
-            self._create_db_schema_tables(db_schema_loc)
         self.meta = sa.MetaData(bind=self.engine)
         self.meta.reflect()
+        if init:
+            self._create_db_schema_tables(db_schema_loc)
 
     def _create_db_schema_tables(self, db_schema_loc):
         if db_schema_loc is None:
@@ -148,6 +153,16 @@ class MySQLInterface(DBInterface):
         conn.execute(table.delete())
         logging.info(f'table {table_name} purged')
 
+    def insert_df(self, df: pd.DataFrame, table_name: str) -> None:
+        if df.empty:
+            return
+
+        start_timestamp = time.time()
+        df.to_sql(table_name, self.engine, if_exists='append')
+        if logging.getLogger().level <= logging.DEBUG:
+            end_timestamp = time.time()
+            logging.debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
+
     def update_df(self, df: pd.DataFrame, table_name: str) -> None:
         """ 将DataFrame写入数据库"""
         if df.empty:
@@ -160,22 +175,26 @@ class MySQLInterface(DBInterface):
 
         date_cols = flat_df.select_dtypes(np.datetime64).columns.values.tolist()
         for col in date_cols:
-            flat_df[col] = flat_df[col].apply(self.date2str)
+            flat_df[col] = flat_df[col].apply(self._date2str)
 
         # replace nan to None so that insert will not error out
         # it seems that this operation changes dtypes. so do it last
+        start_timestamp = time.time()
         for col in flat_df.columns:
             flat_df[col] = flat_df[col].where(flat_df[col].notnull(), other=None)
         for _, row in flat_df.iterrows():
             insert_statement = insert(table).values(**row.to_dict())
             statement = insert_statement.on_duplicate_key_update(**row.to_dict())
             self.engine.execute(statement)
+        if logging.getLogger().level <= logging.DEBUG:
+            end_timestamp = time.time()
+            logging.debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
 
     def update_compact_df(self, df, table_name: str) -> None:
         if df.empty:
             return
 
-        existing_data = self.read_table(table_name, index_col=['DateTime', 'ID'])
+        existing_data = self.read_table(table_name)
         if existing_data.empty:
             self.update_df(df, table_name)
         else:
@@ -230,7 +249,7 @@ class MySQLInterface(DBInterface):
         data = self.read_table(table_name).unstack()
 
     @staticmethod
-    def date2str(date) -> Optional[str]:
+    def _date2str(date) -> Optional[str]:
         if isinstance(date, pd.Timestamp):
             return date.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -250,7 +269,7 @@ class MySQLInterface(DBInterface):
             ret = pd.read_sql_table(table_name=table_name, con=self.engine, index_col=index_col, columns=columns)
         else:
             # construct sql command
-            sql = f'SELECT {", ".join(columns)} FROM {table_name} WHERE {where_clause}'
+            sql = f'SELECT {", ".join(index_col + columns)} FROM {table_name} WHERE {where_clause}'
             ret = pd.read_sql(sql, con=self.engine, index_col=index_col, columns=columns)
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]

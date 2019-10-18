@@ -10,6 +10,9 @@ class TradingCalendar(object):
         calendar_df = db_interface.read_table('交易日历')
         self.calendar = calendar_df['交易日期'].dt.to_pydatetime().tolist()
 
+    def is_trading_date(self, date: DateType):
+        return date_type2datetime(date) in self.calendar
+
     @staticmethod
     def _select_dates(calendar: Sequence[dt.datetime],
                       start_date: DateType = None, end_date: DateType = None,

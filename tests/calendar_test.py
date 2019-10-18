@@ -11,6 +11,10 @@ class MyTestCase(unittest.TestCase):
         engine = prepare_engine(config_loc)
         self.calendar = TradingCalendar(MySQLInterface(engine))
 
+    def test_is_trading_day(self):
+        self.assertFalse(self.calendar.is_trading_date(dt.date(2019, 10, 1)))
+        self.assertTrue(self.calendar.is_trading_date(dt.date(2019, 10, 16)))
+
     def test_days_count(self):
         start = dt.datetime(2019, 1, 4)
         end = dt.datetime(2019, 1, 7)

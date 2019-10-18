@@ -31,6 +31,13 @@ class MyTestCase(unittest.TestCase):
     def test_update_wind_industry(self):
         self.wind_data.update_industry('Wind')
 
+    def test_minutes_data(self):
+        self.assertRaises(AssertionError, self.wind_data.get_minutes_data, '20191001')
+        # print(self.wind_data.get_minutes_data('20161017'))
+
+    def test_update_minutes_data(self):
+        self.wind_data.update_minutes_data()
+
 
 if __name__ == '__main__':
     unittest.main()

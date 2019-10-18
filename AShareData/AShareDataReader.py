@@ -2,13 +2,13 @@ import datetime as dt
 import json
 import logging
 from importlib.resources import open_text
-from typing import Callable, Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Sequence
 
 import pandas as pd
 from cached_property import cached_property
 
 from AShareData import utils
-from AShareData.constants import INDUSTRY_LEVEL
+from AShareData.constants import FINANCIAL_STATEMENTS, FINANCIAL_STATEMENTS_TYPE, INDUSTRY_LEVEL
 from AShareData.DBInterface import DBInterface, get_listed_stocks, get_stocks
 from AShareData.TradingCalendar import TradingCalendar
 
@@ -33,30 +33,125 @@ class AShareDataReader(object):
     def listed_stock(self, date: utils.DateType = dt.date.today()) -> List[str]:
         return get_listed_stocks(self.db_interface, date)
 
+    # common factors
     def get_factor(self, table_name: str, factor_name: str, ffill: bool = False,
                    start_date: utils.DateType = None, end_date: utils.DateType = None,
-                   stock_list: Sequence[str] = None) -> pd.DataFrame:
+                   stock_list: Sequence[str] = None) -> [pd.Series, pd.DataFrame]:
+        assert not (table_name in FINANCIAL_STATEMENTS), '财报数据请使用 query_financial_data 或 get_financial_factor 查询!'
         table_name = table_name.lower()
-        self._check_args_and_get_primary_keys(table_name, factor_name)
+        self._check_args(table_name, factor_name)
+
+        logging.debug('开始读取数据.')
+        df = self.db_interface.read_table(table_name, columns=factor_name)
+        logging.debug('数据读取完成.')
+        if isinstance(df.index, pd.MultiIndex):
+            df = self._conform_df(df.unstack(), ffill=ffill,
+                                  start_date=start_date, end_date=end_date, stock_list=stock_list)
+            # name may not survive pickling
+            df.name = factor_name
+        return df
+
+    def get_snapshot(self, table_name: str, factor_name: str, date: utils.DateType = dt.date.today()) -> pd.Series:
+        assert not (table_name in FINANCIAL_STATEMENTS), '财报数据请使用 query_financial_data 或 get_financial_factor 查询!'
+        table_name = table_name.lower()
+        self._check_args(table_name, factor_name)
 
         logging.debug('开始读取数据.')
         series = self.db_interface.read_table(table_name, columns=factor_name)
         logging.debug('数据读取完成.')
-        df = self._conform_df(series.unstack(), ffill=ffill,
-                              start_date=start_date, end_date=end_date, stock_list=stock_list)
-        # name may not survive pickling
-        df.name = factor_name
+
+        df = series.reset_index()
+        if date:
+            date = utils.date_type2datetime(date)
+            timestamp = date
+            df = df.loc[df['DateTime'] <= date, :]
+        else:
+            timestamp = df['DateTime'].max()
+
+        listed_stocks = get_listed_stocks(self.db_interface, timestamp)
+        content = df.groupby('ID').tail(1).loc[df['ID'].isin(listed_stocks), ['ID', factor_name]]
+        content['DateTime'] = timestamp
+        return content.set_index(series.index.names).sort_index().iloc[:, 0]
+
+    # industry
+    def get_industry(self, provider: str, level: int, translation_json_loc: str = None,
+                     start_date: utils.DateType = None, end_date: utils.DateType = None,
+                     stock_list: Sequence[str] = None) -> pd.DataFrame:
+        assert 0 < level <= INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
+
+        table_name = f'{provider}行业'
+        logging.debug('开始读取数据.')
+        series = self.db_interface.read_table(table_name, columns='行业名称')
+        logging.debug('数据读取完成.')
+
+        if level != INDUSTRY_LEVEL[provider]:
+            new_translation = self._get_industry_translation_dict(table_name, level, translation_json_loc)
+            series = series.map(new_translation)
+
+        df = self._conform_df(series.unstack(), True, start_date, end_date, stock_list)
+        df.name = f'{provider}{level}级行业'
         return df
 
+    def get_industry_snapshot(self, provider: str, level: int, translation_json_loc: str = None,
+                              date: utils.DateType = dt.date.today()) -> pd.Series:
+        table_name = f'{provider}行业'
+        factor_name = '行业名称'
+        industry = self.get_snapshot(table_name, factor_name, date)
+        if level != INDUSTRY_LEVEL[provider]:
+            new_translation = self._get_industry_translation_dict(table_name, level, translation_json_loc)
+            industry = industry.map(new_translation)
+        industry.name = f'{provider}{level}级行业'
+        return industry
+
+    # financial statements
+    def query_financial_statements(self, table_type: str, factor_name: str, report_date: utils.DateType,
+                                   combined: bool = True, quarterly: bool = False) -> pd.Series:
+        assert table_type in FINANCIAL_STATEMENTS_TYPE, '非财报数据请使用 get_factor 等函数查询!'
+        table_name = self._gen_table_name(table_type, combined, quarterly)
+        self._check_args(table_name, factor_name)
+
+        report_date = utils.date_type2str(report_date, '-')
+
+        logging.debug('开始读取数据.')
+        df = self.db_interface.read_table(table_name, columns=factor_name, where_clause=f'报告期="{report_date}"')
+        logging.debug('数据读取完成.')
+        df = df.groupby(df.index.get_level_values('ID')).tail(1)
+        return df
+
+    def get_financial_snapshot(self, table_type: str, factor_name: str, date: utils.DateType = dt.date.today(),
+                               combined: bool = True, quarterly: bool = False, yearly=False) -> pd.Series:
+        assert not (quarterly & yearly), 'quarterly 和 yearly 不能同时为 True'
+        assert table_type in FINANCIAL_STATEMENTS_TYPE, '非财报数据请使用 get_factor 等函数查询!'
+        table_name = self._gen_table_name(table_type, combined, quarterly)
+        self._check_args(table_name, factor_name)
+
+        pre_date_str = utils.date_type2str(utils.date_type2datetime(date) - dt.timedelta(365 * 2), '-')
+        date = utils.date_type2datetime(date)
+        date_str = utils.date_type2str(date, '-')
+        where_clause = f'DateTime >= "{pre_date_str}" AND DateTime <= "{date_str}"'
+
+        logging.debug('开始读取数据.')
+        df = self.db_interface.read_table(table_name, columns=factor_name, where_clause=where_clause)
+        stock_list = get_listed_stocks(self.db_interface, date)
+        logging.debug('数据读取完成.')
+        if yearly:
+            df = df.loc[df.index.get_level_values('报告期').month == 12, :]
+        df = df.groupby('ID').tail(1).droplevel(['DateTime', '报告期']).reindex(stock_list).to_frame()
+        df['DateTime'] = date
+        df = df.set_index('DateTime', append=True).swaplevel().iloc[:, 0]
+        return df
+
+    # todo: TBD
     def get_financial_factor(self, table_name: str, factor_name: str, agg_func: Callable,
                              start_date: utils.DateType = None, end_date: utils.DateType = None,
                              stock_list: Sequence[str] = None, yearly: bool = True) -> pd.DataFrame:
+        assert table_name in FINANCIAL_STATEMENTS, '非财报数据请使用 get_factor 等函数查询!'
         table_name = table_name.lower()
-        self._check_args_and_get_primary_keys(table_name, factor_name)
+        self._check_args(table_name, factor_name)
 
         data = self.db_interface.read_table(table_name, columns=factor_name)
         if yearly:
-            data = data.loc[lambda x: x['报告期'].dt.month == 12, :]
+            data = data.loc[data.index.get_level_values('报告期').month == 12, :]
 
         storage = []
         all_secs = set(data.ID.unique().tolist())
@@ -81,65 +176,34 @@ class AShareDataReader(object):
         df.name = factor_name
         return df
 
-    def get_industry(self, provider: str, level: int, translation_json_loc: str = None,
-                     start_date: utils.DateType = None, end_date: utils.DateType = None,
-                     stock_list: Sequence[str] = None) -> pd.DataFrame:
-        assert 0 < level <= INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
-
-        table_name = f'{provider}行业'
-        logging.debug('开始读取数据.')
-        series = self.db_interface.read_table(table_name, columns='行业名称')
-        logging.debug('数据读取完成.')
-
-        if level != INDUSTRY_LEVEL[provider]:
-            new_translation = self._get_industry_translation_dict(table_name, level, translation_json_loc)
-            series = series.map(new_translation)
-
-        df = self._conform_df(series.unstack(), True, start_date, end_date, stock_list)
-        df.name = f'{provider}{level}级行业'
-        return df
-
-    def get_snapshot(self, table_name: str, factor_name: str, date: utils.DateType = dt.date.today()) -> pd.Series:
-        table_name = table_name.lower()
-        primary_keys = self._check_args_and_get_primary_keys(table_name, factor_name)
-
-        logging.debug('开始读取数据.')
-        series = self.db_interface.read_table(table_name, columns=factor_name)
-        logging.debug('数据读取完成.')
-
-        df = series.reset_index()
-        if date:
-            date = utils.date_type2datetime(date)
-            timestamp = date
-            df = df.loc[df['DateTime'] <= date, :]
-        else:
-            timestamp = df['DateTime'].max()
-
-        listed_stocks = get_listed_stocks(self.db_interface, timestamp)
-        content = df.groupby('ID').tail(1).loc[df['ID'].isin(listed_stocks), ['ID', factor_name]]
-        content['DateTime'] = timestamp
-        return content.set_index(primary_keys).sort_index().iloc[:, 0]
-
-    def get_industry_snapshot(self, provider: str, level: int, translation_json_loc: str = None,
-                              date: utils.DateType = dt.date.today()) -> pd.Series:
-        table_name = f'{provider}行业'
-        factor_name = '行业名称'
-        industry = self.get_snapshot(table_name, factor_name, date)
-        if level != INDUSTRY_LEVEL[provider]:
-            new_translation = self._get_industry_translation_dict(table_name, level, translation_json_loc)
-            industry = industry.map(new_translation)
-        industry.name = f'{provider}{level}级行业'
-        return industry
-
     # helper functions
-    def _check_args_and_get_primary_keys(self, table_name: str, factor_name: str) -> Optional[List[str]]:
+    def _check_args(self, table_name: str, factor_name: str):
         table_name = table_name.lower()
         assert self.db_interface.exist_table(table_name), f'数据库中不存在表 {table_name}'
 
         columns = self.db_interface.get_columns_names(table_name)
         assert factor_name in columns, f'表 {table_name} 中不存在 {factor_name} 列'
 
-        return self.db_interface.get_table_primary_keys(table_name)
+    @staticmethod
+    def _get_industry_translation_dict(table_name: str, level: int, translation_json_loc: str = None) -> Dict[str, str]:
+        if translation_json_loc is None:
+            with open_text('AShareData.data', 'industry.json') as f:
+                translation = json.load(f)
+        else:
+            with open(translation_json_loc, 'r', encoding='utf-8') as f:
+                translation = json.load(f)
+
+        new_translation = {}
+        for key, value in translation[table_name].items():
+            new_translation[key] = value[f'level_{level}']
+        return new_translation
+
+    @staticmethod
+    def _gen_table_name(table_type: str, combined: bool, quarterly: bool) -> str:
+        combined = '合并' if combined else '母公司'
+        quarterly = '单季度' if (quarterly & (table_type != '资产负债表')) else ''
+        table_name = f'{combined}{quarterly}{table_type}'
+        return table_name
 
     def _conform_df(self, df, ffill: bool = False,
                     start_date: utils.DateType = None, end_date: utils.DateType = None,
@@ -157,17 +221,3 @@ class AShareDataReader(object):
             stock_list = self.stocks
         df = df.reindex(stock_list, axis=1)
         return df
-
-    @staticmethod
-    def _get_industry_translation_dict(table_name: str, level: int, translation_json_loc: str = None) -> Dict[str, str]:
-        if translation_json_loc is None:
-            with open_text('AShareData.data', 'industry.json') as f:
-                translation = json.load(f)
-        else:
-            with open(translation_json_loc, 'r', encoding='utf-8') as f:
-                translation = json.load(f)
-
-        new_translation = {}
-        for key, value in translation[table_name].items():
-            new_translation[key] = value[f'level_{level}']
-        return new_translation

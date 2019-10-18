@@ -40,6 +40,13 @@ class MyTestCase(unittest.TestCase):
         print(self.db.get_industry_snapshot('中信', 3))
         print(self.db.get_industry_snapshot('中证', 3))
 
+    def test_financial_query(self):
+        print(self.db.query_financial_statements('资产负债表', '资产总计', '2018-12-31'))
+
+    def test_financial_snapshot(self):
+        print(self.db.get_financial_snapshot('资产负债表', '资产总计', yearly=True))
+        print(self.db.get_financial_snapshot('资产负债表', '资产总计', quarterly=True))
+
 
 if __name__ == '__main__':
     unittest.main()

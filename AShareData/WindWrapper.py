@@ -4,10 +4,10 @@ import sys
 import tempfile
 from typing import List
 
-import WindPy
 import pandas as pd
+import WindPy
 
-from AShareData.utils import DateType, date_type2datetime
+from AShareData.utils import date_type2datetime, DateType
 
 
 class WindWrapper(object):
@@ -65,6 +65,11 @@ class WindWrapper(object):
 
     def wss(self, *args, **kwargs) -> pd.DataFrame:
         data = self._w.wss(*args, usedf=True, **kwargs)
+        self._api_error(data)
+        return data[1]
+
+    def wsi(self, *args, **kwargs) -> pd.DataFrame:
+        data = self._w.wsi(*args, usedf=True, **kwargs)
         self._api_error(data)
         return data[1]
 
