@@ -2,7 +2,6 @@ import datetime as dt
 import json
 import logging
 import time
-from importlib.resources import open_text
 from typing import List, Mapping, Optional, Sequence, Union
 
 import numpy as np
@@ -17,48 +16,62 @@ import AShareData.utils as utils
 
 
 class DBInterface(object):
+    """Database Interface Base Class"""
     def __init__(self):
         pass
 
     def create_table(self, table_name: str, table_info: Mapping[str, str]) -> None:
+        """Create table named ``table_name`` with column name adn type specified in ``table_info``"""
         raise NotImplementedError()
 
     def drop_all_tables(self) -> None:
+        """Drop *ALL TABLES AND THEIR DATA* in the database"""
         raise NotImplementedError()
 
     def purge_table(self, table_name: str) -> None:
+        """Drop *ALL DATA* in the table, *BE CAUTIOUS*"""
         raise NotImplementedError()
 
     def insert_df(self, df: pd.DataFrame, table_name: str) -> None:
+        """Insert pandas.DataFrame(df) into table ``table_name``"""
         raise NotImplementedError()
 
     def update_df(self, df: pd.DataFrame, table_name: str) -> None:
+        """Update pandas.DataFrame(df) into table ``table_name``"""
         raise NotImplementedError()
 
     def update_compact_df(self, df, table_name: str) -> None:
+        """Update new information from df to table ``table_name``"""
         raise NotImplementedError()
 
     def get_latest_timestamp(self, table_name: str) -> Optional[dt.datetime]:
+        """Get the latest timestamp from records in ``table_name``"""
         raise NotImplementedError()
 
     def read_table(self, table_name: str, columns: Sequence[str] = None,
                    where_clause: str = None) -> Union[pd.Series, pd.DataFrame]:
+        """Read data from ``table_name``"""
         raise NotImplementedError()
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
+        """Get all stocks in the a table"""
         raise NotImplementedError()
 
     def exist_table(self, table_name: str) -> bool:
+        """Check if ``table_name`` exists in the database"""
         raise NotImplementedError()
 
     def get_columns_names(self, table_name: str) -> List[str]:
+        """Get column names of a table"""
         raise NotImplementedError()
 
     def get_table_primary_keys(self, table_name: str) -> Optional[List[str]]:
+        """Get primary keys of a table"""
         raise NotImplementedError()
 
 
 def prepare_engine(config_loc: str) -> sa.engine.Engine:
+    """Create sqlalchemy engine from config file"""
     with open(config_loc, 'r') as f:
         config = json.load(f)
     url = URL(drivername=config['driver'], host=config['host'], port=config['port'], database=config['database'],
@@ -68,7 +81,7 @@ def prepare_engine(config_loc: str) -> sa.engine.Engine:
 
 
 class MySQLInterface(DBInterface):
-    type_mapper = {
+    _type_mapper = {
         'datetime': DateTime,
         'float': Float,
         'double': DOUBLE,
@@ -79,16 +92,14 @@ class MySQLInterface(DBInterface):
     }
 
     def __init__(self, engine: sa.engine.Engine, init: bool = False, db_schema_loc: str = None) -> None:
-        """ DataFrame to MySQL Database Writer
+        """ DataFrame to MySQL Database Interface
 
-        Write pd.DataFrame to MySQL server. Feature:
-        - Auto Create Table Set 'DateTime' and 'ID' as primary key and index if they are available as DataFrame index.
-        - Add new columns when necessary
-        - Handle datetime insertion
-        - Handle nan insertion
+        Read and write pd.DataFrame to MySQL server. Feature:
         - Insert new or update old records using on_duplicate_key_update()
 
         :param engine: sqlalchemy engine
+        :param init: if needed to initialize database tables
+        :param db_schema_loc: database schema description if you have custom schema
         """
         super().__init__()
         assert engine.name == 'mysql', 'This class is MySQL database ONLY!!!'
@@ -100,12 +111,7 @@ class MySQLInterface(DBInterface):
             self._create_db_schema_tables(db_schema_loc)
 
     def _create_db_schema_tables(self, db_schema_loc):
-        if db_schema_loc is None:
-            f = open_text('AShareData.data', 'db_schema.json')
-        else:
-            f = open(db_schema_loc, 'r', encoding='utf-8')
-        with f:
-            self._db_parameters = json.load(f)
+        self._db_parameters = utils.load_param('db_schema.json', db_schema_loc)
         for special_item in ['资产负债表', '现金流量表', '利润表']:
             tmp_item = self._db_parameters.pop(special_item)
             for prefix in ['合并', '母公司']:
@@ -124,7 +130,7 @@ class MySQLInterface(DBInterface):
         :param table_schema: dict{字段名: 类型}
         """
         col_names = list(table_schema.keys())
-        col_types = [self.type_mapper[it] for it in table_schema.values()]
+        col_types = [self._type_mapper[it] for it in table_schema.values()]
         primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'IndexCode'] if it in col_names]
         existing_tables = [it.lower() for it in self.meta.tables]
         if table_name.lower() in existing_tables:
@@ -146,7 +152,7 @@ class MySQLInterface(DBInterface):
         self.meta.reflect()
 
     def purge_table(self, table_name: str) -> None:
-        """删除表中的所有数据, 谨慎使用!!!"""
+        """Drop *ALL DATA* in the table, *BE CAUTIOUS*"""
         assert table_name in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name]
         conn = self.engine.connect()
@@ -300,11 +306,13 @@ def _get_stock_list_info(db_interface: DBInterface, date: utils.DateType = None)
 
 
 def get_stocks(db_interface: DBInterface, date: utils.DateType = None) -> List[str]:
+    """Get all the stocks ever listed before(and including) ``date``"""
     stock_list_df = _get_stock_list_info(db_interface, date)
     return sorted(stock_list_df.index.get_level_values('ID').unique().tolist())
 
 
 def get_listed_stocks(db_interface: DBInterface, date: utils.DateType = None) -> List[str]:
+    """Get stocks still listed at ``date``"""
     stock_list_df = _get_stock_list_info(db_interface, date)
     tmp = stock_list_df.reset_index().groupby('ID').tail(1)
     return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())

@@ -11,6 +11,7 @@ from AShareData.utils import date_type2datetime, DateType
 
 
 class WindWrapper(object):
+    """Wind Wrapper to make wind API easier to use"""
     def __init__(self):
         self._w = None
 

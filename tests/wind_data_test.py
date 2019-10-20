@@ -32,7 +32,7 @@ class MyTestCase(unittest.TestCase):
         self.wind_data.update_industry('Wind')
 
     def test_minutes_data(self):
-        self.assertRaises(AssertionError, self.wind_data.get_minutes_data, '20191001')
+        self.assertRaises(AssertionError, self.wind_data.get_stock_minutes_data, '20191001')
         # print(self.wind_data.get_minutes_data('20161017'))
 
     def test_update_minutes_data(self):

@@ -1,6 +1,7 @@
 import datetime as dt
 import json
-from typing import Optional, Union
+from importlib.resources import open_text
+from typing import Any, Dict, Optional, Union
 
 import pandas as pd
 
@@ -39,8 +40,6 @@ def _prepare_example_json(config_loc, example_config_loc) -> None:
     with open(example_config_loc, 'w') as fh:
         json.dump(config, fh, indent=4)
 
-# _prepare_example_json('data.json', 'config_example.json')
-
 
 def compute_diff(input_data: pd.DataFrame, db_data: pd.DataFrame) -> pd.DataFrame:
     db_data = db_data.unstack().ffill().tail(1).stack()
@@ -50,3 +49,13 @@ def compute_diff(input_data: pd.DataFrame, db_data: pd.DataFrame) -> pd.DataFram
     diff_stock = diff.iloc[-1, :]
     diff_stock = diff_stock.loc[diff_stock].index.tolist()
     return input_data.loc[(slice(None), diff_stock), :]
+
+
+def load_param(default_loc: str, param_json_loc: str) -> Dict[str, Any]:
+    if param_json_loc is None:
+        f = open_text('AShareData.data', default_loc)
+    else:
+        f = open(param_json_loc, 'r', encoding='utf-8')
+    with f:
+        param = json.load(f)
+        return param

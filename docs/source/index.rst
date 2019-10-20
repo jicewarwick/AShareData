@@ -1,23 +1,34 @@
-.. AShareData documentation master file, created by
-sphinx-quickstart on Tue Sep 10 13:58:32 2019.
-You can adapt this file completely to your liking, but it should at least
-contain the root `toctree` directive.
-
 Welcome to AShareData's documentation!
 ======================================
 
-Contents
---------
-
-.. only:: html
 
 Modules
 =======
+.. currentmodule:: AShare
 
 .. autosummary::
    :toctree: modules
+   :nosignatures:
 
-   AShareData.AShareDataReader
+   AShareData.DBInterface.DBInterface
+   AShareData.DBInterface.MySQLInterface
+
+.. autosummary::
+   :toctree: AShareData
+   :nosignatures:
+
+   AShareData.AShareDataReader.AShareDataReader
+
+
+Contents
+========
+
+.. only:: html
+
+.. toctree::
+   :maxdepth: 3
+
+   modules.rst
 
 Indices and tables
 ==================

@@ -1,7 +1,5 @@
 import datetime as dt
-import json
 import logging
-from importlib.resources import open_text
 from time import sleep
 from typing import Callable, List, Mapping, Sequence
 
@@ -28,13 +26,7 @@ class TushareData(DataSource):
         """
         super().__init__(db_interface)
         self._pro = ts.pro_api(tushare_token)
-
-        if param_json_loc is None:
-            f = open_text('AShareData.data', 'tushare_param.json')
-        else:
-            f = open(param_json_loc, 'r', encoding='utf-8')
-        with f:
-            self._factor_param = json.load(f)
+        self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
 
         if init:
             self.update_calendar()

@@ -1,7 +1,5 @@
 import datetime as dt
-import json
 import logging
-from importlib.resources import open_text
 from typing import Callable, Dict, List, Sequence
 
 import pandas as pd
@@ -14,9 +12,11 @@ from AShareData.TradingCalendar import TradingCalendar
 
 
 class AShareDataReader(object):
+    """ AShare Data Reader"""
+
     def __init__(self, db_interface: DBInterface) -> None:
         """
-        SQL Database Reader
+        AShare Data Reader
 
         :param db_interface: DBInterface
         """
@@ -24,13 +24,16 @@ class AShareDataReader(object):
 
     @cached_property
     def calendar(self) -> TradingCalendar:
+        """Trading Calendar"""
         return TradingCalendar(self.db_interface)
 
     @cached_property
     def stocks(self) -> List[str]:
+        """Get all the stocks ever listed"""
         return get_stocks(self.db_interface)
 
     def listed_stock(self, date: utils.DateType = dt.date.today()) -> List[str]:
+        """Get stocks still listed at ``date``"""
         return get_listed_stocks(self.db_interface, date)
 
     # common factors
@@ -52,6 +55,7 @@ class AShareDataReader(object):
         return df
 
     def get_snapshot(self, table_name: str, factor_name: str, date: utils.DateType = dt.date.today()) -> pd.Series:
+        """Get ``factor_name`` from ``table_name`` at ``date``"""
         assert not (table_name in FINANCIAL_STATEMENTS), '财报数据请使用 query_financial_data 或 get_financial_factor 查询!'
         table_name = table_name.lower()
         self._check_args(table_name, factor_name)
@@ -77,6 +81,16 @@ class AShareDataReader(object):
     def get_industry(self, provider: str, level: int, translation_json_loc: str = None,
                      start_date: utils.DateType = None, end_date: utils.DateType = None,
                      stock_list: Sequence[str] = None) -> pd.DataFrame:
+        """Get industry factor
+
+        :param provider: Industry classification data provider
+        :param level: Level of industry classification
+        :param translation_json_loc: custom dict specifying maximum industry classification level to lower level
+        :param start_date: start date
+        :param end_date: end date
+        :param stock_list: query stocks
+        :return: industry classification pandas.DataFrame with DateTime as index and stock as column
+        """
         assert 0 < level <= INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
 
         table_name = f'{provider}行业'
@@ -94,6 +108,14 @@ class AShareDataReader(object):
 
     def get_industry_snapshot(self, provider: str, level: int, translation_json_loc: str = None,
                               date: utils.DateType = dt.date.today()) -> pd.Series:
+        """Get industry info at ``date``
+
+        :param provider: Industry classification data provider
+        :param level: Level of industry classification
+        :param translation_json_loc: custom dict specifying maximum industry classification level to lower level
+        :param date:
+        :return: industry classification pandas.DataFrame with DateTime as index and stock as column
+        """
         table_name = f'{provider}行业'
         factor_name = '行业名称'
         industry = self.get_snapshot(table_name, factor_name, date)
@@ -106,6 +128,15 @@ class AShareDataReader(object):
     # financial statements
     def query_financial_statements(self, table_type: str, factor_name: str, report_date: utils.DateType,
                                    combined: bool = True, quarterly: bool = False) -> pd.Series:
+        """Query financial statements
+
+        :param table_type: type of financial statements
+        :param factor_name: factor name
+        :param report_date: report date
+        :param combined: if query combined statements
+        :param quarterly: if query quarterly date
+        :return: factor series
+        """
         assert table_type in FINANCIAL_STATEMENTS_TYPE, '非财报数据请使用 get_factor 等函数查询!'
         table_name = self._gen_table_name(table_type, combined, quarterly)
         self._check_args(table_name, factor_name)
@@ -120,6 +151,16 @@ class AShareDataReader(object):
 
     def get_financial_snapshot(self, table_type: str, factor_name: str, date: utils.DateType = dt.date.today(),
                                combined: bool = True, quarterly: bool = False, yearly=False) -> pd.Series:
+        """Query financial latest info until ``date``
+
+        :param table_type: type of financial statements
+        :param factor_name: factor name
+        :param date: query date
+        :param combined: if query combined statements
+        :param quarterly: if query quarterly date
+        :param yearly: if only query data on yearly report
+        :return: factor series
+        """
         assert not (quarterly & yearly), 'quarterly 和 yearly 不能同时为 True'
         assert table_type in FINANCIAL_STATEMENTS_TYPE, '非财报数据请使用 get_factor 等函数查询!'
         table_name = self._gen_table_name(table_type, combined, quarterly)
@@ -186,13 +227,7 @@ class AShareDataReader(object):
 
     @staticmethod
     def _get_industry_translation_dict(table_name: str, level: int, translation_json_loc: str = None) -> Dict[str, str]:
-        if translation_json_loc is None:
-            with open_text('AShareData.data', 'industry.json') as f:
-                translation = json.load(f)
-        else:
-            with open(translation_json_loc, 'r', encoding='utf-8') as f:
-                translation = json.load(f)
-
+        translation = utils.load_param('industry.json', translation_json_loc)
         new_translation = {}
         for key, value in translation[table_name].items():
             new_translation[key] = value[f'level_{level}']

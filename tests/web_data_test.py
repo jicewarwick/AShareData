@@ -21,7 +21,7 @@ class WebDataSourceTest(unittest.TestCase):
         self.web_crawler.get_sw_industry()
 
     def test_zx_industry(self):
-        self.web_crawler.get_zx_industry(self.calendar.offset(dt.date.today(), -1))
+        self.web_crawler.get_zz_industry(self.calendar.offset(dt.date.today(), -1))
 
 
 if __name__ == '__main__':
