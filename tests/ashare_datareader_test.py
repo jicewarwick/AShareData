@@ -41,7 +41,7 @@ class MyTestCase(unittest.TestCase):
         print(self.db.get_industry_snapshot('中证', 3))
 
     def test_financial_query(self):
-        print(self.db.query_financial_statements('资产负债表', '资产总计', '2018-12-31'))
+        print(self.db.query_financial_statements('资产负债表', '资产总计', '20181231'))
 
     def test_financial_snapshot(self):
         print(self.db.get_financial_snapshot('资产负债表', '资产总计', yearly=True))

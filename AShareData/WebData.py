@@ -5,9 +5,9 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-from AShareData import utils
-from AShareData.DataSource import DataSource
-from AShareData.DBInterface import DBInterface, get_stocks
+from . import utils
+from .DataSource import DataSource
+from .DBInterface import DBInterface, get_stocks
 
 
 class WebDataCrawler(DataSource):

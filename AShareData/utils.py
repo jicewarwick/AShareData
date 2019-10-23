@@ -20,6 +20,8 @@ def date_type2datetime(date: str) -> Optional[dt.datetime]:
     if isinstance(date, dt.date):
         return dt.datetime.combine(date, dt.time())
     if isinstance(date, str) & (date not in ['', 'nan']):
+        date.replace('/', '')
+        date.replace('-', '')
         return dt.datetime.strptime(date, '%Y%m%d')
 
 

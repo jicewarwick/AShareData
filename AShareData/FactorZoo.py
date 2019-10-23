@@ -5,8 +5,8 @@ import pandas as pd
 # todo: import from functools from 3.9
 from cached_property import cached_property
 
-from AShareData.AShareDataReader import AShareDataReader
-from AShareData.constants import STOCK_INDEXES, TRADING_DAYS_IN_YEAR
+from .AShareDataReader import AShareDataReader
+from .constants import STOCK_INDEXES, TRADING_DAYS_IN_YEAR
 
 
 class FactorZoo(object):

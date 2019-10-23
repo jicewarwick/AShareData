@@ -11,7 +11,7 @@ release = '0.0.1'
 # -- General configuration ---------------------------------------------------
 extensions = ['IPython.sphinxext.ipython_directive',
               'IPython.sphinxext.ipython_console_highlighting',
-              # 'sphinx.ext.mathjax',
+              'sphinx.ext.mathjax',
               'sphinx.ext.autodoc',
               'sphinx.ext.inheritance_diagram',
               'sphinx.ext.autosummary'
@@ -26,6 +26,10 @@ html_static_path = ['_static']
 html_use_modindex = True
 # If false, no index is generated.
 html_use_index = True
+
+autodoc_default_options = {
+    'member-order': 'bysource',
+}
 
 # -- Options for LaTeX output --------------------------------------------------
 latex_paper_size = 'a4'

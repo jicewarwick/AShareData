@@ -25,6 +25,8 @@ if errorlevel 9009 (
 	exit /b 1
 )
 
+%SPHINXBUILD% -M clean %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
+sphinx-autogen %SOURCEDIR%/index.rst
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 goto end
 

@@ -8,10 +8,10 @@ import tushare as ts
 from cached_property import cached_property
 from tqdm import tqdm
 
-from AShareData import constants, utils
-from AShareData.DataSource import DataSource
-from AShareData.DBInterface import DBInterface, get_stocks
-from AShareData.TradingCalendar import TradingCalendar
+from . import constants, utils
+from .DataSource import DataSource
+from .DBInterface import DBInterface, get_stocks
+from .TradingCalendar import TradingCalendar
 
 
 class TushareData(DataSource):

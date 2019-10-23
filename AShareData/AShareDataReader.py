@@ -5,10 +5,10 @@ from typing import Callable, Dict, List, Sequence
 import pandas as pd
 from cached_property import cached_property
 
-from AShareData import utils
-from AShareData.constants import FINANCIAL_STATEMENTS, FINANCIAL_STATEMENTS_TYPE, INDUSTRY_LEVEL
-from AShareData.DBInterface import DBInterface, get_listed_stocks, get_stocks
-from AShareData.TradingCalendar import TradingCalendar
+from . import utils
+from .constants import FINANCIAL_STATEMENTS, FINANCIAL_STATEMENTS_TYPE, INDUSTRY_LEVEL
+from .DBInterface import DBInterface, get_listed_stocks, get_stocks
+from .TradingCalendar import TradingCalendar
 
 
 class AShareDataReader(object):
@@ -29,7 +29,7 @@ class AShareDataReader(object):
 
     @cached_property
     def stocks(self) -> List[str]:
-        """Get all the stocks ever listed"""
+        """All the stocks ever listed"""
         return get_stocks(self.db_interface)
 
     def listed_stock(self, date: utils.DateType = dt.date.today()) -> List[str]:
@@ -126,13 +126,13 @@ class AShareDataReader(object):
         return industry
 
     # financial statements
-    def query_financial_statements(self, table_type: str, factor_name: str, report_date: utils.DateType,
+    def query_financial_statements(self, table_type: str, factor_name: str, report_period: utils.DateType,
                                    combined: bool = True, quarterly: bool = False) -> pd.Series:
         """Query financial statements
 
         :param table_type: type of financial statements
         :param factor_name: factor name
-        :param report_date: report date
+        :param report_period: report date
         :param combined: if query combined statements
         :param quarterly: if query quarterly date
         :return: factor series
@@ -141,10 +141,10 @@ class AShareDataReader(object):
         table_name = self._gen_table_name(table_type, combined, quarterly)
         self._check_args(table_name, factor_name)
 
-        report_date = utils.date_type2str(report_date, '-')
+        report_period = utils.date_type2datetime(report_period)
 
         logging.debug('开始读取数据.')
-        df = self.db_interface.read_table(table_name, columns=factor_name, where_clause=f'报告期="{report_date}"')
+        df = self.db_interface.read_table(table_name, columns=factor_name, report_period=report_period)
         logging.debug('数据读取完成.')
         df = df.groupby(df.index.get_level_values('ID')).tail(1)
         return df

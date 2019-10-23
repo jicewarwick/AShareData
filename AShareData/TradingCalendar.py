@@ -1,8 +1,8 @@
 import datetime as dt
 from typing import Callable, List, Sequence
 
-from AShareData.DBInterface import DBInterface
-from AShareData.utils import date_type2datetime, DateType
+from .DBInterface import DBInterface
+from .utils import date_type2datetime, DateType
 
 
 class TradingCalendar(object):

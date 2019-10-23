@@ -12,7 +12,7 @@ from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 
-import AShareData.utils as utils
+from . import utils
 
 
 class DBInterface(object):
@@ -48,8 +48,7 @@ class DBInterface(object):
         """Get the latest timestamp from records in ``table_name``"""
         raise NotImplementedError()
 
-    def read_table(self, table_name: str, columns: Sequence[str] = None,
-                   where_clause: str = None) -> Union[pd.Series, pd.DataFrame]:
+    def read_table(self, table_name: str, columns: Sequence[str] = None, **kwargs) -> Union[pd.Series, pd.DataFrame]:
         """Read data from ``table_name``"""
         raise NotImplementedError()
 
@@ -260,23 +259,45 @@ class MySQLInterface(DBInterface):
             return date.strftime('%Y-%m-%d %H:%M:%S')
 
     def read_table(self, table_name: str, columns: Union[str, Sequence[str]] = None,
+                   start_date: utils.DateType = None, end_date: utils.DateType = None,
+                   report_period: utils.DateType = None,
                    where_clause: str = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
         :param table_name: 表名
         :param columns: 所需的列名
-        :param where_clause: 所需数据条件
+        :param start_date: 开始时间
+        :param end_date: 结束时间
+        :param report_period: 报告期
+        :param where_clause: 所有其他数据条件
         :return:
         """
+        index_col = self.get_table_primary_keys(table_name)
+        if columns is None:
+            return pd.read_sql_table(table_name, self.engine, index_col=index_col)
+
         if isinstance(columns, str):
             columns = [columns]
-        index_col = self.get_table_primary_keys(table_name)
-        if where_clause is None:
-            ret = pd.read_sql_table(table_name=table_name, con=self.engine, index_col=index_col, columns=columns)
-        else:
-            # construct sql command
-            sql = f'SELECT {", ".join(index_col + columns)} FROM {table_name} WHERE {where_clause}'
-            ret = pd.read_sql(sql, con=self.engine, index_col=index_col, columns=columns)
+        where_clauses_sql = ''
+        where_storage = []
+        if where_clause is not None:
+            where_storage.append(where_clause)
+        if start_date is not None:
+            start_date = utils.date_type2datetime(start_date)
+            where_storage.append(f'DateTime >= "{start_date}"')
+        if end_date is not None:
+            end_date = utils.date_type2datetime(end_date)
+            where_storage.append(f'DateTime <= "{end_date}"')
+        if report_period is not None:
+            report_period = utils.date_type2datetime(report_period)
+            where_storage.append(f'报告期 = "{report_period}"')
+        if where_storage:
+            where_clauses_sql = 'WHERE ' + ' AND '.join(where_storage)
+
+        # construct sql command
+        sql = f'SELECT {", ".join(index_col + columns)} FROM {table_name} {where_clauses_sql}'
+        logging.debug(sql)
+        ret = pd.read_sql(sql, con=self.engine, index_col=index_col, columns=columns)
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]
         return ret

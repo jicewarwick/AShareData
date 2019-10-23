@@ -1,4 +1,4 @@
-from AShareData.DBInterface import DBInterface
+from .DBInterface import DBInterface
 
 
 class DataSource(object):

@@ -1,6 +1,6 @@
 import unittest
 
-from AShareData.WindWrapper import WindWrapper
+from AShareData.WindData import WindWrapper
 
 
 class MyTestCase(unittest.TestCase):

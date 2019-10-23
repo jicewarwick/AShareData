@@ -1,4 +1,4 @@
-from AShareData.BarraDescriptors import BarraDescriptor
+from .BarraDescriptors import BarraDescriptor
 
 
 class BarraStyleFactors(object):
