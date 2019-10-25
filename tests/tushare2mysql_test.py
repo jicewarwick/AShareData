@@ -42,7 +42,7 @@ class Tushare2MySQLTest(unittest.TestCase):
         self.downloader.get_company_info()
 
     def test_daily_hq(self):
-        self.downloader.get_daily_hq(start_date='20090803')
+        self.downloader.get_daily_hq(start_date='2010917')
 
     def test_dividend(self):
         self.downloader.get_dividend()

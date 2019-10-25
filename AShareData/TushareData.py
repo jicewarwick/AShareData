@@ -1,7 +1,7 @@
 import datetime as dt
 import logging
 from time import sleep
-from typing import Callable, List, Mapping, Sequence
+from typing import Callable, List, Mapping, Sequence, Union
 
 import pandas as pd
 import tushare as ts
@@ -48,11 +48,12 @@ class TushareData(DataSource):
     # ------------------------------------------
     def update_routine(self) -> None:
         """自动更新函数"""
-        # self.get_company_info()
+        self.get_company_info()
         self.get_shibor(start_date=self._check_db_timestamp('Shibor利率数据', dt.date(2006, 10, 8)))
         self.get_ipo_info(start_date=self._check_db_timestamp('IPO新股列表', dt.datetime(1990, 1, 1)))
 
         self.get_daily_hq(start_date=self._check_db_timestamp('股票日行情', dt.date(2008, 1, 1)), end_date=dt.date.today())
+        self.get_daily_hq(start_date=self._check_db_timestamp('总股本', dt.date(2008, 1, 1)), end_date=dt.date.today())
         self.get_past_names(start_date=self._check_db_timestamp('股票曾用名', dt.datetime(1990, 1, 1)))
 
         self.get_index_daily(self._check_db_timestamp('指数日行情', dt.date(2008, 1, 1)))
@@ -107,6 +108,7 @@ class TushareData(DataSource):
         if (not trade_date) & (not start_date):
             raise ValueError('trade_date 和 start_date 必填一个!')
         dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
+        pre_date = self.calendar.offset(dates[0], -1)
 
         output_fields = '输出参数'
 
@@ -115,6 +117,15 @@ class TushareData(DataSource):
         adj_factor_desc = self._factor_param['复权因子'][output_fields]
         indicator_desc = self._factor_param['每日指标'][output_fields]
         indicator_fields = list(indicator_desc.keys())
+
+        # pre data:
+        def get_pre_data(tn: str) -> pd.Series:
+            return self.db_interface.read_table(tn, tn, end_date=pre_date).groupby('ID').tail(1)
+
+        pre_adj_factor = get_pre_data('复权因子')
+        pre_dict = {'total_share': get_pre_data('总股本'),
+                    'float_share': get_pre_data('流通股本'),
+                    'free_share': get_pre_data('自由流通股本')}
 
         with tqdm(dates) as pbar:
             for date in dates:
@@ -131,15 +142,16 @@ class TushareData(DataSource):
                 # adj_factor data
                 df = self._pro.adj_factor(trade_date=current_date_str)
                 adj_df = self._standardize_df(df, adj_factor_desc)
-                self.db_interface.update_compact_df(adj_df, '复权因子')
+                self.db_interface.update_compact_df(adj_df, '复权因子', pre_adj_factor)
+                pre_adj_factor = adj_df
 
                 # indicator data
                 df = self._pro.daily_basic(trade_date=current_date_str, fields=indicator_fields)
-                df[['total_share', 'float_share', 'free_share']] = \
-                    df[['total_share', 'float_share', 'free_share']] * 10000
-                indicator_df = self._standardize_df(df, indicator_desc)
-                for column in indicator_df.columns:
-                    self.db_interface.update_compact_df(indicator_df[column], column)
+                df = self._standardize_df(df, indicator_desc).multiply(10000)
+                for key, value in pre_dict.items():
+                    col_name = indicator_desc[key]
+                    self.db_interface.update_compact_df(df[col_name], col_name, value)
+                    pre_dict[key] = df[col_name]
 
                 pbar.update(1)
 
@@ -412,7 +424,7 @@ class TushareData(DataSource):
     # utilities
     # ------------------------------------------
     @staticmethod
-    def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str]) -> pd.DataFrame:
+    def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str]) -> Union[pd.Series, pd.DataFrame]:
         dates_columns = [it for it in df.columns if it.endswith('date')]
         for it in dates_columns:
             df[it] = df[it].apply(utils.date_type2datetime)
@@ -420,6 +432,8 @@ class TushareData(DataSource):
         df.rename(parameter_info, axis=1, inplace=True)
         index = sorted(list({'DateTime', 'ID', '报告期', 'IndexCode'} & set(df.columns)))
         df = df.set_index(index, drop=True)
+        if df.shape[1] == 1:
+            df = df.iloc[:, 0]
         return df
 
     def _get_all_stocks(self) -> None:

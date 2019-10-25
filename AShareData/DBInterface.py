@@ -40,7 +40,7 @@ class DBInterface(object):
         """Update pandas.DataFrame(df) into table ``table_name``"""
         raise NotImplementedError()
 
-    def update_compact_df(self, df, table_name: str) -> None:
+    def update_compact_df(self, df: pd.Series, table_name: str, old_df: pd.Series = None) -> None:
         """Update new information from df to table ``table_name``"""
         raise NotImplementedError()
 
@@ -158,7 +158,7 @@ class MySQLInterface(DBInterface):
         conn.execute(table.delete())
         logging.info(f'table {table_name} purged')
 
-    def insert_df(self, df: pd.DataFrame, table_name: str) -> None:
+    def insert_df(self, df: Union[pd.Series, pd.DataFrame], table_name: str) -> None:
         if df.empty:
             return
 
@@ -168,8 +168,10 @@ class MySQLInterface(DBInterface):
             end_timestamp = time.time()
             logging.debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
 
-    def update_df(self, df: pd.DataFrame, table_name: str) -> None:
+    def update_df(self, df: Union[pd.Series, pd.DataFrame], table_name: str) -> None:
         """ 将DataFrame写入数据库"""
+        if df is None:
+            return
         if df.empty:
             return
 
@@ -195,16 +197,16 @@ class MySQLInterface(DBInterface):
             end_timestamp = time.time()
             logging.debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
 
-    def update_compact_df(self, df, table_name: str) -> None:
+    def update_compact_df(self, df: pd.Series, table_name: str, old_df: pd.Series = None) -> None:
         if df.empty:
             return
 
-        existing_data = self.read_table(table_name)
+        existing_data = self.read_table(table_name) if old_df is None else old_df
         if existing_data.empty:
             self.update_df(df, table_name)
         else:
             current_date = df.index.get_level_values('DateTime').to_pydatetime()[0]
-            existing_data = existing_data.loc[existing_data.index.get_level_values('DateTime') < current_date, :]
+            existing_data = existing_data.loc[existing_data.index.get_level_values('DateTime') < current_date]
             new_info = utils.compute_diff(df, existing_data)
             self.update_df(new_info, table_name)
 
@@ -274,30 +276,31 @@ class MySQLInterface(DBInterface):
         """
         index_col = self.get_table_primary_keys(table_name)
         if columns is None:
-            return pd.read_sql_table(table_name, self.engine, index_col=index_col)
+            ret = pd.read_sql_table(table_name, self.engine, index_col=index_col)
+        else:
+            if isinstance(columns, str):
+                columns = [columns]
+            where_clauses_sql = ''
+            where_storage = []
+            if where_clause is not None:
+                where_storage.append(where_clause)
+            if start_date is not None:
+                start_date = utils.date_type2datetime(start_date)
+                where_storage.append(f'DateTime >= "{start_date}"')
+            if end_date is not None:
+                end_date = utils.date_type2datetime(end_date)
+                where_storage.append(f'DateTime <= "{end_date}"')
+            if report_period is not None:
+                report_period = utils.date_type2datetime(report_period)
+                where_storage.append(f'报告期 = "{report_period}"')
+            if where_storage:
+                where_clauses_sql = 'WHERE ' + ' AND '.join(where_storage)
 
-        if isinstance(columns, str):
-            columns = [columns]
-        where_clauses_sql = ''
-        where_storage = []
-        if where_clause is not None:
-            where_storage.append(where_clause)
-        if start_date is not None:
-            start_date = utils.date_type2datetime(start_date)
-            where_storage.append(f'DateTime >= "{start_date}"')
-        if end_date is not None:
-            end_date = utils.date_type2datetime(end_date)
-            where_storage.append(f'DateTime <= "{end_date}"')
-        if report_period is not None:
-            report_period = utils.date_type2datetime(report_period)
-            where_storage.append(f'报告期 = "{report_period}"')
-        if where_storage:
-            where_clauses_sql = 'WHERE ' + ' AND '.join(where_storage)
+            # construct sql command
+            sql = f'SELECT {", ".join(index_col + columns)} FROM {table_name} {where_clauses_sql}'
+            logging.debug(sql)
+            ret = pd.read_sql(sql, con=self.engine, index_col=index_col, columns=columns)
 
-        # construct sql command
-        sql = f'SELECT {", ".join(index_col + columns)} FROM {table_name} {where_clauses_sql}'
-        logging.debug(sql)
-        ret = pd.read_sql(sql, con=self.engine, index_col=index_col, columns=columns)
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]
         return ret

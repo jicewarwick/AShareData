@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+from typing import Union
 
 import pandas as pd
 import requests
@@ -45,7 +46,7 @@ class WebDataCrawler(DataSource):
             return ret
 
         raw_data['DateTime'] = raw_data['起始日期'].map(convert_dt)
-        raw_data['ID'] = raw_data['股票代码'].map(utils.stock_code2ts_code)
+        raw_data['ID'] = raw_data['股票代码'].map(stock_code2ts_code)
 
         raw_data.set_index(['DateTime', 'ID'], inplace=True)
         self.db_interface.update_df(raw_data[['行业名称']], '申万一级行业')
@@ -67,9 +68,18 @@ class WebDataCrawler(DataSource):
                 storage.append(res_table)
                 pbar.update(1)
         data = pd.concat(storage)
-        data['股票代码'] = data['股票代码'].map(utils.stock_code2ts_code)
+        data['股票代码'] = data['股票代码'].map(stock_code2ts_code)
         data['trade_date'] = utils.date_type2datetime(date)
         useful_data = data[['trade_date', '股票代码', '所属中证行业四级名称']]
         useful_data.columns = ['DateTime', 'ID', '行业名称']
         useful_data.set_index(['DateTime', 'ID'], inplace=True)
         self.db_interface.update_df(useful_data, '中证行业')
+
+
+def stock_code2ts_code(stock_code: Union[int, str]) -> str:
+    stock_code = int(stock_code)
+    return f'{stock_code:06}.SH' if stock_code >= 600000 else f'{stock_code:06}.SZ'
+
+
+def ts_code2stock_code(ts_code: str) -> str:
+    return ts_code.split()[0]

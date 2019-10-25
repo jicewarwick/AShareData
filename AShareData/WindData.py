@@ -2,7 +2,7 @@ import datetime as dt
 import logging
 import sys
 import tempfile
-from typing import List
+from typing import List, Sequence, Union
 
 import pandas as pd
 import WindPy
@@ -63,11 +63,36 @@ class WindWrapper(object):
             date = date.strftime('%Y-%m-%d')
         return date
 
+    @staticmethod
+    def _to_df(out: WindPy.w.WindData) -> Union[pd.Series, pd.DataFrame]:
+        times = [utils.date_type2datetime(it) for it in out.Times]
+        df = pd.DataFrame(out.Data).T
+        if len(out.Times) > 1:
+            df.index = times
+            if len(out.Fields) >= len(out.Codes):
+                df.columns = out.Fields
+                df['ID'] = out.Codes[0]
+                df.set_index('ID', append=True, inplace=True)
+            else:
+                df.columns = out.Codes
+                df = df.stack()
+                df.name = out.Fields[0]
+        else:
+            df.index = out.Codes
+            df.columns = out.Fields
+            df['DateTime'] = times[0]
+            df = df.set_index(['DateTime'], append=True).swaplevel()
+        df.index.names = ['DateTime', 'ID']
+        if isinstance(df, pd.DataFrame) and (df.shape[1] == 1):
+            df = df.iloc[:, 0]
+        return df
+
     # wrap functions
-    def wsd(self, *args, **kwargs) -> pd.DataFrame:
-        data = self._w.wsd(*args, usedf=True, **kwargs)
+    def wsd(self, security, fields, startDate=None, endDate=None, options=None,
+            *args, **kwargs) -> Union[pd.Series, pd.DataFrame]:
+        data = self._w.wsd(security, fields, startDate, endDate, options, *args, **kwargs)
         self._api_error(data)
-        return data[1]
+        return self._to_df(data)
 
     def wss(self, *args, **kwargs) -> pd.DataFrame:
         data = self._w.wss(*args, usedf=True, **kwargs)
@@ -114,33 +139,29 @@ class WindWrapper(object):
 
 class WindData(DataSource):
     """Wind 数据源"""
-    _trading_time_cut = [(dt.timedelta(hours=9, minutes=30), dt.timedelta(hours=10)),
-                         (dt.timedelta(hours=10, minutes=1), dt.timedelta(hours=10, minutes=30)),
-                         (dt.timedelta(hours=10, minutes=31), dt.timedelta(hours=11)),
-                         (dt.timedelta(hours=11, minutes=1), dt.timedelta(hours=11, minutes=30)),
-                         (dt.timedelta(hours=13), dt.timedelta(hours=13, minutes=30)),
-                         (dt.timedelta(hours=13, minutes=31), dt.timedelta(hours=14)),
-                         (dt.timedelta(hours=14, minutes=1), dt.timedelta(hours=14, minutes=30)),
-                         (dt.timedelta(hours=14, minutes=31), dt.timedelta(hours=15))]
+    _stock_trading_time_cut = [(dt.timedelta(hours=9, minutes=30), dt.timedelta(hours=10)),
+                               (dt.timedelta(hours=10, minutes=1), dt.timedelta(hours=10, minutes=30)),
+                               (dt.timedelta(hours=10, minutes=31), dt.timedelta(hours=11)),
+                               (dt.timedelta(hours=11, minutes=1), dt.timedelta(hours=11, minutes=30)),
+                               (dt.timedelta(hours=13), dt.timedelta(hours=13, minutes=30)),
+                               (dt.timedelta(hours=13, minutes=31), dt.timedelta(hours=14)),
+                               (dt.timedelta(hours=14, minutes=1), dt.timedelta(hours=14, minutes=30)),
+                               (dt.timedelta(hours=14, minutes=31), dt.timedelta(hours=15))]
 
     def __init__(self, db_interface: DBInterface, param_json_loc: str = None):
         super().__init__(db_interface)
 
-        self._factor_param = utils.load_param('wind_param.json', param_json_loc)
-
         self.calendar = TradingCalendar(db_interface)
         self.stocks = get_stocks(db_interface)
+        self._factor_param = utils.load_param('wind_param.json', param_json_loc)
         self.w = WindWrapper()
         self.w.connect()
 
-    def _get_industry_data(self, wind_code, provider, date):
+    def _get_industry_data(self, wind_code: Union[str, Sequence[str]], provider: str, date: dt.datetime) -> pd.Series:
         wind_data = self.w.wsd(wind_code, f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
                                date, date, industryType=constants.INDUSTRY_LEVEL[provider])
-        wind_data.reset_index(inplace=True)
-        wind_data.columns = ['ID', '行业名称']
-        wind_data['DateTime'] = date
-        wind_data = wind_data.set_index(['DateTime', 'ID'])
-        wind_data['行业名称'] = wind_data['行业名称'].str.replace('III|Ⅲ|IV|Ⅳ$', '')
+        wind_data.name = '行业名称'
+        wind_data = wind_data.str.replace('III|Ⅲ|IV|Ⅳ$', '')
         return wind_data
 
     def _find_industry(self, wind_code: str, provider: str,
@@ -157,7 +178,7 @@ class WindData(DataSource):
                     break
                 mid_date = self.calendar.middle(start_date, end_date)
                 logging.debug(f'查询{wind_code} 在 {mid_date}的行业')
-                mid_data = self._get_industry_data(wind_code, provider, mid_date).iloc[0, 0]
+                mid_data = self._get_industry_data(wind_code, provider, mid_date).iloc[0]
                 if mid_data == start_data:
                     start_date = mid_date
                 elif mid_data == end_data:
@@ -178,9 +199,9 @@ class WindData(DataSource):
         if latest is None:
             latest = utils.date_type2datetime(constants.INDUSTRY_START_DATE[provider])
             initial_data = self._get_industry_data(self.stocks, provider, latest).dropna()
-            self.db_interface.update_df(initial_data, table_name)
+            self.db_interface.insert_df(initial_data, table_name)
         else:
-            initial_data = self.db_interface.read_table(table_name, index_col=['DateTime', 'ID'])
+            initial_data = self.db_interface.read_table(table_name)
 
         new_data = self._get_industry_data(self.stocks, provider, query_date).dropna()
 
@@ -195,7 +216,7 @@ class WindData(DataSource):
                 self._find_industry(stock, provider, latest, old_industry, query_date, new_industry['行业名称'])
                 pbar.update(1)
 
-    def _get_minutes_data(self, start_time: dt.datetime, end_time: dt.datetime) -> None:
+    def _stock_get_minutes_data(self, start_time: dt.datetime, end_time: dt.datetime) -> None:
         table_name = '股票分钟行情'
         replace_dict = self._factor_param[table_name]
 
@@ -213,11 +234,11 @@ class WindData(DataSource):
         assert self.calendar.is_trading_date(query_date.date()), f'{query_date} 非交易日!'
 
         logging.info(f'开始下载 {utils.date_type2str(query_date, "-")} 的分钟数据')
-        for start_delta, end_delta in self._trading_time_cut:
+        for start_delta, end_delta in self._stock_trading_time_cut:
             if start_time is not None:
                 if start_time > start_delta:
                     continue
-            self._get_minutes_data(query_date + start_delta, query_date + end_delta)
+            self._stock_get_minutes_data(query_date + start_delta, query_date + end_delta)
 
         logging.info(f'{utils.date_type2str(query_date, "-")} 分钟数据下载完成')
 

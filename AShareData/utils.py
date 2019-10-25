@@ -25,15 +25,6 @@ def date_type2datetime(date: str) -> Optional[dt.datetime]:
         return dt.datetime.strptime(date, '%Y%m%d')
 
 
-def stock_code2ts_code(stock_code: Union[int, str]) -> str:
-    stock_code = int(stock_code)
-    return f'{stock_code:06}.SH' if stock_code >= 600000 else f'{stock_code:06}.SZ'
-
-
-def ts_code2stock_code(ts_code: str) -> str:
-    return ts_code.split()[0]
-
-
 def _prepare_example_json(config_loc, example_config_loc) -> None:
     with open(config_loc, 'r') as f:
         config = json.load(f)
@@ -43,14 +34,15 @@ def _prepare_example_json(config_loc, example_config_loc) -> None:
         json.dump(config, fh, indent=4)
 
 
-def compute_diff(input_data: pd.DataFrame, db_data: pd.DataFrame) -> pd.DataFrame:
-    db_data = db_data.unstack().ffill().tail(1).stack()
-    tmp_data = pd.concat([input_data, db_data]).unstack().droplevel(None, axis=1)
-    tmp_data = tmp_data.where(tmp_data.notnull(), None)
-    diff = (tmp_data != tmp_data.shift())
-    diff_stock = diff.iloc[-1, :]
-    diff_stock = diff_stock.loc[diff_stock].index.tolist()
-    return input_data.loc[(slice(None), diff_stock), :]
+def compute_diff(input_data: pd.Series, db_data: pd.Series) -> Optional[pd.Series]:
+    if db_data.empty:
+        return input_data
+
+    db_data = db_data.groupby('ID').tail(1)
+    combined_data = pd.concat([db_data.droplevel('DateTime'), input_data.droplevel('DateTime')], axis=1, sort=True)
+    # combined_data = combined_data.where(combined_data.notnull(), None)
+    stocks = combined_data.index[combined_data.iloc[:, 0] != combined_data.iloc[:, 1]]
+    return input_data.loc[slice(None), stocks, :]
 
 
 def load_param(default_loc: str, param_json_loc: str) -> Dict[str, Any]:
