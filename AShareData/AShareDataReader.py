@@ -48,8 +48,8 @@ class AShareDataReader(object):
         df = self.db_interface.read_table(table_name, columns=factor_name)
         logging.debug('数据读取完成.')
         if isinstance(df.index, pd.MultiIndex):
-            df = self._conform_df(df.unstack(), ffill=ffill,
-                                  start_date=start_date, end_date=end_date, stock_list=stock_list)
+            df = self._conform_df(df.unstack(), start_date=start_date, end_date=end_date, stock_list=stock_list,
+                                  ffill=ffill)
             # name may not survive pickling
             df.name = factor_name
         return df
@@ -102,7 +102,7 @@ class AShareDataReader(object):
             new_translation = self._get_industry_translation_dict(table_name, level, translation_json_loc)
             series = series.map(new_translation)
 
-        df = self._conform_df(series.unstack(), True, start_date, end_date, stock_list)
+        df = self._conform_df(series.unstack(), start_date, end_date, stock_list, True)
         df.name = f'{provider}{level}级行业'
         return df
 
@@ -138,7 +138,7 @@ class AShareDataReader(object):
         :return: factor series
         """
         assert table_type in FINANCIAL_STATEMENTS_TYPE, '非财报数据请使用 get_factor 等函数查询!'
-        table_name = self._gen_table_name(table_type, combined, quarterly)
+        table_name = self._generate_table_name(table_type, combined, quarterly)
         self._check_args(table_name, factor_name)
 
         report_period = utils.date_type2datetime(report_period)
@@ -163,16 +163,13 @@ class AShareDataReader(object):
         """
         assert not (quarterly & yearly), 'quarterly 和 yearly 不能同时为 True'
         assert table_type in FINANCIAL_STATEMENTS_TYPE, '非财报数据请使用 get_factor 等函数查询!'
-        table_name = self._gen_table_name(table_type, combined, quarterly)
+        table_name = self._generate_table_name(table_type, combined, quarterly)
         self._check_args(table_name, factor_name)
 
-        pre_date_str = utils.date_type2str(utils.date_type2datetime(date) - dt.timedelta(365 * 2), '-')
-        date = utils.date_type2datetime(date)
-        date_str = utils.date_type2str(date, '-')
-        where_clause = f'DateTime >= "{pre_date_str}" AND DateTime <= "{date_str}"'
-
         logging.debug('开始读取数据.')
-        df = self.db_interface.read_table(table_name, columns=factor_name, where_clause=where_clause)
+        df = self.db_interface.read_table(table_name, columns=factor_name,
+                                          start_date=utils.date_type2datetime(date) - dt.timedelta(365 * 2),
+                                          end_date=date)
         stock_list = get_listed_stocks(self.db_interface, date)
         logging.debug('数据读取完成.')
         if yearly:
@@ -182,37 +179,50 @@ class AShareDataReader(object):
         df = df.set_index('DateTime', append=True).swaplevel().iloc[:, 0]
         return df
 
-    # todo: TBD
-    def get_financial_factor(self, table_name: str, factor_name: str, agg_func: Callable,
-                             start_date: utils.DateType = None, end_date: utils.DateType = None,
-                             stock_list: Sequence[str] = None, yearly: bool = True) -> pd.DataFrame:
-        assert table_name in FINANCIAL_STATEMENTS, '非财报数据请使用 get_factor 等函数查询!'
-        table_name = table_name.lower()
+    def get_financial_factor(self, table_type: str, factor_name: str, agg_func: Callable, combined: bool = True,
+                             quarterly: bool = False, yearly: bool = True, start_date: utils.DateType = None,
+                             end_date: utils.DateType = None, stock_list: Sequence[str] = None) -> pd.DataFrame:
+        """ Query ``factor_name`` from ``start_date`` to ``end_date``
+        WARNING: This function takes a very long time to process all the data. Please cache your results.
+
+        :param table_type: type of financial statements
+        :param factor_name: factor name
+        :param agg_func: target function to compute result. eg: lambda x: tail(1) to get the latest data
+        :param start_date: start date
+        :param end_date: end data
+        :param stock_list: returned stocks
+        :param combined: if query combined statements
+        :param quarterly: if query quarterly date
+        :param yearly: if only query data on yearly report
+        :return: factor dataframe
+        """
+        assert not (quarterly & yearly), 'quarterly 和 yearly 不能同时为 True'
+        assert table_type in FINANCIAL_STATEMENTS_TYPE, '非财报数据请使用 get_factor 等函数查询!'
+        table_name = self._generate_table_name(table_type, combined, quarterly)
         self._check_args(table_name, factor_name)
 
-        data = self.db_interface.read_table(table_name, columns=factor_name)
+        query_start_date = utils.date_type2datetime(start_date) - dt.timedelta(365 * 2) if start_date else None
+        data = self.db_interface.read_table(table_name, factor_name, start_date=query_start_date, end_date=end_date)
         if yearly:
             data = data.loc[data.index.get_level_values('报告期').month == 12, :]
 
         storage = []
-        all_secs = set(data.ID.unique().tolist())
+        all_secs = set(data.index.get_level_values('ID').unique().tolist())
         if stock_list:
             all_secs = all_secs & set(stock_list)
         for sec_id in all_secs:
-            id_data = data.loc[data.ID == sec_id, :]
-            dates = id_data.DateTime.dt.to_pydatetime().tolist()
+            id_data = data.loc[data.index.get_level_values('ID') == sec_id, :]
+            dates = id_data.index.get_level_values('DateTime').to_pydatetime().tolist()
             dates = sorted(list(set(dates)))
             for date in dates:
-                date_id_data = id_data.loc[data.DateTime <= date, :]
-                each_date_data = date_id_data.groupby('报告期', as_index=False).last()
-                each_date_data.set_index(['DateTime', 'ID', '报告期'], inplace=True)
+                date_id_data = id_data.loc[id_data.index.get_level_values('DateTime') <= date, :]
+                each_date_data = date_id_data.groupby('报告期').last()
                 output_data = each_date_data.apply({factor_name: agg_func})
                 output_data.index = pd.MultiIndex.from_tuples([(date, sec_id)], names=['DateTime', 'ID'])
                 storage.append(output_data)
 
         df = pd.concat(storage)
-        df = df.unstack().droplevel(None, axis=1)
-        df = self._conform_df(df, False, start_date, end_date, stock_list)
+        df = self._conform_df(df.unstack(), start_date, end_date, stock_list, False)
         # name may not survive pickling
         df.name = factor_name
         return df
@@ -234,15 +244,14 @@ class AShareDataReader(object):
         return new_translation
 
     @staticmethod
-    def _gen_table_name(table_type: str, combined: bool, quarterly: bool) -> str:
+    def _generate_table_name(table_type: str, combined: bool, quarterly: bool) -> str:
         combined = '合并' if combined else '母公司'
         quarterly = '单季度' if (quarterly & (table_type != '资产负债表')) else ''
         table_name = f'{combined}{quarterly}{table_type}'
         return table_name
 
-    def _conform_df(self, df, ffill: bool = False,
-                    start_date: utils.DateType = None, end_date: utils.DateType = None,
-                    stock_list: Sequence[str] = None) -> pd.DataFrame:
+    def _conform_df(self, df, start_date: utils.DateType = None, end_date: utils.DateType = None,
+                    stock_list: Sequence[str] = None, ffill: bool = False) -> pd.DataFrame:
         if ffill:
             first_timestamp = df.index.get_level_values(0).min()
             date_list = self.calendar.select_dates(first_timestamp, end_date)

@@ -207,13 +207,13 @@ class WindData(DataSource):
 
         diff_stock = utils.compute_diff(new_data, initial_data)
         with tqdm(diff_stock) as pbar:
-            for (_, stock), new_industry in diff_stock.iterrows():
+            for (_, stock), new_industry in diff_stock.iteritems():
                 pbar.set_description(f'获取{stock}的{provider}行业')
                 try:
                     old_industry = initial_data.loc[(slice(None), stock), '行业名称'].values[-1]
                 except KeyError:
                     old_industry = None
-                self._find_industry(stock, provider, latest, old_industry, query_date, new_industry['行业名称'])
+                self._find_industry(stock, provider, latest, old_industry, query_date, new_industry)
                 pbar.update(1)
 
     def _stock_get_minutes_data(self, start_time: dt.datetime, end_time: dt.datetime) -> None:

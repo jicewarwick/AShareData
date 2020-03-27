@@ -32,8 +32,7 @@ class FactorZooTest(unittest.TestCase):
         print(names.fillna(method='ffill').tail())
 
     def test_latest_year_equity(self):
-        output = self.db.get_financial_factor('合并资产负债表', '股东权益合计(不含少数股东权益)',
-                                              agg_func=lambda x: x.tail(1), yearly=True)
+        output = self.db.get_financial_factor('合并资产负债表', '股东权益合计(不含少数股东权益)', agg_func=lambda x: x.tail(1), yearly=True)
         print(output.fillna(method='ffill').tail())
 
     def test_industry(self):

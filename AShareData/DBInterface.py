@@ -68,6 +68,10 @@ class DBInterface(object):
         """Get primary keys of a table"""
         raise NotImplementedError()
 
+    def get_table_list(self) -> list:
+        """List ALL tables in the database"""
+        raise NotImplementedError()
+
 
 def prepare_engine(config_loc: str) -> sa.engine.Engine:
     """Create sqlalchemy engine from config file"""
@@ -120,6 +124,14 @@ class MySQLInterface(DBInterface):
             del self._db_parameters[entry]
         for table_name, table_schema in self._db_parameters.items():
             self.create_table(table_name, table_schema)
+
+    def get_table_list(self) -> List[str]:
+        return list(self.meta.tables.keys())
+
+    def get_columns_names(self, table_name: str) -> List[str]:
+        """ 数据库中表中的所有列"""
+        table = sa.Table(table_name, self.meta)
+        return [str(it.name) for it in table.columns]
 
     def create_table(self, table_name: str, table_schema: Mapping[str, str]) -> None:
         """
@@ -274,6 +286,7 @@ class MySQLInterface(DBInterface):
         :param where_clause: 所有其他数据条件
         :return:
         """
+        table_name = table_name.lower()
         index_col = self.get_table_primary_keys(table_name)
         if columns is None:
             ret = pd.read_sql_table(table_name, self.engine, index_col=index_col)
@@ -297,7 +310,8 @@ class MySQLInterface(DBInterface):
                 where_clauses_sql = 'WHERE ' + ' AND '.join(where_storage)
 
             # construct sql command
-            sql = f'SELECT {", ".join(index_col + columns)} FROM {table_name} {where_clauses_sql}'
+            requested_columns = [f'`{w}`' for w in (index_col + columns)]
+            sql = f'SELECT {", ".join(requested_columns)} FROM {table_name} {where_clauses_sql}'
             logging.debug(sql)
             ret = pd.read_sql(sql, con=self.engine, index_col=index_col, columns=columns)
 
@@ -307,14 +321,11 @@ class MySQLInterface(DBInterface):
 
     def exist_table(self, table_name: str) -> bool:
         """ 数据库中是否存在该表"""
+        table_name = table_name.lower()
         return table_name in self.meta.tables.keys()
 
-    def get_columns_names(self, table_name: str) -> List[str]:
-        """ 数据库中表中的所有列"""
-        table = sa.Table(table_name, self.meta)
-        return [it.name for it in table.columns]
-
     def get_table_primary_keys(self, table_name: str) -> Optional[List[str]]:
+        table_name = table_name.lower()
         table = self.meta.tables[table_name]
         primary_key = [it.name for it in table.primary_key]
         if primary_key:

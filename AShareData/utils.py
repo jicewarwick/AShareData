@@ -40,7 +40,6 @@ def compute_diff(input_data: pd.Series, db_data: pd.Series) -> Optional[pd.Serie
 
     db_data = db_data.groupby('ID').tail(1)
     combined_data = pd.concat([db_data.droplevel('DateTime'), input_data.droplevel('DateTime')], axis=1, sort=True)
-    # combined_data = combined_data.where(combined_data.notnull(), None)
     stocks = combined_data.index[combined_data.iloc[:, 0] != combined_data.iloc[:, 1]]
     return input_data.loc[slice(None), stocks, :]
 
