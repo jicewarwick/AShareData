@@ -53,7 +53,11 @@ class DBInterface(object):
         raise NotImplementedError()
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
-        """Get all stocks in the a table"""
+        """Get all stocks in a table"""
+        raise NotImplementedError()
+
+    def get_column(self, table_name: str, column_name: str) -> Optional[List]:
+        """Get a column from a table"""
         raise NotImplementedError()
 
     def exist_table(self, table_name: str) -> bool:
@@ -229,16 +233,9 @@ class MySQLInterface(DBInterface):
         :param table_name: 表名
         :return: 最新时间
         """
-        table_name = table_name.lower()
-        assert table_name in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
-
-        table = self.meta.tables[table_name]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
-        if 'DateTime' in table.columns.keys():
-            logging.debug(f'{table_name} 表中找到时间列')
-            latest_time = session.query(func.max(table.c.DateTime)).one()[0]
-            return latest_time
+        data = self.get_column(table_name, 'DateTime')
+        if data:
+            return max(data)
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
         """
@@ -247,13 +244,23 @@ class MySQLInterface(DBInterface):
         :param table_name: 表名
         :return: 证券代码列表
         """
+        return self.get_column(table_name, 'ID')
+
+    def get_column(self, table_name: str, column_name: str) -> Optional[List]:
+        """
+        返回数据库表中的`column_name`
+
+        :param table_name: 表名
+        :param column_name: 列名
+        :return: 证券代码列表
+        """
         assert table_name in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name]
         session_maker = sessionmaker(bind=self.engine)
         session = session_maker()
-        if 'ID' in table.columns.keys():
-            logging.debug(f'{table_name} 表中找到ID列')
-            cache = session.query(table.c.ID).all()
+        if column_name in table.columns.keys():
+            logging.debug(f'{table_name} 表中找到 {column_name} 列')
+            cache = session.query(table.columns[column_name]).all()
             return sorted(list(set([it[0] for it in cache])))
 
     # todo: TBD

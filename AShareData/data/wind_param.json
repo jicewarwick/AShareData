@@ -6,5 +6,71 @@
 		"close": "收盘价",
 		"volume": "成交量",
 		"amount": "成交额"
+	},
+	"指数日行情": {
+		"OPEN": "开盘点位",
+		"HIGH": "最高点位",
+		"LOW": "最低点位",
+		"CLOSE": "收盘点位",
+		"VOLUME": "成交量",
+		"AMT": "成交额"
+	},
+	"期货合约": {
+		"sec_name": "合约名称",
+		"code": "合约代码",
+		"delivery_month": "交割月份",
+		"change_limit": "涨跌幅限制",
+		"target_margin": "保证金比例",
+		"contract_issue_date": "合约上市日期",
+		"last_trade_date": "最后交易日",
+		"last_delivery_month": "最后交割日"
+	},
+	"期货日行情": {
+		"OPEN": "开盘价",
+		"HIGH": "最高价",
+		"LOW": "最低价",
+		"CLOSE": "收盘价",
+		"SETTLE": "结算价",
+		"VOLUME": "成交量",
+		"AMT": "成交额",
+		"OI": "持仓量"
+	},
+	"期权合约": {
+		"wind_code": "ID",
+		"sec_name": "期权名称",
+		"option_mark_code": "期权标的",
+		"call_or_put": "认沽认购",
+		"exercise_price": "行权价",
+		"contract_unit": "合约乘数",
+		"limit_month": "到期月份",
+		"listed_date": "上市日期",
+		"exercise_date": "行权日期"
+	},
+	"期权日行情": {
+		"date": "DateTime",
+		"option_code": "ID",
+		"AMT": "成交额",
+		"OPEN": "开盘价",
+		"HIGH": "最高价",
+		"LOW": "最低价",
+		"CLOSE": "收盘价",
+		"VOLUME": "成交量",
+		"OI": "持仓量",
+		"DELTA": "Delta",
+		"GAMMA": "Gamma",
+		"VEGA": "Vega",
+		"THETA": "Theta",
+		"RHO": "Rho"
+	},
+	"场内基金日行情": {
+		"OPEN": "开盘价",
+		"HIGH": "最高价",
+		"LOW": "最低价",
+		"CLOSE": "收盘价",
+		"VOLUME": "成交量",
+		"AMT": "成交额",
+		"NAV": "单位净值",
+		"UNIT_TOTAL": "基金份额",
+		"NAV_ADJ": "复权因子"
 	}
 }

@@ -52,3 +52,9 @@ def load_param(default_loc: str, param_json_loc: str) -> Dict[str, Any]:
     with f:
         param = json.load(f)
         return param
+
+
+def chunk_list(l: list, n: int):
+    for i in range(0, len(l), n):
+        yield l[i:i+n]
+

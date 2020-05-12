@@ -462,5 +462,71 @@
 		"现金等价物的期末余额": "double",
 		"现金等价物的期初余额": "double",
 		"现金及现金等价物净增加额(间接法)": "double"
+	},
+	"期货合约": {
+		"合约名称": "varchar",
+		"合约代码": "varchar",
+		"交割月份": "varchar",
+		"涨跌幅限制": "float",
+		"保证金比例": "float",
+		"合约上市日期": "datetime",
+		"最后交易日": "datetime",
+		"最后交割日": "datetime"
+	},
+	"期货日行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"结算价": "float",
+		"成交量": "float",
+		"成交额": "double",
+		"持仓量": "double"
+	},
+	"期权合约": {
+		"ID": "varchar",
+		"期权名称": "varchar",
+		"期权标的": "varchar",
+		"认沽认购": "varchar",
+		"行权价": "float",
+		"合约乘数": "float",
+		"到期月份": "varchar",
+		"上市日期": "datetime",
+		"行权日期": "datetime"
+	},
+	"期权日行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"成交额": "double",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"持仓量": "float",
+		"Delta": "float",
+		"Gamma": "float",
+		"Vega": "float",
+		"Theta": "float",
+		"Rho": "float"
+	},
+	"场内基金日行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double",
+		"单位净值": "float",
+		"基金份额": "double"
+	},
+	"ETF上市日期": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"证券名称": "varchar"
 	}
 }

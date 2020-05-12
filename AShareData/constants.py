@@ -9,6 +9,8 @@ ALL_EXCHANGES = STOCK_EXCHANGES + FUTURE_EXCHANGES
 STOCK_INDEXES = {'上证指数': '000001.SH', '深证成指': '399001.SZ', '中小板指': '399005.SZ', '创业板指': '399006.SZ',
                  '上证50': '000016.SH', '沪深300': '000300.SH', '中证500': '000905.SH'}
 BOARD_INDEXES = ['000016.SH', '399300.SH', '000905.SH']
+STOCK_INDEX_ETFS = {'中小板': '159902.SZ', '创业板': '159915.SZ', '50ETF': '510050.SH', '300ETF': '510300.SH',
+                    '500ETF': '510500.SH'}
 
 # financial statements
 FINANCIAL_STATEMENTS_TYPE = ['资产负债表', '利润表', '现金流量表']
