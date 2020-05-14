@@ -1,6 +1,6 @@
 import datetime as dt
 import logging
-from typing import Callable, Dict, List, Sequence
+from typing import Callable, Dict, List, Sequence, Union
 
 import pandas as pd
 from cached_property import cached_property
@@ -37,21 +37,25 @@ class AShareDataReader(object):
         return get_listed_stocks(self.db_interface, date)
 
     # common factors
-    def get_factor(self, table_name: str, factor_name: str, ffill: bool = False,
+    def get_factor(self, table_name: str, factor_names: Union[str, Sequence[str]], ffill: bool = False, unstack=True,
                    start_date: utils.DateType = None, end_date: utils.DateType = None,
-                   stock_list: Sequence[str] = None) -> [pd.Series, pd.DataFrame]:
+                   IDs: Sequence[str] = None) -> [pd.Series, pd.DataFrame]:
         assert not (table_name in FINANCIAL_STATEMENTS), '财报数据请使用 query_financial_data 或 get_financial_factor 查询!'
         table_name = table_name.lower()
-        self._check_args(table_name, factor_name)
+        self._check_args(table_name, factor_names)
 
         logging.debug('开始读取数据.')
-        df = self.db_interface.read_table(table_name, columns=factor_name)
+        df = self.db_interface.read_table(table_name, columns=factor_names)
         logging.debug('数据读取完成.')
-        if isinstance(df.index, pd.MultiIndex):
-            df = self._conform_df(df.unstack(), start_date=start_date, end_date=end_date, stock_list=stock_list,
+        if not isinstance(factor_names, str):
+            df.columns = factor_names
+            return df
+
+        if isinstance(df.index, pd.MultiIndex) & unstack:
+            df = self._conform_df(df.unstack(), start_date=start_date, end_date=end_date, stock_list=IDs,
                                   ffill=ffill)
             # name may not survive pickling
-            df.name = factor_name
+            df.name = factor_names
         return df
 
     def get_snapshot(self, table_name: str, factor_name: str, date: utils.DateType = dt.date.today()) -> pd.Series:
@@ -228,12 +232,16 @@ class AShareDataReader(object):
         return df
 
     # helper functions
-    def _check_args(self, table_name: str, factor_name: str):
+    def _check_args(self, table_name: str, factor_names: Union[str, Sequence[str]]):
         table_name = table_name.lower()
         assert self.db_interface.exist_table(table_name), f'数据库中不存在表 {table_name}'
 
         columns = self.db_interface.get_columns_names(table_name)
-        assert factor_name in columns, f'表 {table_name} 中不存在 {factor_name} 列'
+        if isinstance(factor_names, str):
+            assert factor_names in columns, f'表 {table_name} 中不存在 {factor_names} 列'
+        else:
+            for name in factor_names:
+                assert name in columns, f'表 {table_name} 中不存在 {name} 列'
 
     @staticmethod
     def _get_industry_translation_dict(table_name: str, level: int, translation_json_loc: str = None) -> Dict[str, str]:
@@ -253,7 +261,7 @@ class AShareDataReader(object):
     def _conform_df(self, df, start_date: utils.DateType = None, end_date: utils.DateType = None,
                     stock_list: Sequence[str] = None, ffill: bool = False) -> pd.DataFrame:
         if ffill:
-            first_timestamp = df.index.get_level_values(0).min()
+            first_timestamp = df.index.get_level_values('DateTime').min()
             date_list = self.calendar.select_dates(first_timestamp, end_date)
             df = df.reindex(date_list[:-1]).ffill()
             df = df.loc[start_date:, :]
@@ -261,7 +269,7 @@ class AShareDataReader(object):
             date_list = self.calendar.select_dates(start_date, end_date)
             df = df.reindex(date_list[:-1])
 
-        if stock_list is None:
-            stock_list = self.stocks
+        # if stock_list is None:
+        #     stock_list = self.stocks
         df = df.reindex(stock_list, axis=1)
         return df

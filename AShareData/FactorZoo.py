@@ -90,7 +90,7 @@ class FactorZoo(object):
 
     @lru_cache(None)
     def index_close(self, ts_code: str) -> pd.Series:
-        return self._db_reader.get_factor('指数日行情', '收盘点位', stock_list=[ts_code])[ts_code]
+        return self._db_reader.get_factor('指数日行情', '收盘点位', IDs=[ts_code])[ts_code]
 
     def index_return(self, ts_code: str) -> pd.Series:
         return self.index_close(ts_code).pct_change()
