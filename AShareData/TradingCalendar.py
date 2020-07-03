@@ -7,6 +7,7 @@ from .utils import date_type2datetime, DateType
 
 class TradingCalendar(object):
     """Trading Calendar Class"""
+
     def __init__(self, db_interface: DBInterface):
         calendar_df = db_interface.read_table('交易日历')
         self.calendar = calendar_df['交易日期'].dt.to_pydatetime().tolist()
@@ -40,6 +41,18 @@ class TradingCalendar(object):
         start_date = date_type2datetime(start_date) if start_date else self.calendar[0]
         end_date = date_type2datetime(end_date) if end_date else dt.datetime.now()
         return self._select_dates(self.calendar, start_date, end_date, lambda pre, curr, next_: True)
+
+    def first_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+        """Get first trading day of the months during[``start_date``, ``end_date``]"""
+        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
+        return self._select_dates(self.calendar, start_date, end_date,
+                                  lambda pre, curr, next_: pre.isocalendar()[1] != curr.isocalendar()[1])
+
+    def last_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+        """Get last trading day of the months during[``start_date``, ``end_date``]"""
+        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
+        return self._select_dates(self.calendar, start_date, end_date,
+                                  lambda pre, curr, next_: curr.isocalendar()[1] != next_.isocalendar()[1])
 
     def first_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get first trading day of the months during[``start_date``, ``end_date``]"""
