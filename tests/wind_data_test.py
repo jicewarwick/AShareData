@@ -40,6 +40,9 @@ class MyTestCase(unittest.TestCase):
     def test_update_minutes_data(self):
         self.wind_data.update_minutes_data()
 
+    def test_stock_daily_data(self):
+        self.wind_data.get_stock_daily_data(trade_date=dt.date(2019, 12, 27))
+
 
 class WindWrapperTestCase(unittest.TestCase):
     def setUp(self) -> None:

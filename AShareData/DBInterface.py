@@ -254,8 +254,8 @@ class MySQLInterface(DBInterface):
         :param column_name: 列名
         :return: 证券代码列表
         """
-        assert table_name in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
-        table = self.meta.tables[table_name]
+        assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        table = self.meta.tables[table_name.lower()]
         session_maker = sessionmaker(bind=self.engine)
         session = session_maker()
         if column_name in table.columns.keys():

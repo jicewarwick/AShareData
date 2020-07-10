@@ -1,17 +1,15 @@
 import datetime as dt
 import logging
 from time import sleep
-from typing import Callable, List, Mapping, Sequence, Union
+from typing import Callable, Mapping, Sequence, Union
 
 import pandas as pd
 import tushare as ts
-from cached_property import cached_property
 from tqdm import tqdm
 
 from . import constants, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface, get_stocks
-from .TradingCalendar import TradingCalendar
 
 
 class TushareData(DataSource):
@@ -34,40 +32,28 @@ class TushareData(DataSource):
         if self.db_interface.get_latest_timestamp('股票上市退市') < dt.datetime.today() - dt.timedelta(10):
             self._get_all_stocks()
 
-    @cached_property
-    def all_stocks(self) -> List[str]:
-        """获取所有股票列表"""
-        return get_stocks(self.db_interface)
-
-    @cached_property
-    def calendar(self) -> TradingCalendar:
-        """获取交易日历"""
-        return TradingCalendar(self.db_interface)
-
-    # get data
-    # ------------------------------------------
     def update_routine(self) -> None:
         """自动更新函数"""
         self.get_company_info()
-        self.get_shibor(start_date=self._check_db_timestamp('Shibor利率数据', dt.date(2006, 10, 8)))
+        # self.get_shibor(start_date=self._check_db_timestamp('Shibor利率数据', dt.date(2006, 10, 8)))
         self.get_ipo_info(start_date=self._check_db_timestamp('IPO新股列表', dt.datetime(1990, 1, 1)))
 
-        self.get_daily_hq(start_date=self._check_db_timestamp('股票日行情', dt.date(2008, 1, 1)), end_date=dt.date.today())
-        self.get_daily_hq(start_date=self._check_db_timestamp('总股本', dt.date(2008, 1, 1)), end_date=dt.date.today())
+        # self.get_daily_hq(start_date=self._check_db_timestamp('股票日行情', dt.date(2008, 1, 1)), end_date=dt.date.today())
+        # self.get_daily_hq(start_date=self._check_db_timestamp('总股本', dt.date(2008, 1, 1)), end_date=dt.date.today())
         self.get_past_names(start_date=self._check_db_timestamp('股票曾用名', dt.datetime(1990, 1, 1)))
 
-        self.get_index_daily(self._check_db_timestamp('指数日行情', dt.date(2008, 1, 1)))
-        latest = self._check_db_timestamp('指数成分股权重', '20050101')
-        if latest < dt.datetime.now() - dt.timedelta(days=20):
-            self.get_index_weight(start_date=latest)
+        # self.get_index_daily(self._check_db_timestamp('指数日行情', dt.date(2008, 1, 1)))
+        # latest = self._check_db_timestamp('指数成分股权重', '20050101')
+        # if latest < dt.datetime.now() - dt.timedelta(days=20):
+        #     self.get_index_weight(start_date=latest)
 
         self.get_hs_const()
         self.get_hs_holding(start_date=self._check_db_timestamp('沪深港股通持股明细', dt.date(2016, 6, 29)))
 
-        stocks = self.db_interface.get_all_id('合并资产负债表')
-        stocks = list(set(self.all_stocks) - set(stocks)) if stocks else self.all_stocks
-        if stocks:
-            self.get_financial(stocks)
+        # stocks = self.db_interface.get_all_id('合并资产负债表')
+        # stocks = list(set(self.all_stocks) - set(stocks)) if stocks else self.all_stocks
+        # if stocks:
+        #     self.get_financial(stocks)
 
     def get_company_info(self) -> pd.DataFrame:
         """
@@ -472,9 +458,3 @@ class TushareData(DataSource):
 
         self.db_interface.purge_table(table_name)
         self.db_interface.update_df(cal_date, table_name)
-
-    def _check_db_timestamp(self, table_name: str, default_timestamp: utils.DateType) -> dt.datetime:
-        latest_time = self.db_interface.get_latest_timestamp(table_name)
-        if latest_time is None:
-            latest_time = utils.date_type2datetime(default_timestamp)
-        return latest_time

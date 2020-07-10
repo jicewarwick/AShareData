@@ -89,3 +89,6 @@ class TradingCalendar(object):
         """Count number of trading days during [``start_date``, ``end_date``]"""
         start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         return self.calendar.index(end_date) - self.calendar.index(start_date)
+
+    def yesterday(self) -> dt.datetime:
+        return self.offset(dt.date.today(), -1)
