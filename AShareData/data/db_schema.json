@@ -528,5 +528,12 @@
 		"DateTime": "datetime",
 		"ID": "varchar",
 		"证券名称": "varchar"
+	},
+	"股票停牌": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"证券名称": "varchar",
+		"停牌类型": "varchar",
+		"停牌原因": "varchar"
 	}
 }

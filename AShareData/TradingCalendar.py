@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Callable, List, Sequence
+from typing import Callable, List, Sequence, Tuple
 
 from .DBInterface import DBInterface
 from .utils import date_type2datetime, DateType
@@ -92,3 +92,12 @@ class TradingCalendar(object):
 
     def yesterday(self) -> dt.datetime:
         return self.offset(dt.date.today(), -1)
+
+    def split_to_chunks(self, start_date: DateType, end_date: DateType, chunk_size: int) \
+            -> List[Tuple[dt.datetime, dt.datetime]]:
+        all_dates = self.select_dates(start_date, end_date)
+        res = []
+        for i in range(0, len(all_dates), chunk_size):
+            tmp = all_dates[i:i + chunk_size]
+            res.append((tmp[0], tmp[-1]))
+        return res

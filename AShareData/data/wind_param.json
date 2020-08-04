@@ -15,6 +15,11 @@
 		"VOLUME": "成交量",
 		"AMT": "成交额"
 	},
+	"股票停牌": {
+		"sec_name": "证券名称",
+		"suspend_type": "停牌类型",
+		"suspend_reason": "停牌原因"
+	},
 	"指数日行情": {
 		"OPEN": "开盘点位",
 		"HIGH": "最高点位",

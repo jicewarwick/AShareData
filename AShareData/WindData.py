@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 import tempfile
-from typing import List, Sequence, Union
+from typing import List, Union
 
 import pandas as pd
 import WindPy
@@ -132,7 +132,8 @@ class WindWrapper(object):
         self._api_error(data)
         df = data[1]
 
-        index_val = sorted(list({'date', 'wind_code'} & set(df.columns)))
+        df.rename({'date': 'DateTime', 'wind_code': 'ID'}, axis=1, inplace=True)
+        index_val = sorted(list({'DateTime', 'ID'} & set(df.columns)))
         if index_val:
             df.set_index(index_val, drop=True, inplace=True)
         return df
@@ -165,23 +166,25 @@ class WindData(DataSource):
 
     def update_routine(self):
         # stock
-        self.update_stock_daily_data()
-        self.update_adj_factor()
-
-        # future
-        self.update_future_contracts_list()
-        self.update_future_daily_data()
-
-        # option
-        self.update_stock_option_list()
-        self.update_stock_option_daily_data()
-
-        # index
-        self.update_target_stock_index_daily()
-
-        # etf
-        self.update_etf_list()
-        self.update_etf_daily()
+        # self.update_stock_daily_data()
+        # self.update_adj_factor()
+        self.update_industry()
+        # self.update_pause_stock_info()
+        #
+        # # future
+        # self.update_future_contracts_list()
+        # self.update_future_daily_data()
+        #
+        # # option
+        # self.update_stock_option_list()
+        # self.update_stock_option_daily_data()
+        #
+        # # index
+        # self.update_target_stock_index_daily()
+        #
+        # # etf
+        # self.update_etf_list()
+        # self.update_etf_daily()
         return
 
     #######################################
@@ -204,7 +207,6 @@ class WindData(DataSource):
         if (not trade_date) & (not start_date):
             raise ValueError('trade_date 和 start_date 必填一个!')
         dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
-
         renaming_dict = self._factor_param['股票日线行情']
 
         with tqdm(dates) as pbar:
@@ -296,82 +298,98 @@ class WindData(DataSource):
         current_fund_data = current_data.loc[slice(None), wind_code, :]
         self.sparse_data_queryer(data_func, current_fund_data, fund_adj_factor, '更新基金复权因子')
 
-    def _get_industry_data(self, wind_code: Union[str, Sequence[str]], provider: str, date: dt.datetime) -> pd.Series:
-        wind_data = self.w.wsd(wind_code, f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
-                               date, date, industryType=constants.INDUSTRY_LEVEL[provider])
-        wind_data.name = '行业名称'
-        wind_data = wind_data.str.replace('III|Ⅲ|IV|Ⅳ$', '')
-        return wind_data
+    # TODO
 
-    def _find_industry(self, wind_code: str, provider: str,
-                       start_date: utils.DateType, start_data: str,
-                       end_date: utils.DateType, end_data: str) -> None:
-        if start_data != end_data:
-            logging.info(f'{wind_code} 的行业由 {start_date} 的 {start_data} 改为 {end_date} 的 {end_data}')
-            while True:
-                if self.calendar.days_count(start_date, end_date) < 2:
-                    entry = pd.DataFrame({'DateTime': end_date, 'ID': wind_code, '行业名称': end_data}, index=[0])
-                    entry.set_index(['DateTime', 'ID'], inplace=True)
-                    logging.info(f'插入数据: {wind_code} 于 {end_date} 的行业为 {end_data}')
-                    self.db_interface.update_df(entry, f'{provider}行业')
-                    break
-                mid_date = self.calendar.middle(start_date, end_date)
-                logging.debug(f'查询{wind_code} 在 {mid_date}的行业')
-                mid_data = self._get_industry_data(wind_code, provider, mid_date).iloc[0]
-                if mid_data == start_data:
-                    start_date = mid_date
-                elif mid_data == end_data:
-                    end_date = mid_date
-                else:
-                    self._find_industry(wind_code, provider, start_date, start_data, mid_date, mid_data)
-                    self._find_industry(wind_code, provider, mid_date, mid_data, end_date, end_data)
-                    break
+    def update_stock_units(self):
+        # 流通股本
+        table_name = '流通股本'
+        end_date = self.calendar.yesterday()
+
+        current_data = self.db_interface.read_table(table_name, table_name).groupby('ID').tail(1)
+        stock_adj_factor = self.w.wss(self.all_stocks, 'adjfactor', trade_date=end_date).iloc[:, 0]
+        stock_adj_factor.name = '复权因子'
+
+        def data_func(date: utils.DateType, ticker: str) -> pd.Series:
+            data = self.w.wsd(ticker, 'adjfactor', date, date)
+            data.name = '复权因子'
+            return data
+
+        current_stock_data = current_data.loc[slice(None), self.all_stocks, :]
+        self.sparse_data_queryer(data_func, current_stock_data, stock_adj_factor, '更新股票复权因子')
+
+        funds_info = self.db_interface.read_table('ETF上市日期').reset_index()
+        wind_code = funds_info['ID'].tolist()
+        fund_adj_factor = self.w.wss(wind_code, 'adjfactor', trade_date=end_date).iloc[:, 0]
+        fund_adj_factor.name = '复权因子'
+
+        current_fund_data = current_data.loc[slice(None), wind_code, :]
+        self.sparse_data_queryer(data_func, current_fund_data, fund_adj_factor, '更新基金复权因子')
 
     def _update_industry(self, provider: str) -> None:
         """更新行业信息
 
-        :param provider:
+        :param provider: 行业分类提供商
         """
+
+        def _get_industry_data(date: dt.datetime, ticker: Union[str, List[str]]) -> pd.Series:
+            wind_data = self.w.wsd(ticker, f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
+                                   date, date, industryType=constants.INDUSTRY_LEVEL[provider])
+            wind_data.name = f'{provider}行业'
+            wind_data = wind_data.str.replace('III|Ⅲ|IV|Ⅳ$', '')
+            return wind_data
+
         table_name = f'{provider}行业'
         query_date = self.calendar.yesterday()
         latest = self.db_interface.get_latest_timestamp(table_name)
         if latest is None:
             latest = utils.date_type2datetime(constants.INDUSTRY_START_DATE[provider])
-            initial_data = self._get_industry_data(self.all_stocks, provider, latest).dropna()
+            initial_data = self.w.wss(self.all_stocks,
+                                      f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
+                                      trade_date=latest).dropna()
             self.db_interface.insert_df(initial_data, table_name)
         else:
-            initial_data = self.db_interface.read_table(table_name)
+            initial_data = self.db_interface.read_table(table_name).groupby('ID').tail(1)
 
-        new_data = self._get_industry_data(self.all_stocks, provider, query_date).dropna()
+        new_data = _get_industry_data(date=query_date, ticker=self.all_stocks).dropna()
 
-        diff_stock = utils.compute_diff(new_data, initial_data)
-        with tqdm(diff_stock) as pbar:
-            for (_, stock), new_industry in diff_stock.iteritems():
-                pbar.set_description(f'获取{stock}的{provider}行业')
-                try:
-                    old_industry = initial_data.loc[(slice(None), stock), '行业名称'].values[-1]
-                except KeyError:
-                    old_industry = None
-                self._find_industry(stock, provider, latest, old_industry, query_date, new_industry)
-                pbar.update(1)
+        self.sparse_data_queryer(_get_industry_data, initial_data, new_data, f'更新{table_name}',
+                                 default_start_date=constants.INDUSTRY_START_DATE[provider])
 
     def update_industry(self) -> None:
         needed_update_provider = []
         for provider in constants.INDUSTRY_DATA_PROVIDER:
             timestamp = self.db_interface.get_latest_timestamp(f'{provider}行业')
-            if timestamp < dt.datetime.now() - dt.timedelta(days=30):
+            if (not timestamp) or (timestamp < dt.datetime.now() - dt.timedelta(days=30)):
                 needed_update_provider.append(provider)
 
         for provider in needed_update_provider:
             self._update_industry(provider)
+
+    def update_pause_stock_info(self):
+        table_name = '股票停牌'
+        start_date = self._check_db_timestamp(table_name, dt.date(1990, 12, 10)) + dt.timedelta(days=1)
+        end_date = self.calendar.yesterday()
+        chunks = self.calendar.split_to_chunks(start_date, end_date, 20)
+
+        renaming_dict = self._factor_param[table_name]
+        with tqdm(chunks) as pbar:
+            pbar.set_description('下载股票停牌数据')
+            for range_start, range_end in chunks:
+                start_date_str = range_start.strftime("%Y%m%d")
+                end_date_str = range_end.strftime("%Y%m%d")
+                pbar.set_postfix_str(f'{start_date_str} - {end_date_str}')
+                data = self.w.wset("tradesuspend", f'startdate={start_date_str};enddate={end_date_str}')
+                data.rename(renaming_dict, axis=1, inplace=True)
+                self.db_interface.insert_df(data, table_name)
+                pbar.update()
 
     #######################################
     # etf funcs
     #######################################
     def update_etf_list(self) -> pd.DataFrame:
         etf_table_name = 'ETF上市日期'
-        etfs = self.w.wset("sectorconstituent",
-                           f"date={dt.date.today().strftime('%Y%m%d')};sectorid=1000009165000000;field=wind_code,sec_name")
+        etfs = self.w.wset("sectorconstituent", date=dt.date.today(), sectorid='1000009165000000',
+                           field='wind_code,sec_name')
         wind_codes = etfs.index.tolist()
         listed_date = self.w.wss(wind_codes, "fund_etflisteddate")
         etf_info = pd.concat([etfs, listed_date], axis=1)
@@ -390,7 +408,7 @@ class WindData(DataSource):
         if start_date is None:
             start_date = funds_info.DateTime.min()
 
-        end_date = dt.date.today() - dt.timedelta(days=1)
+        end_date = self.calendar.yesterday()
         dates = self.calendar.select_dates(start_date, end_date)
         if len(dates) <= 1:
             return
@@ -412,8 +430,8 @@ class WindData(DataSource):
     #######################################
     def get_future_symbols(self) -> List[str]:
         all_contracts = self.w.wset('sectorconstituent', date=dt.date.today(), sectorid='1000028001000000')
-        IDs = all_contracts.index.get_level_values(1).tolist()
-        symbols = [re.sub(r'\d*', '', it) for it in IDs]
+        ids = all_contracts.index.get_level_values(1).tolist()
+        symbols = [re.sub(r'\d*', '', it) for it in ids]
         symbols = list(set(symbols))
 
         # delete simulated symbols
@@ -450,7 +468,7 @@ class WindData(DataSource):
         if start_date is None:
             start_date = self.db_interface.get_column(contract_table_name, '合约上市日期')
             start_date = min(start_date)
-        end_date = dt.date.today() - dt.timedelta(days=1)
+        end_date = self.calendar.yesterday()
         dates = self.calendar.select_dates(start_date, end_date)
         if len(dates) <= 1:
             return
@@ -479,7 +497,7 @@ class WindData(DataSource):
             start_date = dt.date(1990, 1, 1)
         else:
             start_date = max(start_date)
-        end_date = dt.date.today() - dt.timedelta(days=1)
+        end_date = self.calendar.yesterday()
         storage = []
         option_dict = {'510050.SH': 'sse', '510300.SH': 'sse', '510500.SH': 'sse', '159919.SZ': 'szse',
                        '000300.SH': 'cffex'}
@@ -508,7 +526,7 @@ class WindData(DataSource):
             contract_table_name = '期权合约'
             start_date = self.db_interface.get_column(contract_table_name, '上市日期')
             start_date = min(start_date)
-        end_date = dt.date.today() - dt.timedelta(days=1)
+        end_date = self.calendar.yesterday()
         dates = self.calendar.select_dates(start_date, end_date)
         if len(dates) <= 1:
             return
@@ -532,7 +550,7 @@ class WindData(DataSource):
     def update_target_stock_index_daily(self) -> None:
         table_name = '指数日行情'
         start_date = self.db_interface.get_latest_timestamp(table_name)
-        end_date = dt.date.today() - dt.timedelta(days=1)
+        end_date = self.calendar.yesterday()
         dates = self.calendar.select_dates(start_date, end_date)
         if len(dates) <= 1:
             return
@@ -551,8 +569,7 @@ class WindData(DataSource):
     # helper funcs
     #######################################
     def sparse_data_queryer(self, data_func, start_series: pd.Series = None, end_series: pd.Series = None,
-                            desc: str = ''):
-        default_start_date = dt.date(1990, 12, 19)
+                            desc: str = '', default_start_date: utils.DateType = dt.date(1990, 12, 19)):
         start_stocks = [] if start_series.empty else start_series.index.get_level_values('ID')
 
         all_stocks = sorted(list(set(start_stocks) | set(end_series.index.get_level_values('ID'))))
@@ -593,3 +610,7 @@ class WindData(DataSource):
                 mid_data = data_func(mid_date, ticker)
                 self._binary_data_queryer(data_func, start_data, mid_data)
                 self._binary_data_queryer(data_func, mid_data, end_data)
+
+    # TODO
+    def sparse_data_template(self, table_name: str, data_func, ):
+        pass

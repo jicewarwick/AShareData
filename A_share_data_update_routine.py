@@ -12,9 +12,9 @@ if __name__ == '__main__':
 
     tushare_token = config['tushare_token']
     engine = prepare_engine(config_loc)
-    db_interface = MySQLInterface(engine)
+    db_interface = MySQLInterface(engine, init=True)
 
-    # downloader = TushareData(tushare_token, db_interface=db_interface, init=False)
+    # downloader = TushareData(tushare_token, db_interface=db_interface, init=True)
     # downloader.update_routine()
 
     wind_data = WindData(db_interface)
