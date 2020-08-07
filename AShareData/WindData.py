@@ -166,25 +166,25 @@ class WindData(DataSource):
 
     def update_routine(self):
         # stock
-        # self.update_stock_daily_data()
-        # self.update_adj_factor()
+        self.update_stock_daily_data()
+        self.update_adj_factor()
         self.update_industry()
-        # self.update_pause_stock_info()
-        #
-        # # future
-        # self.update_future_contracts_list()
-        # self.update_future_daily_data()
-        #
-        # # option
-        # self.update_stock_option_list()
-        # self.update_stock_option_daily_data()
-        #
-        # # index
-        # self.update_target_stock_index_daily()
-        #
-        # # etf
-        # self.update_etf_list()
-        # self.update_etf_daily()
+        self.update_pause_stock_info()
+
+        # future
+        self.update_future_contracts_list()
+        self.update_future_daily_data()
+
+        # option
+        self.update_stock_option_list()
+        self.update_stock_option_daily_data()
+
+        # index
+        self.update_target_stock_index_daily()
+
+        # etf
+        self.update_etf_list()
+        self.update_etf_daily()
         return
 
     #######################################
