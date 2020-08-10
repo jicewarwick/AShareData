@@ -22,10 +22,15 @@
 		"ID": "varchar",
 		"总股本": "double"
 	},
-	"流通股本": {
+	"A股总股本": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"流通股本": "double"
+		"A股总股本": "double"
+	},
+	"A股流通股本": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"A股流通股本": "double"
 	},
 	"自由流通股本": {
 		"DateTime": "datetime",
@@ -120,22 +125,22 @@
 	"中信行业": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"行业名称": "str"
+		"中信行业": "str"
 	},
 	"申万行业": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"行业名称": "str"
+		"申万行业": "str"
 	},
 	"Wind行业": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"行业名称": "str"
+		"Wind行业": "str"
 	},
 	"中证行业": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"行业名称": "str"
+		"中证行业": "str"
 	},
 	"沪深股通成份股": {
 		"DateTime": "datetime",

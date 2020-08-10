@@ -3,8 +3,9 @@ import logging
 import re
 import sys
 import tempfile
-from typing import List, Union
+from typing import List, Union, Dict
 
+import numpy as np
 import pandas as pd
 import WindPy
 from tqdm import tqdm
@@ -165,26 +166,27 @@ class WindData(DataSource):
         self.w.connect()
 
     def update_routine(self):
-        # stock
-        self.update_stock_daily_data()
-        self.update_adj_factor()
-        self.update_industry()
-        self.update_pause_stock_info()
-
-        # future
-        self.update_future_contracts_list()
-        self.update_future_daily_data()
-
-        # option
-        self.update_stock_option_list()
-        self.update_stock_option_daily_data()
-
-        # index
-        self.update_target_stock_index_daily()
-
-        # etf
-        self.update_etf_list()
-        self.update_etf_daily()
+        # # stock
+        # self.update_stock_daily_data()
+        # self.update_adj_factor()
+        # self.update_industry()
+        # self.update_pause_stock_info()
+        self.update_stock_units()
+        #
+        # # future
+        # self.update_future_contracts_list()
+        # self.update_future_daily_data()
+        #
+        # # option
+        # self.update_stock_option_list()
+        # self.update_stock_option_daily_data()
+        #
+        # # index
+        # self.update_target_stock_index_daily()
+        #
+        # # etf
+        # self.update_etf_list()
+        # self.update_etf_daily()
         return
 
     #######################################
@@ -282,7 +284,7 @@ class WindData(DataSource):
         stock_adj_factor = self.w.wss(self.all_stocks, 'adjfactor', trade_date=end_date).iloc[:, 0]
         stock_adj_factor.name = '复权因子'
 
-        def data_func(date: utils.DateType, ticker: str) -> pd.Series:
+        def data_func(ticker: str, date: utils.DateType) -> pd.Series:
             data = self.w.wsd(ticker, 'adjfactor', date, date)
             data.name = '复权因子'
             return data
@@ -297,33 +299,39 @@ class WindData(DataSource):
 
         current_fund_data = current_data.loc[slice(None), wind_code, :]
         self.sparse_data_queryer(data_func, current_fund_data, fund_adj_factor, '更新基金复权因子')
-
-    # TODO
 
     def update_stock_units(self):
         # 流通股本
-        table_name = '流通股本'
-        end_date = self.calendar.yesterday()
-
-        current_data = self.db_interface.read_table(table_name, table_name).groupby('ID').tail(1)
-        stock_adj_factor = self.w.wss(self.all_stocks, 'adjfactor', trade_date=end_date).iloc[:, 0]
-        stock_adj_factor.name = '复权因子'
-
-        def data_func(date: utils.DateType, ticker: str) -> pd.Series:
-            data = self.w.wsd(ticker, 'adjfactor', date, date)
-            data.name = '复权因子'
+        def float_a_func(ticker: str, date: utils.DateType) -> pd.Series:
+            data = self.w.wsd(ticker, "float_a_shares", date, date, "unit=1")
+            data.name = 'A股流通股本'
             return data
 
-        current_stock_data = current_data.loc[slice(None), self.all_stocks, :]
-        self.sparse_data_queryer(data_func, current_stock_data, stock_adj_factor, '更新股票复权因子')
+        self.sparse_data_template('A股流通股本', float_a_func)
 
-        funds_info = self.db_interface.read_table('ETF上市日期').reset_index()
-        wind_code = funds_info['ID'].tolist()
-        fund_adj_factor = self.w.wss(wind_code, 'adjfactor', trade_date=end_date).iloc[:, 0]
-        fund_adj_factor.name = '复权因子'
+        # 自由流通股本
+        def free_float_a_func(ticker: str, date: utils.DateType) -> pd.Series:
+            data = self.w.wsd(ticker, "free_float_shares", date, date, "unit=1")
+            data.name = '自由流通股本'
+            return data
 
-        current_fund_data = current_data.loc[slice(None), wind_code, :]
-        self.sparse_data_queryer(data_func, current_fund_data, fund_adj_factor, '更新基金复权因子')
+        self.sparse_data_template('自由流通股本', free_float_a_func)
+
+        # 总股本
+        def total_share_func(ticker: str, date: utils.DateType) -> pd.Series:
+            data = self.w.wsd(ticker, "total_shares", date, date, "unit=1")
+            data.name = '总股本'
+            return data
+
+        self.sparse_data_template('总股本', total_share_func)
+
+        # A股总股本
+        def total_a_share_func(ticker: str, date: utils.DateType) -> pd.Series:
+            data = self.w.wsd(ticker, "share_totala", date, date, "unit=1")
+            data.name = 'A股总股本'
+            return data
+
+        self.sparse_data_template('A股总股本', total_a_share_func)
 
     def _update_industry(self, provider: str) -> None:
         """更新行业信息
@@ -331,7 +339,7 @@ class WindData(DataSource):
         :param provider: 行业分类提供商
         """
 
-        def _get_industry_data(date: dt.datetime, ticker: Union[str, List[str]]) -> pd.Series:
+        def _get_industry_data(ticker: Union[str, List[str]], date: dt.datetime) -> pd.Series:
             wind_data = self.w.wsd(ticker, f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
                                    date, date, industryType=constants.INDUSTRY_LEVEL[provider])
             wind_data.name = f'{provider}行业'
@@ -350,7 +358,7 @@ class WindData(DataSource):
         else:
             initial_data = self.db_interface.read_table(table_name).groupby('ID').tail(1)
 
-        new_data = _get_industry_data(date=query_date, ticker=self.all_stocks).dropna()
+        new_data = _get_industry_data(ticker=self.all_stocks, date=query_date).dropna()
 
         self.sparse_data_queryer(_get_industry_data, initial_data, new_data, f'更新{table_name}',
                                  default_start_date=constants.INDUSTRY_START_DATE[provider])
@@ -569,13 +577,11 @@ class WindData(DataSource):
     # helper funcs
     #######################################
     def sparse_data_queryer(self, data_func, start_series: pd.Series = None, end_series: pd.Series = None,
-                            desc: str = '', default_start_date: utils.DateType = dt.date(1990, 12, 19)):
+                            desc: str = '', default_start_date: Dict = None):
         start_stocks = [] if start_series.empty else start_series.index.get_level_values('ID')
-
         all_stocks = sorted(list(set(start_stocks) | set(end_series.index.get_level_values('ID'))))
 
         tmp = start_series.reset_index().set_index('ID').reindex(all_stocks)
-        tmp['DateTime'] = tmp['DateTime'].where(tmp.DateTime.notnull(), default_start_date)
         start_series = tmp.reset_index().set_index(['DateTime', 'ID']).iloc[:, 0]
 
         end_index = pd.MultiIndex.from_product([[end_series.index.get_level_values('DateTime')[0]], all_stocks],
@@ -586,6 +592,10 @@ class WindData(DataSource):
             for i in range(start_series.shape[0]):
                 new_val = end_series.iloc[i:i + 1]
                 old_val = start_series.iloc[i:i + 1]
+                if np.isnan(old_val.index.get_level_values('DateTime').values[0]):
+                    ticker = old_val.index.get_level_values('ID').values[0]
+                    index_date = default_start_date[ticker]
+                    old_val = data_func(ticker=ticker, date=index_date.date())
                 pbar.set_description(f'{desc}: {new_val.index.get_level_values("ID").values[0]}')
                 self._binary_data_queryer(data_func, old_val, new_val)
                 pbar.update(1)
@@ -611,6 +621,15 @@ class WindData(DataSource):
                 self._binary_data_queryer(data_func, start_data, mid_data)
                 self._binary_data_queryer(data_func, mid_data, end_data)
 
-    # TODO
-    def sparse_data_template(self, table_name: str, data_func, ):
-        pass
+    def sparse_data_template(self, table_name: str, data_func):
+        current_data = self.db_interface.read_table(table_name, table_name).groupby('ID').tail(1)
+        end_date = self.calendar.yesterday()
+        new_data = data_func(ticker=self.all_stocks, date=end_date)
+        new_data.name = table_name
+
+        stock_listed_info = self.db_interface.read_table('股票上市退市')
+        info = stock_listed_info.loc[stock_listed_info == 1].index
+        list_date = dict(zip(info.get_level_values('ID'), info.get_level_values('DateTime')))
+
+        current_data = current_data.loc[slice(None), self.all_stocks, :]
+        self.sparse_data_queryer(data_func, current_data, new_data, f'更新{table_name}', default_start_date=list_date)

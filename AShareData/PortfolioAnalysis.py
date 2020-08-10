@@ -1,9 +1,9 @@
-import datetime as dt
-
 import alphalens
+import numpy as np
 import pandas as pd
+import scipy
 
-from . import AShareDataReader, MySQLInterface, prepare_engine
+from . import AShareDataReader, MySQLInterface, prepare_engine, utils
 from .TradingCalendar import TradingCalendar
 
 
@@ -18,11 +18,9 @@ class ASharePortfolioAnalysis(object):
     def beta_portfolio(self):
         pass
 
-    def size_portfolio(self):
-        price = self.data_reader.get_factor('股票日行情', '收盘价', start_date=dt.date(2010, 1, 1),
-                                            end_date=dt.date(2019, 12, 31))
-        units = self.data_reader.get_factor('总股本', '总股本', ffill=True, start_date=dt.date(2010, 1, 1),
-                                            end_date=dt.date(2019, 12, 31))
+    def size_portfolio(self, start_date: utils.DateType, end_date: utils.DateType):
+        price = self.data_reader.get_factor('股票日行情', '收盘价', start_date=start_date, end_date=end_date)
+        units = self.data_reader.get_factor('总股本', '总股本', start_date=start_date, end_date=end_date, ffill=True)
         market_cap = price * units
         market_size = market_cap.log()
 
@@ -30,5 +28,11 @@ class ASharePortfolioAnalysis(object):
         alphalens.tears.create_full_tear_sheet(factor_data)
 
     @staticmethod
-    def summary_statistics(data) -> pd.DataFrame:
-        pass
+    def summary_statistics(factor_data: pd.DataFrame) -> pd.DataFrame:
+        cross_section_info = factor_data.groupby('DateTime').agg(
+            {'Mean': np.nanmean, 'SD': np.nanstd, 'Skew': scipy.stats.skew, 'Kurt': scipy.stats.kurtosis,
+             'Min': np.nanmin, '5%': np.percentile(5), '25%': np.percentile(25), 'Median': np.median,
+             '75%': np.percentile(75), '95%': np.percentile(95), 'Max': np.nanmax,
+             # 'n':
+             }, axis=1)
+        return cross_section_info.mean()
