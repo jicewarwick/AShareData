@@ -617,7 +617,7 @@ class WindData(DataSource):
             else:
                 ticker = end_data.index.get_level_values('ID')[0]
                 mid_date = self.calendar.middle(start_date, end_date)
-                mid_data = data_func(mid_date, ticker)
+                mid_data = data_func(ticker=ticker, date=mid_date)
                 self._binary_data_queryer(data_func, start_data, mid_data)
                 self._binary_data_queryer(data_func, mid_data, end_data)
 
