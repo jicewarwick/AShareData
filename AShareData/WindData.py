@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 import tempfile
-from typing import List, Union, Dict
+from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -577,7 +577,7 @@ class WindData(DataSource):
     # helper funcs
     #######################################
     def sparse_data_queryer(self, data_func, start_series: pd.Series = None, end_series: pd.Series = None,
-                            desc: str = '', default_start_date: Dict = None):
+                            desc: str = '', default_start_date: Union[Dict, utils.DateType] = None):
         start_stocks = [] if start_series.empty else start_series.index.get_level_values('ID')
         all_stocks = sorted(list(set(start_stocks) | set(end_series.index.get_level_values('ID'))))
 
@@ -594,7 +594,10 @@ class WindData(DataSource):
                 old_val = start_series.iloc[i:i + 1]
                 if np.isnan(old_val.index.get_level_values('DateTime').values[0]):
                     ticker = old_val.index.get_level_values('ID').values[0]
-                    index_date = default_start_date[ticker]
+                    if isinstance(default_start_date, dict):
+                        index_date = default_start_date[ticker]
+                    else:
+                        index_date = utils.date_type2datetime(default_start_date)
                     old_val = data_func(ticker=ticker, date=index_date.date())
                 pbar.set_description(f'{desc}: {new_val.index.get_level_values("ID").values[0]}')
                 self._binary_data_queryer(data_func, old_val, new_val)

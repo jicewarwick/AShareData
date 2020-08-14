@@ -7,7 +7,7 @@ from typing import List, Mapping, Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Column, DateTime, Float, func, Integer, Table, Text, VARCHAR
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, Table, Text, VARCHAR
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
@@ -17,6 +17,7 @@ from . import utils
 
 class DBInterface(object):
     """Database Interface Base Class"""
+
     def __init__(self):
         pass
 
@@ -281,46 +282,45 @@ class MySQLInterface(DBInterface):
 
     def read_table(self, table_name: str, columns: Union[str, Sequence[str]] = None,
                    start_date: utils.DateType = None, end_date: utils.DateType = None,
-                   report_period: utils.DateType = None,
-                   where_clause: str = None) -> Union[pd.Series, pd.DataFrame]:
+                   dates: Sequence[utils.DateType] = None,
+                   report_period: utils.DateType = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
         :param table_name: 表名
         :param columns: 所需的列名
         :param start_date: 开始时间
         :param end_date: 结束时间
+        :param dates: 查询日期
         :param report_period: 报告期
-        :param where_clause: 所有其他数据条件
         :return:
         """
         table_name = table_name.lower()
         index_col = self.get_table_primary_keys(table_name)
+
         if columns is None:
             ret = pd.read_sql_table(table_name, self.engine, index_col=index_col)
         else:
+            Session = sessionmaker(bind=self.engine)
+            session = Session()
+            t = self.meta.tables[table_name]
+            q = session.query()
             if isinstance(columns, str):
                 columns = [columns]
-            where_clauses_sql = ''
-            where_storage = []
-            if where_clause is not None:
-                where_storage.append(where_clause)
+            q = q.add_columns(*(index_col + columns))
             if start_date is not None:
                 start_date = utils.date_type2datetime(start_date)
-                where_storage.append(f'DateTime >= "{start_date}"')
+                q = q.filter(t.columns['DateTime'] >= start_date)
             if end_date is not None:
                 end_date = utils.date_type2datetime(end_date)
-                where_storage.append(f'DateTime <= "{end_date}"')
+                q = q.filter(t.columns['DateTime'] <= end_date)
+            if dates is not None:
+                dates = [utils.date_type2datetime(it) for it in dates]
+                q = q.filter(t.columns['DateTime'].in_(dates))
             if report_period is not None:
                 report_period = utils.date_type2datetime(report_period)
-                where_storage.append(f'报告期 = "{report_period}"')
-            if where_storage:
-                where_clauses_sql = 'WHERE ' + ' AND '.join(where_storage)
+                q = q.filter(t.columns['报告期'] == report_period)
 
-            # construct sql command
-            requested_columns = [f'`{w}`' for w in (index_col + columns)]
-            sql = f'SELECT {", ".join(requested_columns)} FROM {table_name} {where_clauses_sql}'
-            logging.debug(sql)
-            ret = pd.read_sql(sql, con=self.engine, index_col=index_col, columns=columns)
+            ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)
 
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]
