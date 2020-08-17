@@ -37,53 +37,52 @@ class AShareDataReader(object):
         return get_listed_stocks(self.db_interface, date)
 
     # common factors
-    def get_factor(self, table_name: str, factor_names: Union[str, Sequence[str]], ffill: bool = False, unstack=True,
+    def get_factor(self, table_name: str, factor_names: Union[str, Sequence[str]], unstack=True,
                    start_date: utils.DateType = None, end_date: utils.DateType = None,
-                   IDs: Sequence[str] = None) -> [pd.Series, pd.DataFrame]:
+                   dates: Sequence[utils.DateType] = None,
+                   ids: Sequence[str] = None) -> [pd.Series, pd.DataFrame]:
         assert not (table_name in FINANCIAL_STATEMENTS), '财报数据请使用 query_financial_data 或 get_financial_factor 查询!'
-        table_name = table_name.lower()
         self._check_args(table_name, factor_names)
 
         logging.debug('开始读取数据.')
-        df = self.db_interface.read_table(table_name, columns=factor_names)
+        df = self.db_interface.read_table(table_name, columns=factor_names, start_date=start_date, end_date=end_date,
+                                          dates=dates, ids=ids)
         logging.debug('数据读取完成.')
         if not isinstance(factor_names, str):
             df.columns = factor_names
             return df
 
         if isinstance(df.index, pd.MultiIndex) & unstack:
-            df = self._conform_df(df.unstack(), start_date=start_date, end_date=end_date, stock_list=IDs,
-                                  ffill=ffill)
-            # name may not survive pickling
-            df.name = factor_names
+            df = df.unstack()
         return df
 
-    def get_snapshot(self, table_name: str, factor_name: str, date: utils.DateType = dt.date.today()) -> pd.Series:
-        """Get ``factor_name`` from ``table_name`` at ``date``"""
+    def get_compact_factor(self, table_name: str,
+                           start_date: utils.DateType = None, end_date: utils.DateType = None,
+                           dates: Sequence[utils.DateType] = None,
+                           ids: Sequence[str] = None) -> [pd.Series, pd.DataFrame]:
         assert not (table_name in FINANCIAL_STATEMENTS), '财报数据请使用 query_financial_data 或 get_financial_factor 查询!'
-        table_name = table_name.lower()
-        self._check_args(table_name, factor_name)
+        self._check_args(table_name, table_name)
 
+        if end_date is None:
+            end_date = max(dates)
         logging.debug('开始读取数据.')
-        series = self.db_interface.read_table(table_name, columns=factor_name)
+        df = self.db_interface.read_table(table_name, columns=table_name, end_date=end_date, ids=ids)
         logging.debug('数据读取完成.')
 
-        df = series.reset_index()
-        if date:
-            date = utils.date_type2datetime(date)
-            timestamp = date
-            df = df.loc[df['DateTime'] <= date, :]
-        else:
-            timestamp = df['DateTime'].max()
-
-        listed_stocks = get_listed_stocks(self.db_interface, timestamp)
-        content = df.groupby('ID').tail(1).loc[df['ID'].isin(listed_stocks), ['ID', factor_name]]
-        content['DateTime'] = timestamp
-        return content.set_index(series.index.names).sort_index().iloc[:, 0]
+        df = df.unstack()
+        first_timestamp = df.index.get_level_values('DateTime').min()
+        date_list = self.calendar.select_dates(first_timestamp, end_date)
+        df = df.reindex(date_list).ffill()
+        if dates:
+            df = df.loc[dates, :]
+        if start_date:
+            df = df.loc[start_date:, :]
+        return df
 
     # industry
     def get_industry(self, provider: str, level: int, translation_json_loc: str = None,
                      start_date: utils.DateType = None, end_date: utils.DateType = None,
+                     dates: Sequence[utils.DateType] = None,
                      stock_list: Sequence[str] = None) -> pd.DataFrame:
         """Get industry factor
 
@@ -99,15 +98,13 @@ class AShareDataReader(object):
 
         table_name = f'{provider}行业'
         logging.debug('开始读取数据.')
-        series = self.db_interface.read_table(table_name, columns='行业名称')
+        df = self.get_compact_factor(table_name, start_date=start_date, end_date=end_date, dates=dates)
         logging.debug('数据读取完成.')
 
         if level != INDUSTRY_LEVEL[provider]:
             new_translation = self._get_industry_translation_dict(table_name, level, translation_json_loc)
-            series = series.map(new_translation)
+            df = df.map(new_translation)
 
-        df = self._conform_df(series.unstack(), start_date, end_date, stock_list, True)
-        df.name = f'{provider}{level}级行业'
         return df
 
     def get_industry_snapshot(self, provider: str, level: int, translation_json_loc: str = None,
@@ -122,7 +119,7 @@ class AShareDataReader(object):
         """
         table_name = f'{provider}行业'
         factor_name = '行业名称'
-        industry = self.get_snapshot(table_name, factor_name, date)
+        industry = self.get_compact_factor(table_name, dates=[date])
         if level != INDUSTRY_LEVEL[provider]:
             new_translation = self._get_industry_translation_dict(table_name, level, translation_json_loc)
             industry = industry.map(new_translation)
@@ -258,18 +255,3 @@ class AShareDataReader(object):
         table_name = f'{combined}{quarterly}{table_type}'
         return table_name
 
-    def _conform_df(self, df, start_date: utils.DateType = None, end_date: utils.DateType = None,
-                    stock_list: Sequence[str] = None, ffill: bool = False) -> pd.DataFrame:
-        if ffill:
-            first_timestamp = df.index.get_level_values('DateTime').min()
-            date_list = self.calendar.select_dates(first_timestamp, end_date)
-            df = df.reindex(date_list[:-1]).ffill()
-            df = df.loc[start_date:, :]
-        else:
-            date_list = self.calendar.select_dates(start_date, end_date)
-            df = df.reindex(date_list[:-1])
-
-        # if stock_list is None:
-        #     stock_list = self.stocks
-        df = df.reindex(stock_list, axis=1)
-        return df

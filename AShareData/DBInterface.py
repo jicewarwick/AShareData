@@ -283,7 +283,8 @@ class MySQLInterface(DBInterface):
     def read_table(self, table_name: str, columns: Union[str, Sequence[str]] = None,
                    start_date: utils.DateType = None, end_date: utils.DateType = None,
                    dates: Sequence[utils.DateType] = None,
-                   report_period: utils.DateType = None) -> Union[pd.Series, pd.DataFrame]:
+                   report_period: utils.DateType = None,
+                   ids: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
         :param table_name: 表名
@@ -292,6 +293,7 @@ class MySQLInterface(DBInterface):
         :param end_date: 结束时间
         :param dates: 查询日期
         :param report_period: 报告期
+        :param ids: 合约代码
         :return:
         """
         table_name = table_name.lower()
@@ -307,18 +309,20 @@ class MySQLInterface(DBInterface):
             if isinstance(columns, str):
                 columns = [columns]
             q = q.add_columns(*(index_col + columns))
-            if start_date is not None:
-                start_date = utils.date_type2datetime(start_date)
-                q = q.filter(t.columns['DateTime'] >= start_date)
-            if end_date is not None:
-                end_date = utils.date_type2datetime(end_date)
-                q = q.filter(t.columns['DateTime'] <= end_date)
             if dates is not None:
                 dates = [utils.date_type2datetime(it) for it in dates]
                 q = q.filter(t.columns['DateTime'].in_(dates))
+            elif end_date is not None:
+                end_date = utils.date_type2datetime(end_date)
+                q = q.filter(t.columns['DateTime'] <= end_date)
+                if start_date is not None:
+                    start_date = utils.date_type2datetime(start_date)
+                    q = q.filter(t.columns['DateTime'] >= start_date)
             if report_period is not None:
                 report_period = utils.date_type2datetime(report_period)
                 q = q.filter(t.columns['报告期'] == report_period)
+            if ids is not None:
+                q = q.filter(t.columns['ID'].in_(ids))
 
             ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)
 

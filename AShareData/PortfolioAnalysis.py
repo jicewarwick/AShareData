@@ -19,12 +19,15 @@ class ASharePortfolioAnalysis(object):
         pass
 
     def size_portfolio(self, start_date: utils.DateType, end_date: utils.DateType):
-        price = self.data_reader.get_factor('股票日行情', '收盘价', start_date=start_date, end_date=end_date)
-        units = self.data_reader.get_factor('总股本', '总股本', start_date=start_date, end_date=end_date, ffill=True)
+        dates = self.calendar.last_day_of_month(start_date, end_date)
+        price = self.data_reader.get_factor('股票日行情', '收盘价', dates=dates)
+        adj_factor = self.data_reader.get_compact_factor('复权因子', dates=dates)
+        units = self.data_reader.get_compact_factor('A股流通股本', dates=dates)
         market_cap = price * units
-        market_size = market_cap.log()
+        market_size = market_cap.apply(np.log)
+        hfq_price = price * adj_factor
 
-        factor_data = alphalens.utils.get_clean_factor_and_forward_returns(market_size, price, quantiles=10)
+        factor_data = alphalens.utils.get_clean_factor_and_forward_returns(market_size.stack(), hfq_price, quantiles=10)
         alphalens.tears.create_full_tear_sheet(factor_data)
 
     @staticmethod

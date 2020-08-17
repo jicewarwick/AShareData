@@ -172,7 +172,7 @@ class WindData(DataSource):
         # self.update_industry()
         # self.update_pause_stock_info()
         self.update_stock_units()
-        #
+
         # # future
         # self.update_future_contracts_list()
         # self.update_future_daily_data()
@@ -625,7 +625,7 @@ class WindData(DataSource):
                 self._binary_data_queryer(data_func, mid_data, end_data)
 
     def sparse_data_template(self, table_name: str, data_func):
-        current_data = self.db_interface.read_table(table_name, table_name).groupby('ID').tail(1)
+        current_data = self.db_interface.read_table(table_name).groupby('ID').tail(1)
         end_date = self.calendar.yesterday()
         new_data = data_func(ticker=self.all_stocks, date=end_date)
         new_data.name = table_name
