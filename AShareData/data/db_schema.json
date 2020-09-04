@@ -7,7 +7,7 @@
 		"ID": "varchar",
 		"上市状态": "boolean"
 	},
-	"股票曾用名": {
+	"证券名称": {
 		"DateTime": "datetime",
 		"ID": "varchar",
 		"证券名称": "str"

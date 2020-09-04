@@ -71,19 +71,11 @@ class FactorZoo(object):
 
     @cached_property
     def names(self) -> pd.DataFrame:
-        df = self._db_reader.get_factor('股票曾用名', '证券名称', ffill=True)
+        df = self._db_reader.get_compact_factor('证券名称')
         return df
 
     def trading_status(self) -> pd.DataFrame:
-        close_copy = self.close.copy()
-
-        def fill_series(series):
-            index = series.dropna().index[0]
-            series.where(np.logical_not(series > 0), True, inplace=True)
-            series.loc[index:].fillna(False, inplace=True)
-            return series
-
-        return close_copy.apply(fill_series)
+        pass
 
     def is_st(self) -> pd.DataFrame:
         return self.names.str.startswith('ST')

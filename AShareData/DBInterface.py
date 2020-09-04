@@ -308,7 +308,9 @@ class MySQLInterface(DBInterface):
             q = session.query()
             if isinstance(columns, str):
                 columns = [columns]
-            q = q.add_columns(*(index_col + columns))
+            columns.extend(index_col)
+            for it in columns:
+                q = q.add_columns(t.c[it])
             if dates is not None:
                 dates = [utils.date_type2datetime(it) for it in dates]
                 q = q.filter(t.columns['DateTime'].in_(dates))
@@ -347,7 +349,7 @@ def _get_stock_list_info(db_interface: DBInterface, date: utils.DateType = None)
     stock_list_df = db_interface.read_table('股票上市退市')
     if date:
         date = utils.date_type2datetime(date)
-        stock_list_df = stock_list_df.loc[stock_list_df.index.get_level_values('DateTime') <= date, :]
+        stock_list_df = stock_list_df.loc[stock_list_df.index.get_level_values('DateTime') <= date]
     return stock_list_df
 
 

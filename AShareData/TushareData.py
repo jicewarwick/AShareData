@@ -40,7 +40,7 @@ class TushareData(DataSource):
 
         # self.get_daily_hq(start_date=self._check_db_timestamp('股票日行情', dt.date(2008, 1, 1)), end_date=dt.date.today())
         # self.get_daily_hq(start_date=self._check_db_timestamp('总股本', dt.date(2008, 1, 1)), end_date=dt.date.today())
-        self.get_past_names(start_date=self._check_db_timestamp('股票曾用名', dt.datetime(1990, 1, 1)))
+        self.get_past_names(start_date=self._check_db_timestamp('证券名称', dt.datetime(1990, 1, 1)))
 
         # self.get_index_daily(self._check_db_timestamp('指数日行情', dt.date(2008, 1, 1)))
         # latest = self._check_db_timestamp('指数成分股权重', '20050101')
@@ -164,7 +164,7 @@ class TushareData(DataSource):
         :param ticker: 证券代码(000001.SZ)
         :param start_date: 开始日期
         """
-        data_category = '股票曾用名'
+        data_category = '证券名称'
         column_desc = self._factor_param[data_category]['输出参数']
         fields = list(column_desc.keys())
         start_date = utils.date_type2str(start_date)

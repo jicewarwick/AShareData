@@ -16,7 +16,7 @@ if __name__ == '__main__':
     db_interface = MySQLInterface(engine, init=True)
 
     downloader = TushareData(tushare_token, db_interface=db_interface, init=True)
-    downloader.update_routine()
+    # downloader.update_routine()
 
     wind_data = WindData(db_interface)
     wind_data.update_routine()

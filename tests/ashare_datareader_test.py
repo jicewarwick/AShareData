@@ -1,5 +1,6 @@
 import logging
 import unittest
+import datetime as dt
 
 from AShareData.AShareDataReader import AShareDataReader
 from AShareData.DBInterface import MySQLInterface, prepare_engine
@@ -12,6 +13,16 @@ class MyTestCase(unittest.TestCase):
         config_loc = 'config.json'
         engine = prepare_engine(config_loc)
         self.db = AShareDataReader(MySQLInterface(engine))
+
+    def test_warned_stocks(self):
+        start_date = dt.date(2010, 1, 8)
+        end_date = dt.date(2019, 12, 27)
+        self.db.risk_warned_stocks(start_date=start_date, end_date=end_date)
+
+    def test_pause_stocks(self):
+        start_date = dt.date(2010, 1, 8)
+        end_date = dt.date(2019, 12, 27)
+        self.db.paused_stocks(start_date=start_date, end_date=end_date)
 
     def test_calendar(self):
         print(self.db.calendar.calendar)

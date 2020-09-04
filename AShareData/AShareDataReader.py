@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+from functools import lru_cache
 from typing import Callable, Dict, List, Sequence, Union
 
 import pandas as pd
@@ -36,8 +37,61 @@ class AShareDataReader(object):
         """Get stocks still listed at ``date``"""
         return get_listed_stocks(self.db_interface, date)
 
+    @cached_property
+    def _sec_names_cache(self) -> pd.DataFrame:
+        return self.get_factor('证券名称', unstack=False)
+
+    def risk_warned_stocks(self, dates: Sequence[dt.datetime] = None, start_date: utils.DateType = None,
+                           end_date: utils.DateType = None) -> pd.DataFrame:
+        sec_name = self._sec_names_cache.copy()
+        if end_date:
+            end_date = utils.date_type2datetime(end_date)
+            sec_name = sec_name.loc[sec_name.index.get_level_values('DateTime') < end_date]
+
+        ret = sec_name.map(lambda x: 'PT' in x or 'ST' in x or '退' in x).unstack()
+        ret = self._expand_compact_data(ret, dates=dates, start_date=start_date, end_date=end_date)
+
+        return ret
+
+    def paused_stocks(self, dates: Sequence[dt.datetime] = None, start_date: utils.DateType = None,
+                      end_date: utils.DateType = None) -> pd.DataFrame:
+        data = self.db_interface.read_table('股票停牌', '停牌类型', dates=dates, start_date=start_date, end_date=end_date)
+        data = data.loc[data != '盘中停牌']
+        data.loc[:] = True
+
+        if not end_date:
+            end_date = max(dates)
+        date_list = self.calendar.select_dates(start_date=start_date, end_date=end_date)
+
+        ret = data.unstack().reindex(date_list).fillna(False)
+        return ret
+
+    @lru_cache()
+    def daily_price(self, start_date: utils.DateType, end_date: utils.DateType):
+        return self.get_factor('股票日行情', '收盘价', start_date=start_date, end_date=end_date)
+
+    @cached_property
+    def _adj_factor_cache(self):
+        return self.get_factor('复权因子')
+
+    @cached_property
+    def _free_a_share_cache(self):
+        return self.get_factor('A股流通股本')
+
+    def adj_factor(self, dates: Sequence[dt.datetime] = None,
+                   start_date: utils.DateType = None, end_date: utils.DateType = None):
+        return self._expand_compact_data(self._adj_factor_cache, dates, start_date, end_date)
+
+    def free_a_shares(self, dates: Sequence[dt.datetime] = None,
+                      start_date: utils.DateType = None, end_date: utils.DateType = None):
+        return self._expand_compact_data(self._free_a_share_cache, dates, start_date, end_date)
+
+    def close(self, dates: Sequence[dt.datetime]):
+        tmp = self.daily_price(min(dates), max(dates))
+        return tmp.loc[(dates, slice(None)), :]
+
     # common factors
-    def get_factor(self, table_name: str, factor_names: Union[str, Sequence[str]], unstack=True,
+    def get_factor(self, table_name: str, factor_names: Union[str, Sequence[str]] = None, unstack=True,
                    start_date: utils.DateType = None, end_date: utils.DateType = None,
                    dates: Sequence[utils.DateType] = None,
                    ids: Sequence[str] = None) -> [pd.Series, pd.DataFrame]:
@@ -66,17 +120,11 @@ class AShareDataReader(object):
         if end_date is None:
             end_date = max(dates)
         logging.debug('开始读取数据.')
-        df = self.db_interface.read_table(table_name, columns=table_name, end_date=end_date, ids=ids)
+        df = self.db_interface.read_table(table_name, end_date=end_date, ids=ids)
         logging.debug('数据读取完成.')
 
         df = df.unstack()
-        first_timestamp = df.index.get_level_values('DateTime').min()
-        date_list = self.calendar.select_dates(first_timestamp, end_date)
-        df = df.reindex(date_list).ffill()
-        if dates:
-            df = df.loc[dates, :]
-        if start_date:
-            df = df.loc[start_date:, :]
+        df = self._expand_compact_data(df, dates=dates, start_date=start_date, end_date=end_date)
         return df
 
     # industry
@@ -91,6 +139,7 @@ class AShareDataReader(object):
         :param translation_json_loc: custom dict specifying maximum industry classification level to lower level
         :param start_date: start date
         :param end_date: end date
+        :param dates: selected dates
         :param stock_list: query stocks
         :return: industry classification pandas.DataFrame with DateTime as index and stock as column
         """
@@ -98,7 +147,7 @@ class AShareDataReader(object):
 
         table_name = f'{provider}行业'
         logging.debug('开始读取数据.')
-        df = self.get_compact_factor(table_name, start_date=start_date, end_date=end_date, dates=dates)
+        df = self.get_compact_factor(table_name, start_date=start_date, ids=stock_list, end_date=end_date, dates=dates)
         logging.debug('数据读取完成.')
 
         if level != INDUSTRY_LEVEL[provider]:
@@ -233,12 +282,13 @@ class AShareDataReader(object):
         table_name = table_name.lower()
         assert self.db_interface.exist_table(table_name), f'数据库中不存在表 {table_name}'
 
-        columns = self.db_interface.get_columns_names(table_name)
-        if isinstance(factor_names, str):
-            assert factor_names in columns, f'表 {table_name} 中不存在 {factor_names} 列'
-        else:
-            for name in factor_names:
-                assert name in columns, f'表 {table_name} 中不存在 {name} 列'
+        if factor_names:
+            columns = self.db_interface.get_columns_names(table_name)
+            if isinstance(factor_names, str):
+                assert factor_names in columns, f'表 {table_name} 中不存在 {factor_names} 列'
+            else:
+                for name in factor_names:
+                    assert name in columns, f'表 {table_name} 中不存在 {name} 列'
 
     @staticmethod
     def _get_industry_translation_dict(table_name: str, level: int, translation_json_loc: str = None) -> Dict[str, str]:
@@ -255,3 +305,12 @@ class AShareDataReader(object):
         table_name = f'{combined}{quarterly}{table_type}'
         return table_name
 
+    def _expand_compact_data(self, data: pd.Series, dates: Sequence[dt.datetime] = None,
+                             start_date: utils.DateType = None, end_date: utils.DateType = None):
+        if not end_date:
+            end_date = max(dates)
+        date_list = self.calendar.select_dates(start_date=start_date, end_date=end_date)
+        df = data.reindex(date_list).ffill()
+        if dates:
+            df = df.loc[dates, :]
+        return df

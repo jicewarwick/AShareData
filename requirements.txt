@@ -1,6 +1,9 @@
 requests
+alphalens
+scipy
 tqdm
 tushare
 sqlalchemy
 pandas
 numpy
+statsmodels
