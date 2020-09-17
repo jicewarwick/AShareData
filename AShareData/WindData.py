@@ -609,6 +609,7 @@ class WindData(DataSource):
                     else:
                         index_date = utils.date_type2datetime(default_start_date)
                     old_val = data_func(ticker=ticker, date=index_date.date())
+                    self.db_interface.update_df(old_val.to_frame(), old_val.name)
                 pbar.set_description(f'{desc}: {new_val.index.get_level_values("ID").values[0]}')
                 self._binary_data_queryer(data_func, old_val, new_val)
                 pbar.update(1)

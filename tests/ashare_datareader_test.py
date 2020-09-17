@@ -27,6 +27,16 @@ class MyTestCase(unittest.TestCase):
     def test_calendar(self):
         print(self.db.calendar.calendar)
 
+    def test_adj_factor(self):
+        start_date = dt.date(2018, 5, 10)
+        end_date = dt.date(2018, 7, 10)
+        dates = [start_date, end_date]
+        ids = ['000001.SZ', '600000.SH', '000002.SZ']
+        print(self.db.adj_factor(start_date=start_date, end_date=end_date, ids=ids))
+        print(self.db.adj_factor(start_date=start_date, ids=ids))
+        print(self.db.adj_factor(end_date=end_date, ids=ids))
+        print(self.db.adj_factor(dates=dates, ids=ids))
+
     def test_stocks(self):
         print(self.db.stocks)
 
