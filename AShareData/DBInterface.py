@@ -11,6 +11,7 @@ from sqlalchemy import Boolean, Column, DateTime, Float, Integer, Table, Text, V
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql.expression import func
 
 from . import utils
 
@@ -234,9 +235,13 @@ class MySQLInterface(DBInterface):
         :param table_name: 表名
         :return: 最新时间
         """
-        data = self.get_column(table_name, 'DateTime')
-        if data:
-            return max(data)
+        assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        table = self.meta.tables[table_name.lower()]
+        session_maker = sessionmaker(bind=self.engine)
+        session = session_maker()
+        if 'DateTime' in table.columns.keys():
+            q = session.query(func.max(table.c.DateTime))
+            return q.one()[0]
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
         """
@@ -249,11 +254,11 @@ class MySQLInterface(DBInterface):
 
     def get_column(self, table_name: str, column_name: str) -> Optional[List]:
         """
-        返回数据库表中的`column_name`
+        返回数据库表中的`column_name`列排序后的非重复值
 
         :param table_name: 表名
         :param column_name: 列名
-        :return: 证券代码列表
+        :return: 数据库表中的`column_name`列排序后的非重复值
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name.lower()]
@@ -261,8 +266,8 @@ class MySQLInterface(DBInterface):
         session = session_maker()
         if column_name in table.columns.keys():
             logging.debug(f'{table_name} 表中找到 {column_name} 列')
-            cache = session.query(table.columns[column_name]).all()
-            return sorted(list(set([it[0] for it in cache])))
+            tmp = session.query(table.columns[column_name]).distinct().all()
+            return [it[0] for it in tmp]
 
     # todo: TBD
     def clean_db(self, table_name: str) -> None:
