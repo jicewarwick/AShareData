@@ -79,8 +79,9 @@ class AShareDataReader(object):
         return self.get_factor('A股流通股本')
 
     def adj_factor(self, dates: Sequence[dt.datetime] = None,
-                   start_date: utils.DateType = None, end_date: utils.DateType = None):
-        return self._expand_compact_data(self._adj_factor_cache, dates, start_date, end_date)
+                   start_date: utils.DateType = None, end_date: utils.DateType = None,
+                   ids: Sequence[str] = None):
+        return self._expand_compact_data(self._adj_factor_cache, dates, start_date, end_date, ids)
 
     def free_a_shares(self, dates: Sequence[dt.datetime] = None,
                       start_date: utils.DateType = None, end_date: utils.DateType = None):
@@ -306,11 +307,19 @@ class AShareDataReader(object):
         return table_name
 
     def _expand_compact_data(self, data: pd.Series, dates: Sequence[dt.datetime] = None,
-                             start_date: utils.DateType = None, end_date: utils.DateType = None):
-        if not end_date:
+                             start_date: utils.DateType = None, end_date: utils.DateType = None,
+                             ids: Sequence[str] = None):
+        if ids:
+            data = data.loc[(slice(None), ids)]
+        if dates:
             end_date = max(dates)
-        date_list = self.calendar.select_dates(start_date=start_date, end_date=end_date)
-        df = data.reindex(date_list).ffill()
+        if not end_date:
+            end_date = dt.datetime.today()
+        date_list = self.calendar.select_dates(end_date=end_date)
+        df = data.unstack().reindex(date_list).ffill()
+        if start_date:
+            start_date = utils.date_type2datetime(start_date)
+            df = df.loc[df.index >= start_date, :]
         if dates:
             df = df.loc[dates, :]
         return df

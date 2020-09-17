@@ -6,6 +6,7 @@ from .DBInterface import MySQLInterface, prepare_engine
 from .TradingCalendar import TradingCalendar
 from .TushareData import TushareData
 from .WebData import WebDataCrawler
+from .FactorCompositor import FactorCompositor
 from .PortfolioAnalysis import ASharePortfolioAnalysis
 
 spam_spec = importlib.util.find_spec("WindPy")

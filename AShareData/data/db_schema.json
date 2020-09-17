@@ -540,5 +540,10 @@
 		"证券名称": "varchar",
 		"停牌类型": "varchar",
 		"停牌原因": "varchar"
+	},
+	"一字涨跌停": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"涨跌停": "int"
 	}
 }
