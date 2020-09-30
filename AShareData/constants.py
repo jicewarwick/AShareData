@@ -1,3 +1,5 @@
+import datetime as dt
+
 TRADING_DAYS_IN_YEAR = 252
 
 # exchanges
@@ -24,3 +26,9 @@ INDUSTRY_DATA_PROVIDER = ['中信', '申万', '中证', 'Wind']
 INDUSTRY_DATA_PROVIDER_CODE_DICT = {'中信': 'citic', '申万': 'sw', '中证': 'csi', 'Wind': 'gics'}
 INDUSTRY_LEVEL = {'中信': 3, '申万': 3, '中证': 4, 'Wind': 4}
 INDUSTRY_START_DATE = {'中信': '20030103', '申万': '20050527', '中证': '20161212', 'Wind': '20050105'}
+
+# market return index
+MARKET_RETURN_INDEXES = {
+    '000001.IND': {'name': '市场全收益指数', 'ignore_st': True, 'ignore_new_stock_period': dt.timedelta(days=356),
+                   'ignore_pause': True, 'ignore_const_limit': True},
+}

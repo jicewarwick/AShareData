@@ -78,6 +78,9 @@ class DBInterface(object):
         """List ALL tables in the database"""
         raise NotImplementedError()
 
+    def get_column_min(self, table_name: str, column: str):
+        raise NotImplementedError()
+
 
 def prepare_engine(config_loc: str) -> sa.engine.Engine:
     """Create sqlalchemy engine from config file"""
@@ -243,6 +246,22 @@ class MySQLInterface(DBInterface):
             q = session.query(func.max(table.c.DateTime))
             return q.one()[0]
 
+    def get_column_min(self, table_name: str, column: str):
+        """
+        返回数据库表中某列的最小值
+
+        :param table_name: 表名
+        :param column: 列名
+        :return: 列的最小值
+        """
+        assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        table = self.meta.tables[table_name.lower()]
+        session_maker = sessionmaker(bind=self.engine)
+        session = session_maker()
+        if 'DateTime' in table.columns.keys():
+            q = session.query(func.min(table.c[column]))
+            return q.one()[0]
+
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
         """
         返回数据库表中的所有股票代码
@@ -348,24 +367,3 @@ class MySQLInterface(DBInterface):
         primary_key = [it.name for it in table.primary_key]
         if primary_key:
             return primary_key
-
-
-def _get_stock_list_info(db_interface: DBInterface, date: utils.DateType = None) -> pd.DataFrame:
-    stock_list_df = db_interface.read_table('股票上市退市')
-    if date:
-        date = utils.date_type2datetime(date)
-        stock_list_df = stock_list_df.loc[stock_list_df.index.get_level_values('DateTime') <= date]
-    return stock_list_df
-
-
-def get_stocks(db_interface: DBInterface, date: utils.DateType = None) -> List[str]:
-    """Get all the stocks ever listed before(and including) ``date``"""
-    stock_list_df = _get_stock_list_info(db_interface, date)
-    return sorted(stock_list_df.index.get_level_values('ID').unique().tolist())
-
-
-def get_listed_stocks(db_interface: DBInterface, date: utils.DateType = None) -> List[str]:
-    """Get stocks still listed at ``date``"""
-    stock_list_df = _get_stock_list_info(db_interface, date)
-    tmp = stock_list_df.reset_index().groupby('ID').tail(1)
-    return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())

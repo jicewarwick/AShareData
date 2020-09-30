@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+from functools import cached_property
 from time import sleep
 from typing import Callable, Mapping, Sequence, Union
 
@@ -9,7 +10,8 @@ from tqdm import tqdm
 
 from . import constants, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface, get_stocks
+from .DBInterface import DBInterface
+from .Ticker import StockTicker
 
 
 class TushareData(DataSource):
@@ -31,6 +33,10 @@ class TushareData(DataSource):
 
         if self.db_interface.get_latest_timestamp('股票上市退市') < dt.datetime.today() - dt.timedelta(10):
             self._get_all_stocks()
+
+    @cached_property
+    def stock_list(self):
+        return StockTicker(self.db_interface)
 
     def update_routine(self) -> None:
         """自动更新函数"""
@@ -181,7 +187,7 @@ class TushareData(DataSource):
         interval = 60.0 / 100.0
         raw_df = self.get_past_names()
         raw_df_start_dates = raw_df.index.get_level_values('DateTime').min()
-        uncovered_stocks = get_stocks(self.db_interface, raw_df_start_dates)
+        uncovered_stocks = self.stock_list.ticker(raw_df_start_dates)
 
         with tqdm(uncovered_stocks) as pbar:
             for stock in uncovered_stocks:
@@ -199,8 +205,9 @@ class TushareData(DataSource):
         fields = list(column_desc.keys())
 
         logging.debug(f'开始下载{data_category}.')
-        with tqdm(self.all_stocks) as pbar:
-            for stock in self.all_stocks:
+        tickers = self.stock_list.ticker()
+        with tqdm(tickers) as pbar:
+            for stock in tickers:
                 pbar.set_description(f'下载{stock}的分红送股数据')
                 df = self._pro.dividend(ts_code=stock, fields=fields)
                 df = df.loc[df['div_proc'] == '实施', :]
@@ -342,7 +349,7 @@ class TushareData(DataSource):
 
         # 分 合并/母公司, 单季/年
         if stock_list is None:
-            stock_list = self.all_stocks
+            stock_list = self.stock_list.ticker()
         logging.debug(f'开始下载财报.')
         with tqdm(stock_list) as pbar:
             loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cash_flow_desc, cash_flow)]
@@ -446,6 +453,7 @@ class TushareData(DataSource):
 
         output = self._standardize_df(output, desc)
         self.db_interface.update_df(output, '股票上市退市')
+        # del self.__dict__['stock_list']
         logging.info(f'{data_category}下载完成.')
 
     def update_calendar(self) -> None:

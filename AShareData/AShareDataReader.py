@@ -1,14 +1,14 @@
 import datetime as dt
 import logging
-from functools import lru_cache
-from typing import Callable, Dict, List, Sequence, Union
+from functools import cached_property, lru_cache
+from typing import Callable, List, Sequence
 
 import pandas as pd
-from cached_property import cached_property
 
 from . import utils
-from .constants import FINANCIAL_STATEMENTS, FINANCIAL_STATEMENTS_TYPE, INDUSTRY_LEVEL
-from .DBInterface import DBInterface, get_listed_stocks, get_stocks
+from .constants import FINANCIAL_STATEMENTS_TYPE
+from .DBInterface import DBInterface
+from .Factor import CompactFactor, ContinuousFactor
 from .TradingCalendar import TradingCalendar
 
 
@@ -29,33 +29,34 @@ class AShareDataReader(object):
         return TradingCalendar(self.db_interface)
 
     @cached_property
-    def stocks(self) -> List[str]:
-        """All the stocks ever listed"""
-        return get_stocks(self.db_interface)
+    def _stock_list(self) -> pd.DataFrame:
+        return self.db_interface.read_table('股票上市退市').reset_index()
 
-    def listed_stock(self, date: utils.DateType = dt.date.today()) -> List[str]:
+    def stocks(self, date: utils.DateType = dt.date.today()) -> List[str]:
         """Get stocks still listed at ``date``"""
-        return get_listed_stocks(self.db_interface, date)
+        stock_ticker_df = self._stock_list.copy()
+        if date:
+            date = utils.date_type2datetime(date)
+            stock_ticker_df = stock_ticker_df.loc[stock_ticker_df.DateTime <= date]
+        tmp = stock_ticker_df.groupby('ID').tail(1)
+        return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
 
     @cached_property
-    def _sec_names_cache(self) -> pd.DataFrame:
-        return self.get_factor('证券名称', unstack=False)
+    def sec_name(self):
+        return CompactFactor(self.db_interface, '证券名称')
 
-    def risk_warned_stocks(self, dates: Sequence[dt.datetime] = None, start_date: utils.DateType = None,
-                           end_date: utils.DateType = None) -> pd.DataFrame:
-        sec_name = self._sec_names_cache.copy()
-        if end_date:
-            end_date = utils.date_type2datetime(end_date)
-            sec_name = sec_name.loc[sec_name.index.get_level_values('DateTime') < end_date]
-
-        ret = sec_name.map(lambda x: 'PT' in x or 'ST' in x or '退' in x).unstack()
-        ret = self._expand_compact_data(ret, dates=dates, start_date=start_date, end_date=end_date)
-
-        return ret
+    @cached_property
+    def risk_warned_stocks(self) -> CompactFactor:
+        tmp = CompactFactor(self.db_interface, '证券名称')
+        rws = tmp.data.map(lambda x: 'PT' in x or 'ST' in x or '退' in x)
+        tmp.data = rws
+        tmp.factor_name = '风险警示股'
+        return tmp
 
     def paused_stocks(self, dates: Sequence[dt.datetime] = None, start_date: utils.DateType = None,
                       end_date: utils.DateType = None) -> pd.DataFrame:
-        data = self.db_interface.read_table('股票停牌', '停牌类型', dates=dates, start_date=start_date, end_date=end_date)
+        factor = ContinuousFactor(self.db_interface, '股票停牌', '停牌类型')
+        data = factor.get_data(dates=dates, start_date=start_date, end_date=end_date, unstack=False)
         data = data.loc[data != '盘中停牌']
         data.loc[:] = True
 
@@ -71,110 +72,15 @@ class AShareDataReader(object):
         return self.get_factor('股票日行情', '收盘价', start_date=start_date, end_date=end_date)
 
     @cached_property
-    def _adj_factor_cache(self):
-        return self.get_factor('复权因子')
+    def adj_factor(self) -> CompactFactor:
+        return CompactFactor(self.db_interface, '复权因子')
 
     @cached_property
-    def _free_a_share_cache(self):
-        return self.get_factor('A股流通股本')
+    def free_a_shares(self) -> CompactFactor:
+        return CompactFactor(self.db_interface, 'A股流通股本')
 
-    def adj_factor(self, dates: Sequence[dt.datetime] = None,
-                   start_date: utils.DateType = None, end_date: utils.DateType = None,
-                   ids: Sequence[str] = None):
-        return self._expand_compact_data(self._adj_factor_cache, dates, start_date, end_date, ids)
-
-    def free_a_shares(self, dates: Sequence[dt.datetime] = None,
-                      start_date: utils.DateType = None, end_date: utils.DateType = None):
-        return self._expand_compact_data(self._free_a_share_cache, dates, start_date, end_date)
-
-    def close(self, dates: Sequence[dt.datetime]):
-        tmp = self.daily_price(min(dates), max(dates))
-        return tmp.loc[(dates, slice(None)), :]
-
-    # common factors
-    def get_factor(self, table_name: str, factor_names: Union[str, Sequence[str]] = None, unstack=True,
-                   start_date: utils.DateType = None, end_date: utils.DateType = None,
-                   dates: Sequence[utils.DateType] = None,
-                   ids: Sequence[str] = None) -> [pd.Series, pd.DataFrame]:
-        assert not (table_name in FINANCIAL_STATEMENTS), '财报数据请使用 query_financial_data 或 get_financial_factor 查询!'
-        self._check_args(table_name, factor_names)
-
-        logging.debug('开始读取数据.')
-        df = self.db_interface.read_table(table_name, columns=factor_names, start_date=start_date, end_date=end_date,
-                                          dates=dates, ids=ids)
-        logging.debug('数据读取完成.')
-        if not isinstance(factor_names, str):
-            df.columns = factor_names
-            return df
-
-        if isinstance(df.index, pd.MultiIndex) & unstack:
-            df = df.unstack()
-        return df
-
-    def get_compact_factor(self, table_name: str,
-                           start_date: utils.DateType = None, end_date: utils.DateType = None,
-                           dates: Sequence[utils.DateType] = None,
-                           ids: Sequence[str] = None) -> [pd.Series, pd.DataFrame]:
-        assert not (table_name in FINANCIAL_STATEMENTS), '财报数据请使用 query_financial_data 或 get_financial_factor 查询!'
-        self._check_args(table_name, table_name)
-
-        if end_date is None:
-            end_date = max(dates)
-        logging.debug('开始读取数据.')
-        df = self.db_interface.read_table(table_name, end_date=end_date, ids=ids)
-        logging.debug('数据读取完成.')
-
-        df = df.unstack()
-        df = self._expand_compact_data(df, dates=dates, start_date=start_date, end_date=end_date)
-        return df
-
-    # industry
-    def get_industry(self, provider: str, level: int, translation_json_loc: str = None,
-                     start_date: utils.DateType = None, end_date: utils.DateType = None,
-                     dates: Sequence[utils.DateType] = None,
-                     stock_list: Sequence[str] = None) -> pd.DataFrame:
-        """Get industry factor
-
-        :param provider: Industry classification data provider
-        :param level: Level of industry classification
-        :param translation_json_loc: custom dict specifying maximum industry classification level to lower level
-        :param start_date: start date
-        :param end_date: end date
-        :param dates: selected dates
-        :param stock_list: query stocks
-        :return: industry classification pandas.DataFrame with DateTime as index and stock as column
-        """
-        assert 0 < level <= INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
-
-        table_name = f'{provider}行业'
-        logging.debug('开始读取数据.')
-        df = self.get_compact_factor(table_name, start_date=start_date, ids=stock_list, end_date=end_date, dates=dates)
-        logging.debug('数据读取完成.')
-
-        if level != INDUSTRY_LEVEL[provider]:
-            new_translation = self._get_industry_translation_dict(table_name, level, translation_json_loc)
-            df = df.map(new_translation)
-
-        return df
-
-    def get_industry_snapshot(self, provider: str, level: int, translation_json_loc: str = None,
-                              date: utils.DateType = dt.date.today()) -> pd.Series:
-        """Get industry info at ``date``
-
-        :param provider: Industry classification data provider
-        :param level: Level of industry classification
-        :param translation_json_loc: custom dict specifying maximum industry classification level to lower level
-        :param date:
-        :return: industry classification pandas.DataFrame with DateTime as index and stock as column
-        """
-        table_name = f'{provider}行业'
-        factor_name = '行业名称'
-        industry = self.get_compact_factor(table_name, dates=[date])
-        if level != INDUSTRY_LEVEL[provider]:
-            new_translation = self._get_industry_translation_dict(table_name, level, translation_json_loc)
-            industry = industry.map(new_translation)
-        industry.name = f'{provider}{level}级行业'
-        return industry
+    def close(self) -> ContinuousFactor:
+        return ContinuousFactor(self.db_interface, '股票日行情', '收盘价')
 
     # financial statements
     def query_financial_statements(self, table_type: str, factor_name: str, report_period: utils.DateType,
@@ -278,48 +184,9 @@ class AShareDataReader(object):
         df.name = factor_name
         return df
 
-    # helper functions
-    def _check_args(self, table_name: str, factor_names: Union[str, Sequence[str]]):
-        table_name = table_name.lower()
-        assert self.db_interface.exist_table(table_name), f'数据库中不存在表 {table_name}'
-
-        if factor_names:
-            columns = self.db_interface.get_columns_names(table_name)
-            if isinstance(factor_names, str):
-                assert factor_names in columns, f'表 {table_name} 中不存在 {factor_names} 列'
-            else:
-                for name in factor_names:
-                    assert name in columns, f'表 {table_name} 中不存在 {name} 列'
-
-    @staticmethod
-    def _get_industry_translation_dict(table_name: str, level: int, translation_json_loc: str = None) -> Dict[str, str]:
-        translation = utils.load_param('industry.json', translation_json_loc)
-        new_translation = {}
-        for key, value in translation[table_name].items():
-            new_translation[key] = value[f'level_{level}']
-        return new_translation
-
     @staticmethod
     def _generate_table_name(table_type: str, combined: bool, quarterly: bool) -> str:
         combined = '合并' if combined else '母公司'
         quarterly = '单季度' if (quarterly & (table_type != '资产负债表')) else ''
         table_name = f'{combined}{quarterly}{table_type}'
         return table_name
-
-    def _expand_compact_data(self, data: pd.Series, dates: Sequence[dt.datetime] = None,
-                             start_date: utils.DateType = None, end_date: utils.DateType = None,
-                             ids: Sequence[str] = None):
-        if ids:
-            data = data.loc[(slice(None), ids)]
-        if dates:
-            end_date = max(dates)
-        if not end_date:
-            end_date = dt.datetime.today()
-        date_list = self.calendar.select_dates(end_date=end_date)
-        df = data.unstack().reindex(date_list).ffill()
-        if start_date:
-            start_date = utils.date_type2datetime(start_date)
-            df = df.loc[df.index >= start_date, :]
-        if dates:
-            df = df.loc[dates, :]
-        return df

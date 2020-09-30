@@ -47,4 +47,3 @@ class BarraStyleFactors(object):
         return 0.38 * self.descriptors.market_leverage() + \
                0.35 * self.descriptors.debt_to_assets() + \
                0.27 * self.descriptors.book_leverage()
-

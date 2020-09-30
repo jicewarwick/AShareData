@@ -8,7 +8,8 @@ from tqdm import tqdm
 
 from . import utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface, get_stocks
+from .DBInterface import DBInterface
+from .Ticker import StockTicker
 
 
 class WebDataCrawler(DataSource):
@@ -28,7 +29,7 @@ class WebDataCrawler(DataSource):
             for table_name, type_info in self._db_parameters.items():
                 self.db_interface.create_table(table_name, type_info)
 
-        self._stock_list = get_stocks(db_interface)
+        self._stock_list = StockTicker(db_interface).ticker()
 
     def get_sw_industry(self) -> None:
         """获取申万一级行业"""

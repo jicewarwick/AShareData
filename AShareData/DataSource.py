@@ -1,10 +1,8 @@
 import datetime as dt
-from typing import List
-
-from cached_property import cached_property
+from functools import cached_property
 
 from . import utils
-from .DBInterface import DBInterface, get_stocks
+from .DBInterface import DBInterface
 from .TradingCalendar import TradingCalendar
 
 
@@ -13,11 +11,6 @@ class DataSource(object):
 
     def __init__(self, db_interface: DBInterface):
         self.db_interface = db_interface
-
-    @cached_property
-    def all_stocks(self) -> List[str]:
-        """获取所有股票列表"""
-        return get_stocks(self.db_interface)
 
     @cached_property
     def calendar(self) -> TradingCalendar:

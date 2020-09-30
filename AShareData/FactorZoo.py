@@ -1,9 +1,7 @@
-from functools import lru_cache, reduce
+from functools import cached_property, lru_cache, reduce
 
 import numpy as np
 import pandas as pd
-# todo: import from functools from 3.9
-from cached_property import cached_property
 
 from .AShareDataReader import AShareDataReader
 from .constants import STOCK_INDEXES, TRADING_DAYS_IN_YEAR
@@ -105,7 +103,7 @@ class FactorZoo(object):
 
     @staticmethod
     def exponential_weight(n: int, half_life: int) -> np.array:
-        series = range(-(n-1), 1)
+        series = range(-(n - 1), 1)
         return np.exp(np.log(2) * series / half_life)
 
     def estimation_universe_bool(self) -> pd.DataFrame:

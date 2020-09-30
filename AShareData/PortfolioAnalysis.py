@@ -23,9 +23,9 @@ class ASharePortfolioAnalysis(object):
 
     def size_portfolio(self, start_date: utils.DateType, end_date: utils.DateType) -> pd.DataFrame:
         dates = self.calendar.last_day_of_month(start_date, end_date)
-        price = self.data_reader.close(dates)
-        adj_factor = self.data_reader.adj_factor(dates)
-        units = self.data_reader.free_a_shares(dates)
+        price = self.data_reader.close.get_data(dates=dates)
+        adj_factor = self.data_reader.adj_factor.get_data(dates=dates)
+        units = self.data_reader.free_a_shares.get_data(dates=dates)
         market_cap = price * units
         market_size = market_cap.apply(np.log).stack()
         hfq_price = price * adj_factor

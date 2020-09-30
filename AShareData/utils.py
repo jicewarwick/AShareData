@@ -44,7 +44,7 @@ def compute_diff(input_data: pd.Series, db_data: pd.Series) -> Optional[pd.Serie
     return input_data.loc[slice(None), stocks, :]
 
 
-def load_param(default_loc: str, param_json_loc: str) -> Dict[str, Any]:
+def load_param(default_loc: str, param_json_loc: str = None) -> Dict[str, Any]:
     if param_json_loc is None:
         f = open_text('AShareData.data', default_loc)
     else:
@@ -56,5 +56,4 @@ def load_param(default_loc: str, param_json_loc: str) -> Dict[str, Any]:
 
 def chunk_list(l: list, n: int):
     for i in range(0, len(l), n):
-        yield l[i:i+n]
-
+        yield l[i:i + n]
