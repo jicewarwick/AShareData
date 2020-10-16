@@ -66,6 +66,7 @@ class FactorCompositor(DataSource):
                 pre_date = date
                 pbar.update()
 
+    @utils.format_input_dates
     def update_market_return(self, ticker: str, ignore_st: bool = True, ignore_new_stock_period: dt.timedelta = None,
                              ignore_pause: bool = True, ignore_const_limit: bool = True,
                              unit_base: str = '自由流通股本', start_date: utils.DateType = None):
@@ -83,18 +84,41 @@ class FactorCompositor(DataSource):
         table_name = '自合成指数'
         price_table = '股票日行情'
 
-        if ignore_st:
-            risk_warned_stocks = self.data_reader.risk_warned_stocks
-
-        units = CompactFactor(self.db_interface, unit_base)
-        adj_factor = self.data_reader.adj_factor
-        close = self.data_reader.close()
-
-        start_date = utils.date_type2datetime(start_date)
-        pre_date = self.calendar.offset(start_date, -1)
         end_date = self.db_interface.get_latest_timestamp(price_table)
         dates = self.calendar.select_dates(start_date, end_date)
+        units_factor = CompactFactor(self.db_interface, unit_base)
 
-        pre_data = close.get_data(dates=pre_date)
-        for date in dates:
-            data = close.get_data(dates=date)
+        with tqdm(dates) as pbar:
+            for date in dates:
+                ids = set(self.data_reader.stocks(self.calendar.offset(date, -ignore_new_stock_period.days))) & \
+                      set(self.data_reader.stocks(date))
+                if ignore_pause:
+                    ids = ids - set(self.data_reader.paused_stocks.get_data(date))
+                if ignore_const_limit:
+                    ids = ids - set(self.data_reader.const_limit.get_data(date))
+                if ignore_st:
+                    ids = ids - set(self.data_reader.risk_warned_stocks.get_data(date=date))
+                ids = list(ids)
+
+                # pre data
+                pre_date = self.calendar.offset(date, -1)
+                pre_units = units_factor.get_data(dates=pre_date, ids=ids)
+                pre_close_data = self.data_reader.close().get_data(dates=pre_date, ids=ids)
+                pre_adj = self.data_reader.adj_factor.get_data(dates=pre_date, ids=ids)
+
+                # data
+                close_data = self.data_reader.close().get_data(dates=date, ids=ids)
+                adj = self.data_reader.adj_factor.get_data(dates=date, ids=ids)
+
+                # computation
+                stock_daily_ret = (close_data * adj).values / (pre_close_data * pre_adj).values - 1
+                weight = pre_units * pre_close_data
+                weight = weight / weight.sum(axis=1).values[0]
+                daily_ret = stock_daily_ret.dot(weight.T.values)[0][0]
+
+                # write to db
+                index = pd.MultiIndex.from_tuples([(date, ticker)], names=['DateTime', 'ID'])
+                ret = pd.Series(daily_ret, index=index, name='收益率')
+                self.db_interface.update_df(ret, table_name)
+
+                pbar.update()

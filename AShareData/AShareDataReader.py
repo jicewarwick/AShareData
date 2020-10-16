@@ -1,14 +1,8 @@
-import datetime as dt
 import logging
-from functools import cached_property, lru_cache
-from typing import Callable, List, Sequence
+from functools import cached_property
+from typing import Callable
 
-import pandas as pd
-
-from . import utils
-from .constants import FINANCIAL_STATEMENTS_TYPE
-from .DBInterface import DBInterface
-from .Factor import CompactFactor, ContinuousFactor
+from .Factor import *
 from .TradingCalendar import TradingCalendar
 
 
@@ -29,47 +23,19 @@ class AShareDataReader(object):
         return TradingCalendar(self.db_interface)
 
     @cached_property
-    def _stock_list(self) -> pd.DataFrame:
-        return self.db_interface.read_table('股票上市退市').reset_index()
-
-    def stocks(self, date: utils.DateType = dt.date.today()) -> List[str]:
-        """Get stocks still listed at ``date``"""
-        stock_ticker_df = self._stock_list.copy()
-        if date:
-            date = utils.date_type2datetime(date)
-            stock_ticker_df = stock_ticker_df.loc[stock_ticker_df.DateTime <= date]
-        tmp = stock_ticker_df.groupby('ID').tail(1)
-        return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
-
-    @cached_property
     def sec_name(self):
         return CompactFactor(self.db_interface, '证券名称')
 
     @cached_property
-    def risk_warned_stocks(self) -> CompactFactor:
+    def risk_warned_stocks(self) -> CompactRecordFactor:
         tmp = CompactFactor(self.db_interface, '证券名称')
-        rws = tmp.data.map(lambda x: 'PT' in x or 'ST' in x or '退' in x)
-        tmp.data = rws
-        tmp.factor_name = '风险警示股'
-        return tmp
+        tmp.data = tmp.data.map(lambda x: 'PT' in x or 'ST' in x or '退' in x)
+        compact_record_factor = CompactRecordFactor(tmp, '风险警示股')
+        return compact_record_factor
 
-    def paused_stocks(self, dates: Sequence[dt.datetime] = None, start_date: utils.DateType = None,
-                      end_date: utils.DateType = None) -> pd.DataFrame:
-        factor = ContinuousFactor(self.db_interface, '股票停牌', '停牌类型')
-        data = factor.get_data(dates=dates, start_date=start_date, end_date=end_date, unstack=False)
-        data = data.loc[data != '盘中停牌']
-        data.loc[:] = True
-
-        if not end_date:
-            end_date = max(dates)
-        date_list = self.calendar.select_dates(start_date=start_date, end_date=end_date)
-
-        ret = data.unstack().reindex(date_list).fillna(False)
-        return ret
-
-    @lru_cache()
-    def daily_price(self, start_date: utils.DateType, end_date: utils.DateType):
-        return self.get_factor('股票日行情', '收盘价', start_date=start_date, end_date=end_date)
+    @cached_property
+    def paused_stocks(self) -> OnTheRecordFactor:
+        return OnTheRecordFactor(self.db_interface, '股票停牌')
 
     @cached_property
     def adj_factor(self) -> CompactFactor:
@@ -78,6 +44,10 @@ class AShareDataReader(object):
     @cached_property
     def free_a_shares(self) -> CompactFactor:
         return CompactFactor(self.db_interface, 'A股流通股本')
+
+    @cached_property
+    def const_limit(self) -> OnTheRecordFactor:
+        return OnTheRecordFactor(self.db_interface, '一字涨跌停')
 
     def close(self) -> ContinuousFactor:
         return ContinuousFactor(self.db_interface, '股票日行情', '收盘价')

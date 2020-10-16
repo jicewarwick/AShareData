@@ -25,7 +25,7 @@ class MyTestCase(unittest.TestCase):
         # print(data)
 
         data = self.w.wss(['000001.SZ', '000002.SZ', '000005.SZ'], "open,low,high,close,volume,amt",
-                          trade_date='20190715',
+                          date='20190715',
                           priceAdj='U', cycle='D')
         print('\n')
         print(data)

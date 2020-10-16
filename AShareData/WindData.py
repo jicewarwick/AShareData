@@ -14,7 +14,7 @@ from tqdm import tqdm
 from . import constants, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Ticker import ETFTicker, FutureTicker, OptionTicker, StockTicker
+from .Tickers import ETFTickers, FutureTickers, OptionTickers, StockTickers
 
 
 class WindWrapper(object):
@@ -68,7 +68,7 @@ class WindWrapper(object):
 
     @staticmethod
     def _to_df(out: WindPy.w.WindData) -> Union[pd.Series, pd.DataFrame]:
-        times = [utils.date_type2datetime(it) for it in out.Times]
+        times = utils.date_type2datetime(out.Times)
         df = pd.DataFrame(out.Data).T
         if len(out.Times) > 1:
             df.index = times
@@ -99,17 +99,17 @@ class WindWrapper(object):
         self._api_error(data)
         return self._to_df(data)
 
+    @utils.format_input_dates
     def wss(self, codes: Union[str, List[str]], fields: Union[str, List[str]], options: str = '',
-            trade_date: utils.DateType = None, **kwargs) -> pd.DataFrame:
-        if trade_date:
-            trade_date = utils.date_type2datetime(trade_date)
-            options = f'tradeDate={trade_date.strftime("%Y%m%d")};' + options
+            date: utils.DateType = None, **kwargs) -> pd.DataFrame:
+        if date:
+            options = f'tradeDate={date.strftime("%Y%m%d")};' + options
         data = self._w.wss(codes, fields, options, usedf=True, **kwargs)
         self._api_error(data)
         ret_data = data[1]
-        if trade_date:
+        if date:
             ret_data.index.names = ['ID']
-            ret_data['DateTime'] = trade_date
+            ret_data['DateTime'] = date
             ret_data = ret_data.reset_index().set_index(['DateTime', 'ID'])
 
         return ret_data
@@ -168,20 +168,20 @@ class WindData(DataSource):
         self.w.connect()
 
     @cached_property
-    def stock_list(self):
-        return StockTicker(self.db_interface)
+    def stock_list(self) -> StockTickers:
+        return StockTickers(self.db_interface)
 
     @cached_property
-    def future_list(self):
-        return FutureTicker(self.db_interface)
+    def future_list(self) -> FutureTickers:
+        return FutureTickers(self.db_interface)
 
     @cached_property
-    def option_list(self):
-        return OptionTicker(self.db_interface)
+    def option_list(self) -> OptionTickers:
+        return OptionTickers(self.db_interface)
 
     @cached_property
     def etf_list(self):
-        return ETFTicker(self.db_interface)
+        return ETFTickers(self.db_interface)
 
     def update_routine(self):
         # stock
@@ -235,7 +235,7 @@ class WindData(DataSource):
 
                 # price data
                 pbar.set_description(f'下载{current_date_str}的日行情')
-                price_df = self.w.wss(self.stock_list.ticker(date), list(renaming_dict.keys()), trade_date=date,
+                price_df = self.w.wss(self.stock_list.ticker(date), list(renaming_dict.keys()), date=date,
                                       options='priceAdj=U;cycle=D;unit=1')
                 price_df.rename(renaming_dict, axis=1, inplace=True)
 
@@ -362,7 +362,7 @@ class WindData(DataSource):
             latest = utils.date_type2datetime(constants.INDUSTRY_START_DATE[provider])
             initial_data = self.w.wss(self.stock_list.ticker(latest),
                                       f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
-                                      trade_date=latest).dropna()
+                                      date=latest).dropna()
             self.db_interface.insert_df(initial_data, table_name)
         else:
             initial_data = self.db_interface.read_table(table_name).groupby('ID').tail(1)
@@ -436,7 +436,7 @@ class WindData(DataSource):
             for date in dates:
                 pbar.set_description(f'下载{date}的ETF日行情')
                 data = self.w.wss(self.etf_list.ticker(date), "open,low,high,close,volume,amt,nav,unit_total",
-                                  trade_date=date, priceAdj='U', cycle='D')
+                                  date=date, priceAdj='U', cycle='D')
                 data.rename(self._factor_param[table_name], axis=1, inplace=True)
                 data.dropna(inplace=True)
                 self.db_interface.insert_df(data, table_name)
@@ -494,7 +494,7 @@ class WindData(DataSource):
             for date in dates:
                 pbar.set_description(f'下载{date}的{contract_daily_table_name}')
                 data = self.w.wss(self.future_list.ticker(date), "open, high, low, close, settle, volume, amt, oi",
-                                  trade_date=date, options='priceAdj=U;cycle=D')
+                                  date=date, options='priceAdj=U;cycle=D')
                 data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)
                 self.db_interface.insert_df(data, contract_daily_table_name)
                 pbar.update()
@@ -547,7 +547,7 @@ class WindData(DataSource):
                 pbar.set_description(f'下载{date}的{contract_daily_table_name}')
                 data = self.w.wss(self.option_list.ticker(date),
                                   "high,open,low,close,volume,amt,oi,delta,gamma,vega,theta,rho",
-                                  trade_date=date, priceAdj='U', cycle='D')
+                                  date=date, priceAdj='U', cycle='D')
                 data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)
                 self.db_interface.insert_df(data, contract_daily_table_name)
                 pbar.update()
@@ -568,7 +568,7 @@ class WindData(DataSource):
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{table_name}')
-                data = self.w.wss(indexes, "open,low,high,close,volume,amt", trade_date=date, priceAdj='U', cycle='D')
+                data = self.w.wss(indexes, "open,low,high,close,volume,amt", date=date, priceAdj='U', cycle='D')
                 data.rename(self._factor_param[table_name], axis=1, inplace=True)
                 self.db_interface.insert_df(data, table_name)
                 pbar.update()
@@ -587,6 +587,19 @@ class WindData(DataSource):
         end_index = pd.MultiIndex.from_product([[end_series.index.get_level_values('DateTime')[0]], all_ticker],
                                                names=['DateTime', 'ID'])
         end_series = end_series.reindex(end_index)
+
+        ind = np.logical_not(start_series.isnull().values & end_series.isnull().values)
+        start_series = start_series.loc[ind, :]
+        end_series = end_series.loc[ind, :]
+
+        if start_series.dtype == 'float64':
+            ind = np.abs(start_series.values - end_series.values) > 0.0001
+            ind = ind | start_series.isnull().values | end_series.isnull().values
+            ind = ind & (start_series.values != 0)
+        else:
+            ind = (start_series.values != end_series.values)
+        start_series = start_series.loc[ind]
+        end_series = end_series.loc[ind, :]
 
         with tqdm(start_series) as pbar:
             for i in range(start_series.shape[0]):
@@ -630,12 +643,11 @@ class WindData(DataSource):
         if default_start_date is None:
             default_start_date = self.stock_list.list_date()
         if ticker is None:
-            ticker = self.stock_list.ticker()
+            ticker = self.stock_list.all_ticker()
         current_data = self.db_interface.read_table(table_name).groupby('ID').tail(1)
         end_date = self.calendar.yesterday()
         new_data = data_func(ticker=ticker, date=end_date)
         new_data.name = table_name
 
-        current_data = current_data.loc[slice(None), ticker, :]
         self.sparse_data_queryer(data_func, current_data, new_data, f'更新{table_name}',
                                  default_start_date=default_start_date)

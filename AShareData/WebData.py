@@ -9,7 +9,7 @@ from tqdm import tqdm
 from . import utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Ticker import StockTicker
+from .Tickers import StockTickers
 
 
 class WebDataCrawler(DataSource):
@@ -29,7 +29,7 @@ class WebDataCrawler(DataSource):
             for table_name, type_info in self._db_parameters.items():
                 self.db_interface.create_table(table_name, type_info)
 
-        self._stock_list = StockTicker(db_interface).ticker()
+        self._stock_list = StockTickers(db_interface).ticker()
 
     def get_sw_industry(self) -> None:
         """获取申万一级行业"""
@@ -52,6 +52,7 @@ class WebDataCrawler(DataSource):
         raw_data.set_index(['DateTime', 'ID'], inplace=True)
         self.db_interface.update_df(raw_data[['行业名称']], '申万一级行业')
 
+    @utils.format_input_dates
     def get_zz_industry(self, date: utils.DateType) -> None:
         """获取中证4级行业"""
         referer_template = 'http://www.csindex.com.cn/zh-CN/downloads/industry-price-earnings-ratio?type=zz1&date='
@@ -70,7 +71,7 @@ class WebDataCrawler(DataSource):
                 pbar.update(1)
         data = pd.concat(storage)
         data['股票代码'] = data['股票代码'].map(stock_code2ts_code)
-        data['trade_date'] = utils.date_type2datetime(date)
+        data['trade_date'] = date
         useful_data = data[['trade_date', '股票代码', '所属中证行业四级名称']]
         useful_data.columns = ['DateTime', 'ID', '行业名称']
         useful_data.set_index(['DateTime', 'ID'], inplace=True)

@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Sequence, Union
+from typing import List, Sequence, Union
 
 import pandas as pd
 
@@ -45,7 +45,7 @@ class NonFinancialFactor(Factor):
     非财报数据
     """
 
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
+    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]] = None):
         super().__init__(db_interface, table_name, factor_names)
         assert not any([it in table_name for it in FINANCIAL_STATEMENTS_TYPE]), \
             f'{table_name} 为财报数据, 请使用 FinancialFactor 类!'
@@ -66,7 +66,7 @@ class CompactFactor(NonFinancialFactor):
         super().__init__(db_interface, factor_name, factor_name)
         self.data = db_interface.read_table(factor_name)
 
-    def get_data(self, dates: Sequence[dt.datetime] = None,
+    def get_data(self, dates: Union[Sequence[dt.datetime], utils.DateType] = None,
                  start_date: utils.DateType = None, end_date: utils.DateType = None,
                  ids: Union[Sequence[str], str] = None) -> pd.DataFrame:
         """
@@ -76,18 +76,28 @@ class CompactFactor(NonFinancialFactor):
         :param ids: query stocks
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
+        if isinstance(dates, dt.datetime):
+            dates = [dates]
         data = self.data.copy()
         if ids:
             data = data.loc[(slice(None), ids)]
         if dates:
             end_date = max(dates)
+            start_date = min(dates)
         if not end_date:
             end_date = dt.datetime.today()
-        date_list = self.calendar.select_dates(end_date=end_date)
+        if not start_date:
+            start_date = data.index.get_level_values('DateTime').min()
+
+        previous_data = data.loc[data.index.get_level_values('DateTime') <= start_date].groupby('ID').tail(1)
+        index = pd.MultiIndex.from_product([[start_date], previous_data.index.get_level_values('ID')])
+        previous_data.index = index
+        ranged_data = data.loc[(data.index.get_level_values('DateTime') > start_date) &
+                               (data.index.get_level_values('DateTime') <= end_date)]
+        data = pd.concat([previous_data, ranged_data])
+
+        date_list = self.calendar.select_dates(start_date=start_date, end_date=end_date)
         df = data.unstack().reindex(date_list).ffill()
-        if start_date:
-            start_date = utils.date_type2datetime(start_date)
-            df = df.loc[df.index >= start_date, :]
         if dates:
             df = df.loc[dates, :]
         return df
@@ -118,6 +128,41 @@ class IndustryFactor(CompactFactor):
             self.data = self.data.map(new_translation)
 
 
+class OnTheRecordFactor(NonFinancialFactor):
+    """
+        有记录的因子, 例如涨跌停, 一字板, 停牌等
+    """
+
+    def __init__(self, db_interface: DBInterface, factor_name: str):
+        super().__init__(db_interface, factor_name)
+        self.factor_names = factor_name
+
+    @utils.format_input_dates
+    def get_data(self, date: utils.DateType) -> List:
+        """
+        :param date: selected dates
+        :return: list of IDs on the record
+        """
+        tmp = self.db_interface.read_table(self.table_name, dates=[date])
+        return tmp.index.get_level_values('ID').tolist()
+
+
+class CompactRecordFactor(NonFinancialFactor):
+    def __init__(self, compact_factor: CompactFactor, factor_name: str):
+        super().__init__(compact_factor.db_interface, compact_factor.table_name, compact_factor.factor_names)
+        self.base_factor = compact_factor
+        self.factor_names = factor_name
+
+    @utils.format_input_dates
+    def get_data(self, date: utils.DateType) -> List:
+        """
+        :param date: selected dates
+        :return: list of IDs on the record
+        """
+        tmp = self.base_factor.get_data(dates=[date]).stack()
+        return tmp.loc[tmp].index.get_level_values('ID').tolist()
+
+
 class ContinuousFactor(NonFinancialFactor):
     """
     Continuous Factors
@@ -126,7 +171,8 @@ class ContinuousFactor(NonFinancialFactor):
     def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
         super().__init__(db_interface, table_name, factor_names)
 
-    def get_data(self, dates: Sequence[dt.datetime] = None,
+    @utils.format_input_dates
+    def get_data(self, dates: Union[Sequence[dt.datetime], utils.DateType] = None,
                  start_date: utils.DateType = None, end_date: utils.DateType = None,
                  ids: Sequence[str] = None, unstack: bool = True) -> Union[pd.Series, pd.DataFrame]:
         """
@@ -138,8 +184,8 @@ class ContinuousFactor(NonFinancialFactor):
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
 
-        df = self.db_interface.read_table(self.table_name, columns=self.factor_names, start_date=start_date,
-                                          end_date=end_date,
+        df = self.db_interface.read_table(self.table_name, columns=self.factor_names,
+                                          start_date=start_date, end_date=end_date,
                                           dates=dates, ids=ids)
         if not isinstance(self.factor_names, str):
             df.columns = self.factor_names
@@ -171,6 +217,7 @@ class YearlyReportFinancialFactor(FinancialFactor):
     def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
         super().__init__(db_interface, table_name, factor_names)
 
+    @utils.format_input_dates
     def get_data(self, dates: Sequence[dt.datetime] = None,
                  start_date: utils.DateType = None, end_date: utils.DateType = None,
                  ids: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
@@ -185,9 +232,6 @@ class YearlyReportFinancialFactor(FinancialFactor):
         if dates:
             start_date = min(dates)
             end_date = max(end_date)
-        else:
-            start_date = utils.date_type2datetime(start_date)
-            end_date = utils.date_type2datetime(end_date)
         buffer_start = start_date - buffer
 
         data = self.db_interface.read_table(self.table_name, self.factor_names, start_date=buffer_start,

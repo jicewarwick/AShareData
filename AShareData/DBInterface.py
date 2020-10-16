@@ -38,7 +38,7 @@ class DBInterface(object):
         """Insert pandas.DataFrame(df) into table ``table_name``"""
         raise NotImplementedError()
 
-    def update_df(self, df: pd.DataFrame, table_name: str) -> None:
+    def update_df(self, df: Union[pd.DataFrame, pd.Series], table_name: str) -> None:
         """Update pandas.DataFrame(df) into table ``table_name``"""
         raise NotImplementedError()
 
@@ -305,9 +305,9 @@ class MySQLInterface(DBInterface):
             return date.strftime('%Y-%m-%d %H:%M:%S')
 
     def read_table(self, table_name: str, columns: Union[str, Sequence[str]] = None,
-                   start_date: utils.DateType = None, end_date: utils.DateType = None,
-                   dates: Sequence[utils.DateType] = None,
-                   report_period: utils.DateType = None,
+                   start_date: dt.datetime = None, end_date: dt.datetime = None,
+                   dates: Union[Sequence[dt.datetime], dt.datetime] = None,
+                   report_period: dt.datetime = None,
                    ids: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
@@ -323,34 +323,33 @@ class MySQLInterface(DBInterface):
         table_name = table_name.lower()
         index_col = self.get_table_primary_keys(table_name)
 
-        if columns is None:
-            ret = pd.read_sql_table(table_name, self.engine, index_col=index_col)
-        else:
-            Session = sessionmaker(bind=self.engine)
-            session = Session()
-            t = self.meta.tables[table_name]
-            q = session.query()
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        t = self.meta.tables[table_name]
+        q = session.query()
+        if columns:
             if isinstance(columns, str):
                 columns = [columns]
             columns.extend(index_col)
-            for it in columns:
-                q = q.add_columns(t.c[it])
-            if dates is not None:
-                dates = [utils.date_type2datetime(it) for it in dates]
+        else:
+            columns = [it.name for it in t.columns]
+        for it in columns:
+            q = q.add_columns(t.c[it])
+        if dates is not None:
+            if isinstance(dates, Sequence):
                 q = q.filter(t.columns['DateTime'].in_(dates))
-            elif end_date is not None:
-                end_date = utils.date_type2datetime(end_date)
-                q = q.filter(t.columns['DateTime'] <= end_date)
-                if start_date is not None:
-                    start_date = utils.date_type2datetime(start_date)
-                    q = q.filter(t.columns['DateTime'] >= start_date)
-            if report_period is not None:
-                report_period = utils.date_type2datetime(report_period)
-                q = q.filter(t.columns['报告期'] == report_period)
-            if ids is not None:
-                q = q.filter(t.columns['ID'].in_(ids))
+            else:
+                q = q.filter(t.columns['DateTime'] == dates)
+        elif end_date is not None:
+            q = q.filter(t.columns['DateTime'] <= end_date)
+            if start_date is not None:
+                q = q.filter(t.columns['DateTime'] >= start_date)
+        if report_period is not None:
+            q = q.filter(t.columns['报告期'] == report_period)
+        if ids is not None:
+            q = q.filter(t.columns['ID'].in_(ids))
 
-            ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)
+        ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)
 
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]

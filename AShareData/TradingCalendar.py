@@ -2,7 +2,7 @@ import datetime as dt
 from typing import Callable, List, Sequence, Tuple
 
 from .DBInterface import DBInterface
-from .utils import date_type2datetime, DateType
+from .utils import date_type2datetime, DateType, format_input_dates
 
 
 class TradingCalendar(object):
@@ -36,40 +36,44 @@ class TradingCalendar(object):
                 break
         return storage
 
+    @format_input_dates
     def select_dates(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get list of all trading days during[``start_date``, ``end_date``]"""
-        start_date = date_type2datetime(start_date) if start_date else self.calendar[0]
-        end_date = date_type2datetime(end_date) if end_date else dt.datetime.now()
+        if not start_date:
+            start_date = self.calendar[0]
+        if not end_date:
+            end_date = dt.datetime.now()
         return self._select_dates(self.calendar, start_date, end_date, lambda pre, curr, next_: True)
 
+    @format_input_dates
     def first_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get first trading day of the months during[``start_date``, ``end_date``]"""
-        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         return self._select_dates(self.calendar, start_date, end_date,
                                   lambda pre, curr, next_: pre.isocalendar()[1] != curr.isocalendar()[1])
 
+    @format_input_dates
     def last_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get last trading day of the months during[``start_date``, ``end_date``]"""
-        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         return self._select_dates(self.calendar, start_date, end_date,
                                   lambda pre, curr, next_: curr.isocalendar()[1] != next_.isocalendar()[1])
 
+    @format_input_dates
     def first_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get first trading day of the months during[``start_date``, ``end_date``]"""
-        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         return self._select_dates(self.calendar, start_date, end_date, lambda pre, curr, next_: pre.month != curr.month)
 
+    @format_input_dates
     def last_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get last trading day of the months during[``start_date``, ``end_date``]"""
-        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         return self._select_dates(self.calendar, start_date, end_date,
                                   lambda pre, curr, next_: curr.month != next_.month)
 
+    @format_input_dates
     def last_day_of_year(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get last trading day of the year during[``start_date``, ``end_date``]"""
-        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         return self._select_dates(self.calendar, start_date, end_date, lambda pre, curr, next_: curr.year != next_.year)
 
+    @format_input_dates
     def offset(self, date: DateType, days: int) -> dt.datetime:
         """offset ``date`` by number of days
 
@@ -77,17 +81,16 @@ class TradingCalendar(object):
 
         Note: ``date`` has to be a trading day
         """
-        date = date_type2datetime(date)
         return self.calendar[self.calendar.index(date) + days]
 
+    @format_input_dates
     def middle(self, start_date: DateType, end_date: DateType) -> dt.datetime:
         """Get middle of the trading period[``start_date``, ``end_date``]"""
-        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         return self.calendar[int((self.calendar.index(start_date) + self.calendar.index(end_date)) / 2.0)]
 
+    @format_input_dates
     def days_count(self, start_date: DateType, end_date: DateType) -> int:
         """Count number of trading days during [``start_date``, ``end_date``]"""
-        start_date, end_date = date_type2datetime(start_date), date_type2datetime(end_date)
         return self.calendar.index(end_date) - self.calendar.index(start_date)
 
     def yesterday(self) -> dt.datetime:

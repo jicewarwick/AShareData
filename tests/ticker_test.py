@@ -2,7 +2,7 @@ import datetime as dt
 import unittest
 
 from AShareData.DBInterface import MySQLInterface, prepare_engine
-from AShareData.Ticker import *
+from AShareData.Tickers import *
 
 
 class MyTestCase(unittest.TestCase):

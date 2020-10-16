@@ -1,7 +1,8 @@
 import datetime as dt
 import json
+from functools import wraps
 from importlib.resources import open_text
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 import pandas as pd
 
@@ -14,7 +15,15 @@ def date_type2str(date: DateType, delimiter: str = '') -> Optional[str]:
         return date.strftime(formatter) if not isinstance(date, str) else date
 
 
-def date_type2datetime(date: str) -> Optional[dt.datetime]:
+def date_type2datetime(date: Union[str, dt.date, dt.datetime, Sequence]) \
+        -> Union[dt.datetime, Sequence[dt.datetime], None]:
+    if isinstance(date, Sequence):
+        return [_date_type2datetime(it) for it in date]
+    else:
+        return _date_type2datetime(date)
+
+
+def _date_type2datetime(date: DateType) -> Optional[dt.datetime]:
     if isinstance(date, dt.datetime):
         return date
     if isinstance(date, dt.date):
@@ -23,6 +32,17 @@ def date_type2datetime(date: str) -> Optional[dt.datetime]:
         date.replace('/', '')
         date.replace('-', '')
         return dt.datetime.strptime(date, '%Y%m%d')
+
+
+def format_input_dates(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        for it in ['start_date', 'end_date', 'dates', 'date', 'report_period']:
+            if it in kwargs.keys():
+                kwargs[it] = date_type2datetime(kwargs[it])
+        return func(*args, **kwargs)
+
+    return inner
 
 
 def _prepare_example_json(config_loc, example_config_loc) -> None:

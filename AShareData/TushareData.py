@@ -11,7 +11,7 @@ from tqdm import tqdm
 from . import constants, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Ticker import StockTicker
+from .Tickers import StockTickers
 
 
 class TushareData(DataSource):
@@ -36,7 +36,7 @@ class TushareData(DataSource):
 
     @cached_property
     def stock_list(self):
-        return StockTicker(self.db_interface)
+        return StockTickers(self.db_interface)
 
     def update_routine(self) -> None:
         """自动更新函数"""
@@ -378,6 +378,7 @@ class TushareData(DataSource):
         logging.info(f'{data_category}下载完成.')
         return df
 
+    @utils.format_input_dates
     def get_index_weight(self, indexes: Sequence[str] = None,
                          start_date: utils.DateType = None, end_date: utils.DateType = dt.date.today()) -> None:
         """ 指数成分和权重
@@ -394,7 +395,6 @@ class TushareData(DataSource):
         column_desc = self._factor_param[data_category]['输出参数']
         indexes = constants.BOARD_INDEXES if indexes is None else indexes
 
-        start_date, end_date = utils.date_type2datetime(start_date), utils.date_type2datetime(end_date)
         dates = self.calendar.last_day_of_month(start_date, end_date)
         dates = sorted(list(set([start_date] + dates + [end_date])))
 
