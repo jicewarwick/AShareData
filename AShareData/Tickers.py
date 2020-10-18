@@ -42,22 +42,6 @@ class StockTickers(Tickers):
         return dict(zip(first_list_info.ID, first_list_info.DateTime))
 
 
-class StockIndustryTicker(Tickers):
-    def __init__(self, db_interface: DBInterface, provider: str):
-        super().__init__(db_interface)
-        self.provider = provider
-
-    def all_ticker(self):
-        pass
-
-    @utils.format_input_dates
-    def ticker(self, date: utils.DateType = dt.date.today()) -> List[str]:
-        pass
-
-    def list_date(self) -> Dict[str, dt.datetime]:
-        pass
-
-
 class FutureTickers(Tickers):
     def __init__(self, db_interface: DBInterface):
         super().__init__(db_interface)

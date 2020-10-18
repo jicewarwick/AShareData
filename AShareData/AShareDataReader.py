@@ -1,8 +1,8 @@
 import logging
-from functools import cached_property
 from typing import Callable
 
 from .Factor import *
+from .Tickers import StockTickers
 from .TradingCalendar import TradingCalendar
 
 
@@ -21,6 +21,10 @@ class AShareDataReader(object):
     def calendar(self) -> TradingCalendar:
         """Trading Calendar"""
         return TradingCalendar(self.db_interface)
+
+    @cached_property
+    def stocks(self) -> StockTickers:
+        return StockTickers(self.db_interface)
 
     @cached_property
     def sec_name(self):

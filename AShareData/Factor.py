@@ -1,4 +1,5 @@
 import datetime as dt
+from functools import cached_property
 from typing import List, Sequence, Union
 
 import pandas as pd
@@ -127,6 +128,16 @@ class IndustryFactor(CompactFactor):
 
             self.data = self.data.map(new_translation)
 
+    @utils.format_input_dates
+    def list_constitutes(self, date: utils.DateType, industry: str) -> List[str]:
+        date_data = self.get_data(dates=date)
+        data = date_data.loc[:, (date_data == industry).values[0]]
+        return data.columns.tolist()
+
+    @cached_property
+    def all_industries(self) -> List[str]:
+        return self.data.dropna().unique().tolist()
+
 
 class OnTheRecordFactor(NonFinancialFactor):
     """
@@ -196,7 +207,7 @@ class ContinuousFactor(NonFinancialFactor):
         return df
 
 
-class FinancialFactor(Factor):
+class AccountingFactor(Factor):
     """
     财报数据
     """
@@ -209,7 +220,7 @@ class FinancialFactor(Factor):
         raise NotImplementedError()
 
 
-class YearlyReportFinancialFactor(FinancialFactor):
+class YearlyReportAccountingFactor(AccountingFactor):
     """
     年报数据
     """
@@ -248,7 +259,7 @@ class YearlyReportFinancialFactor(FinancialFactor):
         return df
 
 
-class TTMFinancialFactor(FinancialFactor):
+class TTMAccountingFactor(AccountingFactor):
     def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
         super().__init__(db_interface, table_name, factor_names)
 
@@ -266,7 +277,7 @@ class TTMFinancialFactor(FinancialFactor):
         pass
 
 
-class LatestFinancialFactor(FinancialFactor):
+class LatestAccountingFactor(AccountingFactor):
     def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
         super().__init__(db_interface, table_name, factor_names)
 

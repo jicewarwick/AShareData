@@ -51,8 +51,8 @@ class FactorCompositor(DataSource):
                         adj_factor = self.data_reader.adj_factor.get_data(start_date=pre_date, end_date=date,
                                                                           ids=target_stocks)
                         price = data.loc[(slice(None), target_stocks), '最高价'] * adj_factor.loc[(date, target_stocks)]
-                        pre_price = pre_data.loc[(slice(None), target_stocks), '最高价'] * adj_factor.loc[
-                            (date, target_stocks)]
+                        pre_price = pre_data.loc[(slice(None), target_stocks), '最高价'] * \
+                                    adj_factor.loc[(date, target_stocks)]
                         diff_price = pd.concat([pre_price, price]).unstack().diff().iloc[1, :].dropna()
                         diff_price = diff_price.loc[diff_price != 0]
                         if diff_price.shape[0] > 1:
