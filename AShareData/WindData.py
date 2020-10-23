@@ -369,8 +369,13 @@ class WindData(DataSource):
 
         new_data = _get_industry_data(ticker=self.stock_list.ticker(), date=query_date).dropna()
 
+        default_start_date = self.stock_list.list_date()
+        for ticker, date in default_start_date.items():
+            if date < constants.INDUSTRY_START_DATE[provider]:
+                default_start_date[ticker] = constants.INDUSTRY_START_DATE[provider]
+
         self.sparse_data_queryer(_get_industry_data, initial_data, new_data, f'更新{table_name}',
-                                 default_start_date=constants.INDUSTRY_START_DATE[provider])
+                                 default_start_date=default_start_date)
 
     def update_industry(self) -> None:
         needed_update_provider = []

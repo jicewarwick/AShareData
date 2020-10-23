@@ -29,7 +29,23 @@ class MyTestCase(unittest.TestCase):
         industry_factor = IndustryFactor(self.db_interface, '中信', 2)
         print(industry_factor.list_constitutes(dt.datetime(2019, 1, 7), '白酒'))
         print('')
-        print(industry_factor.all_industries())
+        print(industry_factor.all_industries)
+
+    def test_yearly_report_factor(self):
+        f = YearlyReportAccountingFactor(self.db_interface, '合并资产负债表', '未分配利润')
+        start_date = dt.datetime(2005, 1, 1)
+        end_date = dt.datetime(2010, 1, 1)
+        ids = ['000002.SZ']
+        a = f.get_data(start_date=start_date, end_date=end_date, ids=ids)
+        print(a)
+
+    def test_ttm_factor(self):
+        f = TTMAccountingFactor(self.db_interface, '合并单季度利润表', '营业总收入')
+        start_date = dt.datetime(2005, 1, 1)
+        end_date = dt.datetime(2010, 1, 1)
+        ids = ['000002.SZ']
+        a = f.get_data(start_date=start_date, end_date=end_date, ids=ids)
+        print(a)
 
 
 if __name__ == '__main__':

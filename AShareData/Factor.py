@@ -1,11 +1,11 @@
 import datetime as dt
 from functools import cached_property
-from typing import List, Sequence, Union
+from typing import Callable, List, Sequence, Union
 
 import pandas as pd
 
 from . import utils
-from .constants import FINANCIAL_STATEMENTS_TYPE, INDUSTRY_LEVEL
+from .constants import FINANCIAL_STATEMENTS, FINANCIAL_STATEMENTS_TYPE, INDUSTRY_LEVEL
 from .DBInterface import DBInterface
 from .TradingCalendar import TradingCalendar
 
@@ -17,14 +17,13 @@ class Factor(object):
 
     def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
         super().__init__()
-        self.db_interface = db_interface
-        self._check_args(table_name, factor_names)
-
         self.table_name = table_name
         self.factor_names = factor_names
+
+        self.db_interface = db_interface
         self.calendar = TradingCalendar(db_interface)
 
-    def get_data(self, kwargs):
+    def get_data(self, *args, **kwargs):
         raise NotImplementedError()
 
     # helper functions
@@ -48,10 +47,11 @@ class NonFinancialFactor(Factor):
 
     def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]] = None):
         super().__init__(db_interface, table_name, factor_names)
+        self._check_args(table_name, factor_names)
         assert not any([it in table_name for it in FINANCIAL_STATEMENTS_TYPE]), \
             f'{table_name} 为财报数据, 请使用 FinancialFactor 类!'
 
-    def get_data(self, kwargs):
+    def get_data(self, *args, **kwargs):
         raise NotImplementedError()
 
 
@@ -212,12 +212,47 @@ class AccountingFactor(Factor):
     财报数据
     """
 
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
-        super().__init__(db_interface, table_name, factor_names)
-        assert any([it in table_name for it in FINANCIAL_STATEMENTS_TYPE]), f'{table_name} 非财报数据!'
+    fields = {}
 
-    def get_data(self, kwargs):
+    def __init__(self, db_interface: DBInterface, factor_name: str):
+        if len(self.fields) == 0:
+            fields_data = utils.load_param('db_schema.json')
+            for statement_type in FINANCIAL_STATEMENTS:
+                statement = fields_data[statement_type]
+                for key, _ in statement.item():
+                    self.fields[key] = statement_type
+        assert factor_name in self.fields.keys, f'{factor_name} 非财报关键字'
+        table_name = self.fields[factor_name]
+        super().__init__(db_interface, table_name, factor_name)
+
+    def get_data(self, *args, **kwargs):
         raise NotImplementedError()
+
+    def _flatten_data(self, data: pd.Series, agg_func: Callable, start_date: dt.datetime, end_date: dt.datetime,
+                      dates: Sequence[dt.datetime]) -> pd.DataFrame:
+        storage = []
+        tickers = data.index.get_level_values('ID').unique().tolist()
+        for ticker in tickers:
+            id_data = data.loc[data.index.get_level_values('ID') == ticker, :]
+            data_dates = id_data.index.get_level_values('DateTime').to_pydatetime().tolist()
+            dates = sorted(list(set(data_dates)))
+            for date in dates:
+                date_id_data = id_data.loc[id_data.index.get_level_values('DateTime') <= date, :]
+                each_date_data = date_id_data.groupby('报告期').tail(1)
+                output_data = each_date_data.apply({data.name: agg_func})
+                output_data.index = pd.MultiIndex.from_tuples([(date, ticker)], names=['DateTime', 'ID'])
+                storage.append(output_data)
+
+        df = pd.concat(storage)
+
+        buffer_start = data.index.get_level_values('DateTime').min()
+        full_dates = self.calendar.select_dates(buffer_start, end_date)
+        intermediate_dates = self.calendar.select_dates(start_date, end_date)
+
+        df = df.unstack().reindex(full_dates).ffill().reindex(intermediate_dates)
+        if dates:
+            df = df.reset_index(dates)
+        return df
 
 
 class YearlyReportAccountingFactor(AccountingFactor):
@@ -225,8 +260,10 @@ class YearlyReportAccountingFactor(AccountingFactor):
     年报数据
     """
 
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
-        super().__init__(db_interface, table_name, factor_names)
+    def __init__(self, db_interface: DBInterface, factor_name: str):
+        super().__init__(db_interface, factor_name)
+        self.table_name = f'合并{self.table_name}'
+        self._check_args(self.table_name, self.factor_names)
 
     @utils.format_input_dates
     def get_data(self, dates: Sequence[dt.datetime] = None,
@@ -245,24 +282,21 @@ class YearlyReportAccountingFactor(AccountingFactor):
             end_date = max(end_date)
         buffer_start = start_date - buffer
 
-        data = self.db_interface.read_table(self.table_name, self.factor_names, start_date=buffer_start,
-                                            end_date=end_date, ids=ids).dropna()
-        data = data.loc[data.index.get_level_values('报告期').month == 12, :]
+        data = self.db_interface.read_table(self.table_name, self.factor_names,
+                                            start_date=buffer_start, end_date=end_date, report_month=12,
+                                            ids=ids).dropna()
 
-        if dates:
-            index_dates = sorted(list(set(dates) & set(data.index.get_level_values('DateTime'))))
-        else:
-            index_dates = self.calendar.select_dates(buffer_start, end_date)
-            dates = self.calendar.select_dates(start_date, end_date)
-
-        df = data.droplevel('报告期').unstack().reindex(index_dates).ffill().reindex(dates)
+        df = self._flatten_data(data, lambda x: x.tail(1), start_date=start_date, end_date=end_date, dates=dates)
         return df
 
 
 class TTMAccountingFactor(AccountingFactor):
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
-        super().__init__(db_interface, table_name, factor_names)
+    def __init__(self, db_interface: DBInterface, factor_name: str):
+        super().__init__(db_interface, factor_name)
+        self.table_name = f'合并单季度{self.table_name}'
+        self._check_args(self.table_name, self.factor_names)
 
+    @utils.format_input_dates
     def get_data(self, dates: Sequence[dt.datetime] = None,
                  start_date: utils.DateType = None, end_date: utils.DateType = None,
                  ids: Sequence[str] = None, unstack: bool = True) -> Union[pd.Series, pd.DataFrame]:
@@ -274,13 +308,27 @@ class TTMAccountingFactor(AccountingFactor):
         :param unstack: if unstack data from long to wide
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
-        pass
+        buffer = dt.timedelta(days=365 * 2)
+        if dates:
+            start_date = min(dates)
+            end_date = max(end_date)
+        buffer_start = start_date - buffer
+
+        data = self.db_interface.read_table(self.table_name, self.factor_names,
+                                            start_date=buffer_start, end_date=end_date,
+                                            ids=ids).dropna()
+        df = self._flatten_data(data, lambda x: x.tail(4).sum(), start_date=start_date, end_date=end_date, dates=dates)
+
+        return df
 
 
 class LatestAccountingFactor(AccountingFactor):
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
-        super().__init__(db_interface, table_name, factor_names)
+    def __init__(self, db_interface: DBInterface, factor_name: str):
+        super().__init__(db_interface, factor_name)
+        self.table_name = f'合并{self.table_name}'
+        self._check_args(self.table_name, self.factor_names)
 
+    @utils.format_input_dates
     def get_data(self, dates: Sequence[dt.datetime] = None,
                  start_date: utils.DateType = None, end_date: utils.DateType = None,
                  ids: Sequence[str] = None, unstack: bool = True) -> Union[pd.Series, pd.DataFrame]:
@@ -292,4 +340,52 @@ class LatestAccountingFactor(AccountingFactor):
         :param unstack: if unstack data from long to wide
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
-        pass
+        buffer = dt.timedelta(days=365 * 2)
+        if dates:
+            start_date = min(dates)
+            end_date = max(end_date)
+        buffer_start = start_date - buffer
+
+        data = self.db_interface.read_table(self.table_name, self.factor_names,
+                                            start_date=buffer_start, end_date=end_date,
+                                            ids=ids).dropna()
+
+        df = self._flatten_data(data, lambda x: x.tail(1), start_date=start_date, end_date=end_date, dates=dates)
+        return df
+
+
+class YOYTTMAccountingFactor(AccountingFactor):
+    def __init__(self, db_interface: DBInterface, factor_name: str):
+        super().__init__(db_interface, factor_name)
+        self.table_name = f'合并单季度{self.table_name}'
+        self._check_args(self.table_name, self.factor_names)
+
+    @utils.format_input_dates
+    def get_data(self, dates: Sequence[dt.datetime] = None,
+                 start_date: utils.DateType = None, end_date: utils.DateType = None,
+                 ids: Sequence[str] = None, unstack: bool = True) -> Union[pd.Series, pd.DataFrame]:
+        """
+        :param start_date: start date
+        :param end_date: end date
+        :param dates: selected dates
+        :param ids: query stocks
+        :param unstack: if unstack data from long to wide
+        :return: pandas.DataFrame with DateTime as index and stock as column
+        """
+        buffer = dt.timedelta(days=365 * 2)
+        if dates:
+            start_date = min(dates)
+            end_date = max(end_date)
+        buffer_start = start_date - buffer
+
+        data = self.db_interface.read_table(self.table_name, self.factor_names,
+                                            start_date=buffer_start, end_date=end_date,
+                                            ids=ids).dropna()
+        df = self._flatten_data(data, lambda x: x.tail(4).sum() / (x.tail(8).sum() - x.tail(4).sum()),
+                                start_date=start_date, end_date=end_date, dates=dates)
+
+        return df
+
+
+def create_accounting_date_cache(db_interface: DBInterface, table_name):
+    pass

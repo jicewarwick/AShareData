@@ -1,9 +1,24 @@
 import logging
-from typing import Callable
 
 from .Factor import *
 from .Tickers import StockTickers
 from .TradingCalendar import TradingCalendar
+
+
+class StockTickerSelector(object):
+    def __init__(self, db_interface: DBInterface):
+        super().__init__()
+        self.db_interface = db_interface
+        self.stock_ticker = StockTickers(self.db_interface)
+        self.const_limit_selector = OnTheRecordFactor(self.db_interface, '一字涨跌停')
+
+        tmp = CompactFactor(self.db_interface, '证券名称')
+        tmp.data = tmp.data.map(lambda x: 'PT' in x or 'ST' in x or '退' in x)
+        self.risk_warned_stock_selector = CompactRecordFactor(tmp, '风险警示股')
+
+    def ticker(self, ignore_st: bool = True, ignore_new_stock_period: dt.timedelta = None,
+               ignore_pause: bool = True, ignore_const_limit: bool = True):
+        pass
 
 
 class AShareDataReader(object):

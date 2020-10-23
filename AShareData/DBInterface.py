@@ -12,6 +12,7 @@ from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import func
+from sqlalchemy import extract
 
 from . import utils
 
@@ -307,7 +308,7 @@ class MySQLInterface(DBInterface):
     def read_table(self, table_name: str, columns: Union[str, Sequence[str]] = None,
                    start_date: dt.datetime = None, end_date: dt.datetime = None,
                    dates: Union[Sequence[dt.datetime], dt.datetime] = None,
-                   report_period: dt.datetime = None,
+                   report_period: dt.datetime = None, report_month: int = None,
                    ids: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
@@ -317,6 +318,7 @@ class MySQLInterface(DBInterface):
         :param end_date: 结束时间
         :param dates: 查询日期
         :param report_period: 报告期
+        :param report_month: 报告月份
         :param ids: 合约代码
         :return:
         """
@@ -346,6 +348,8 @@ class MySQLInterface(DBInterface):
                 q = q.filter(t.columns['DateTime'] >= start_date)
         if report_period is not None:
             q = q.filter(t.columns['报告期'] == report_period)
+        if report_month is not None:
+            q = q.filter(extract('month', t.columns['报告期']) == report_month)
         if ids is not None:
             q = q.filter(t.columns['ID'].in_(ids))
 

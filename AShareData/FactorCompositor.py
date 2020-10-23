@@ -90,8 +90,8 @@ class FactorCompositor(DataSource):
 
         with tqdm(dates) as pbar:
             for date in dates:
-                ids = set(self.data_reader.stocks(self.calendar.offset(date, -ignore_new_stock_period.days))) & \
-                      set(self.data_reader.stocks(date))
+                ids = set(self.data_reader.stocks.ticker(self.calendar.offset(date, -ignore_new_stock_period.days))) & \
+                      set(self.data_reader.stocks.ticker(date))
                 if ignore_pause:
                     ids = ids - set(self.data_reader.paused_stocks.get_data(date))
                 if ignore_const_limit:
