@@ -3,8 +3,9 @@ import numpy as np
 import pandas as pd
 import statsmodels as sm
 
+import AShareData.DateUtils
 from . import AShareDataReader, MySQLInterface, prepare_engine, utils
-from .TradingCalendar import TradingCalendar
+from .DateUtils import TradingCalendar
 
 
 class ASharePortfolioAnalysis(object):
@@ -15,13 +16,13 @@ class ASharePortfolioAnalysis(object):
         self.data_reader = AShareDataReader(mysql_writer)
         self.calendar = TradingCalendar(mysql_writer)
 
-    def market_return(self, start_date: utils.DateType, end_date: utils.DateType):
+    def market_return(self, start_date: AShareData.DateUtils.DateType, end_date: AShareData.DateUtils.DateType):
         pass
 
     def beta_portfolio(self):
         pass
 
-    def size_portfolio(self, start_date: utils.DateType, end_date: utils.DateType) -> pd.DataFrame:
+    def size_portfolio(self, start_date: AShareData.DateUtils.DateType, end_date: AShareData.DateUtils.DateType) -> pd.DataFrame:
         dates = self.calendar.last_day_of_month(start_date, end_date)
         price = self.data_reader.close.get_data(dates=dates)
         adj_factor = self.data_reader.adj_factor.get_data(dates=dates)

@@ -1,8 +1,48 @@
 import datetime as dt
-from typing import Callable, List, Sequence, Tuple
+from functools import wraps
+from typing import Callable, List, Optional, Sequence, Tuple, Union
+import bisect
 
 from .DBInterface import DBInterface
-from .utils import date_type2datetime, DateType, format_input_dates
+
+DateType = Union[str, dt.datetime, dt.date]
+
+
+def date_type2str(date: DateType, delimiter: str = '') -> Optional[str]:
+    if date is not None:
+        formatter = delimiter.join(['%Y', '%m', '%d'])
+        return date.strftime(formatter) if not isinstance(date, str) else date
+
+
+def date_type2datetime(date: Union[str, dt.date, dt.datetime, Sequence]) \
+        -> Union[dt.datetime, Sequence[dt.datetime], None]:
+    if isinstance(date, Sequence):
+        return [_date_type2datetime(it) for it in date]
+    else:
+        return _date_type2datetime(date)
+
+
+def _date_type2datetime(date: DateType) -> Optional[dt.datetime]:
+    if isinstance(date, dt.datetime):
+        return date
+    if isinstance(date, dt.date):
+        return dt.datetime.combine(date, dt.time())
+    if isinstance(date, str) & (date not in ['', 'nan']):
+        date.replace('/', '')
+        date.replace('-', '')
+        return dt.datetime.strptime(date, '%Y%m%d')
+
+
+def format_input_dates(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        # func_arg_names = inspect.getargspec(func).args
+        for it in ['start_date', 'end_date', 'dates', 'date', 'report_period']:
+            if it in kwargs.keys():
+                kwargs[it] = date_type2datetime(kwargs[it])
+        return func(*args, **kwargs)
+
+    return inner
 
 
 class TradingCalendar(object):
@@ -12,25 +52,26 @@ class TradingCalendar(object):
         calendar_df = db_interface.read_table('交易日历')
         self.calendar = calendar_df['交易日期'].dt.to_pydatetime().tolist()
 
+    @format_input_dates
     def is_trading_date(self, date: DateType):
         """return if ``date`` is a trading date"""
-        return date_type2datetime(date) in self.calendar
+        return date in self.calendar
 
-    @staticmethod
-    def _select_dates(calendar: Sequence[dt.datetime],
-                      start_date: DateType = None, end_date: DateType = None,
+    def _select_dates(self, start_date: DateType = None, end_date: DateType = None,
                       func: Callable[[dt.datetime, dt.datetime, dt.datetime], bool] = None) -> List[dt.datetime]:
-        calendar_len = len(calendar)
+        calendar_len = len(self.calendar)
+        # i = bisect.bisect_left(self.calendar, start_date)
+        # j = bisect.bisect_left(self.calendar, end_date)
         i = 0
         for i in range(calendar_len):
-            if calendar[i] >= start_date:
+            if self.calendar[i] >= start_date:
                 break
 
         storage = []
         while i < calendar_len:
-            if calendar[i] <= end_date:
-                if func(calendar[i - 1], calendar[i], calendar[i + 1]):
-                    storage.append(calendar[i])
+            if self.calendar[i] <= end_date:
+                if func(self.calendar[i - 1], self.calendar[i], self.calendar[i + 1]):
+                    storage.append(self.calendar[i])
                 i = i + 1
             else:
                 break
@@ -43,35 +84,35 @@ class TradingCalendar(object):
             start_date = self.calendar[0]
         if not end_date:
             end_date = dt.datetime.now()
-        return self._select_dates(self.calendar, start_date, end_date, lambda pre, curr, next_: True)
+        return self._select_dates(start_date, end_date, lambda pre, curr, next_: True)
 
     @format_input_dates
     def first_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get first trading day of the months during[``start_date``, ``end_date``]"""
-        return self._select_dates(self.calendar, start_date, end_date,
+        return self._select_dates(start_date, end_date,
                                   lambda pre, curr, next_: pre.isocalendar()[1] != curr.isocalendar()[1])
 
     @format_input_dates
     def last_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get last trading day of the months during[``start_date``, ``end_date``]"""
-        return self._select_dates(self.calendar, start_date, end_date,
+        return self._select_dates(start_date, end_date,
                                   lambda pre, curr, next_: curr.isocalendar()[1] != next_.isocalendar()[1])
 
     @format_input_dates
     def first_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get first trading day of the months during[``start_date``, ``end_date``]"""
-        return self._select_dates(self.calendar, start_date, end_date, lambda pre, curr, next_: pre.month != curr.month)
+        return self._select_dates(start_date, end_date, lambda pre, curr, next_: pre.month != curr.month)
 
     @format_input_dates
     def last_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get last trading day of the months during[``start_date``, ``end_date``]"""
-        return self._select_dates(self.calendar, start_date, end_date,
+        return self._select_dates(start_date, end_date,
                                   lambda pre, curr, next_: curr.month != next_.month)
 
     @format_input_dates
     def last_day_of_year(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get last trading day of the year during[``start_date``, ``end_date``]"""
-        return self._select_dates(self.calendar, start_date, end_date, lambda pre, curr, next_: curr.year != next_.year)
+        return self._select_dates(start_date, end_date, lambda pre, curr, next_: curr.year != next_.year)
 
     @format_input_dates
     def offset(self, date: DateType, days: int) -> dt.datetime:
@@ -104,3 +145,31 @@ class TradingCalendar(object):
             tmp = all_dates[i:i + chunk_size]
             res.append((tmp[0], tmp[-1]))
         return res
+
+
+class ReportingDate(object):
+    @staticmethod
+    @format_input_dates
+    def yoy_date(date: DateType) -> dt.datetime:
+        return dt.datetime(date.year - 1, date.month, date.day)
+
+    @staticmethod
+    @format_input_dates
+    def qoq_date(date: DateType):
+        qoq_dict = {3: dt.datetime(date.year - 1, 12, 31),
+                    6: dt.datetime(date.year, 3, 31),
+                    9: dt.datetime(date.year, 6, 30),
+                    12: dt.datetime(date.year, 9, 30)}
+        return qoq_dict[date.month]
+
+    @staticmethod
+    @format_input_dates
+    def pre_yearly_dates(date: DateType) -> dt.datetime:
+        return dt.datetime(date.year - 1, 12, 31)
+
+    @staticmethod
+    @format_input_dates
+    def ttm_dates(date: DateType) -> (dt.datetime, Optional[dt.datetime]):
+        p1 = ReportingDate.yoy_date(date)
+        p2 = ReportingDate.pre_yearly_dates(date) if date.month != 12 else None
+        return p1, p2

@@ -7,12 +7,11 @@ from typing import List, Mapping, Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, Table, Text, VARCHAR
+from sqlalchemy import Boolean, Column, DateTime, extract, Float, Integer, Table, Text, VARCHAR
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import func
-from sqlalchemy import extract
 
 from . import utils
 
@@ -47,7 +46,7 @@ class DBInterface(object):
         """Update new information from df to table ``table_name``"""
         raise NotImplementedError()
 
-    def get_latest_timestamp(self, table_name: str) -> Optional[dt.datetime]:
+    def get_latest_timestamp(self, table_name: str, column_condition: (str, str) = None) -> Optional[dt.datetime]:
         """Get the latest timestamp from records in ``table_name``"""
         raise NotImplementedError()
 
@@ -232,11 +231,12 @@ class MySQLInterface(DBInterface):
             new_info = utils.compute_diff(df, existing_data)
             self.update_df(new_info, table_name)
 
-    def get_latest_timestamp(self, table_name: str) -> Optional[dt.datetime]:
+    def get_latest_timestamp(self, table_name: str, column_condition: (str, str) = None) -> Optional[dt.datetime]:
         """
         返回数据库表中最新的时间戳
 
         :param table_name: 表名
+        :param column_condition: 列条件Tuple: (列名, 符合条件的列内容)
         :return: 最新时间
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
@@ -245,6 +245,8 @@ class MySQLInterface(DBInterface):
         session = session_maker()
         if 'DateTime' in table.columns.keys():
             q = session.query(func.max(table.c.DateTime))
+            if column_condition:
+                q = q.filter(table.columns[column_condition[0]] == column_condition[1])
             return q.one()[0]
 
     def get_column_min(self, table_name: str, column: str):

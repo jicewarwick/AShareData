@@ -1,48 +1,12 @@
 import datetime as dt
 import json
-from functools import wraps
+from dataclasses import dataclass
 from importlib.resources import open_text
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Dict, Optional
 
 import pandas as pd
 
-DateType = Union[str, dt.datetime, dt.date]
-
-
-def date_type2str(date: DateType, delimiter: str = '') -> Optional[str]:
-    if date is not None:
-        formatter = delimiter.join(['%Y', '%m', '%d'])
-        return date.strftime(formatter) if not isinstance(date, str) else date
-
-
-def date_type2datetime(date: Union[str, dt.date, dt.datetime, Sequence]) \
-        -> Union[dt.datetime, Sequence[dt.datetime], None]:
-    if isinstance(date, Sequence):
-        return [_date_type2datetime(it) for it in date]
-    else:
-        return _date_type2datetime(date)
-
-
-def _date_type2datetime(date: DateType) -> Optional[dt.datetime]:
-    if isinstance(date, dt.datetime):
-        return date
-    if isinstance(date, dt.date):
-        return dt.datetime.combine(date, dt.time())
-    if isinstance(date, str) & (date not in ['', 'nan']):
-        date.replace('/', '')
-        date.replace('-', '')
-        return dt.datetime.strptime(date, '%Y%m%d')
-
-
-def format_input_dates(func):
-    @wraps(func)
-    def inner(*args, **kwargs):
-        for it in ['start_date', 'end_date', 'dates', 'date', 'report_period']:
-            if it in kwargs.keys():
-                kwargs[it] = date_type2datetime(kwargs[it])
-        return func(*args, **kwargs)
-
-    return inner
+from . import constants
 
 
 def _prepare_example_json(config_loc, example_config_loc) -> None:
@@ -77,3 +41,49 @@ def load_param(default_loc: str, param_json_loc: str = None) -> Dict[str, Any]:
 def chunk_list(l: list, n: int):
     for i in range(0, len(l), n):
         yield l[i:i + n]
+
+
+@dataclass
+class StockSelectionPolicy:
+    """
+    股票筛选条件:
+        :param name: 名称
+        :param industry_provider: 股票行业分类标准
+        :param industry_level: 股票行业分类标准
+        :param industry: 股票所在行业
+        :param ignore_st: 排除 风险警告股, 包括 PT, ST, SST, *ST, (即将)退市股 等
+        :param ignore_new_stock_period: 新股纳入市场收益计算的时间
+        :param ignore_pause: 排除停牌股
+        :param ignore_const_limit: 排除一字板股票
+    """
+    industry_provider: str = None,
+    industry_level: int = None,
+    industry: str = None,
+    ignore_new_stock_period: dt.timedelta = None,
+    select_st: bool = False,
+    ignore_st: bool = False,
+    select_pause: bool = False,
+    ignore_pause: bool = False,
+    ignore_const_limit: bool = False
+
+    def __post_init__(self):
+        if self.industry_provider:
+            assert self.industry_provider in constants.INDUSTRY_DATA_PROVIDER, '非法行业分类机构!'
+            assert self.industry_level <= constants.INDUSTRY_LEVEL[self.industry_provider], '非法行业分类级别!'
+
+
+@dataclass
+class IndexCompositionPolicy:
+    """
+
+        :param ticker: 新建指数入库代码. 建议以`.IND`结尾, 代表自合成指数
+        :param stock_selection_policy: 股票筛选条件
+    """
+    ticker: str = None,
+    name: str = None,
+    unit_base: str = None,
+    stock_selection_policy: StockSelectionPolicy = None
+    start_date: dt.datetime = None
+
+    def __post_init__(self):
+        assert self.unit_base in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本'], '非法股本字段!'

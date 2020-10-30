@@ -1,11 +1,17 @@
 import datetime as dt
+import os
+import pickle
+from pathlib import Path
+from typing import Sequence
 
 import pandas as pd
 from tqdm import tqdm
+from sortedcontainers import SortedDict
 
-from . import AShareDataReader, DBInterface, utils
-from .AShareDataReader import CompactFactor
+from . import AShareDataReader, constants, DBInterface, utils, DateUtils
 from .DataSource import DataSource
+from .Factor import CompactFactor
+from .Tickers import StockTickerSelector
 
 
 class FactorCompositor(DataSource):
@@ -19,18 +25,30 @@ class FactorCompositor(DataSource):
         super().__init__(db_interface)
         self.data_reader = AShareDataReader(db_interface)
 
-    def update_const_limit_stock(self):
-        """ 标识一字涨跌停板
+    def update(self):
+        raise NotImplementedError()
+
+
+class ConstLimitStockFactorCompositor(FactorCompositor):
+    def __init__(self, db_interface: DBInterface):
+        """
+        标识一字涨跌停板
 
         判断方法: 取最高价和最低价一致 且 当日未停牌
          - 若价格高于昨前复权价, 则视为涨停一字板
          - 若价格低于昨前复权价, 则视为跌停一字板
-        """
-        table_name = '一字涨跌停'
-        price_table_name = '股票日行情'
-        pause_table_name = '股票停牌'
 
-        start_date = self._check_db_timestamp(table_name, dt.date(1999, 5, 4))
+        :param db_interface: DBInterface
+        """
+        super().__init__(db_interface)
+        self.table_name = '一字涨跌停'
+        stock_selection_policy = utils.StockSelectionPolicy(select_pause=True)
+        self.paused_stock_selector = StockTickerSelector(db_interface, stock_selection_policy)
+
+    def update(self):
+        price_table_name = '股票日行情'
+
+        start_date = self._check_db_timestamp(self.table_name, dt.date(1999, 5, 4))
         end_date = self._check_db_timestamp(price_table_name, dt.date(1990, 12, 10))
 
         pre_data = self.db_interface.read_table(price_table_name, ['最高价', '最低价'], dates=[start_date])
@@ -44,9 +62,7 @@ class FactorCompositor(DataSource):
                 data = self.db_interface.read_table(price_table_name, ['最高价', '最低价'], dates=[date])
                 no_price_move_tickers = data.loc[data['最高价'] == data['最低价']].index.get_level_values('ID').tolist()
                 if no_price_move_tickers:
-                    paused_stocks = self.db_interface.read_table(pause_table_name, '停牌类型', dates=[date])
-                    paused_stocks = paused_stocks.index.get_level_values('ID')
-                    target_stocks = list(set(no_price_move_tickers) - set(paused_stocks))
+                    target_stocks = list(set(no_price_move_tickers) - set(self.paused_stock_selector.ticker(date)))
                     if target_stocks:
                         adj_factor = self.data_reader.adj_factor.get_data(start_date=pre_date, end_date=date,
                                                                           ids=target_stocks)
@@ -61,64 +77,118 @@ class FactorCompositor(DataSource):
                             ret['DateTime'] = date
                             ret.set_index(['DateTime', 'ID'], inplace=True)
                             ret.columns = ['涨跌停']
-                            self.db_interface.insert_df(ret, table_name)
+                            self.db_interface.insert_df(ret, self.table_name)
                 pre_data = data
                 pre_date = date
                 pbar.update()
 
-    @utils.format_input_dates
-    def update_market_return(self, ticker: str, ignore_st: bool = True, ignore_new_stock_period: dt.timedelta = None,
-                             ignore_pause: bool = True, ignore_const_limit: bool = True,
-                             unit_base: str = '自由流通股本', start_date: utils.DateType = None):
-        """ 更新市场收益率
 
-        :param ticker: 新建指数入库代码. 建议以`.IND`结尾, 代表自合成指数
-        :param ignore_st: 排除 风险警告股, 包括 PT, ST, SST, *ST, (即将)退市股 等
-        :param ignore_new_stock_period: 新股纳入市场收益计算的时间
-        :param ignore_pause: 排除停牌股
-        :param ignore_const_limit: 排除一字板股票
-        :param unit_base: 股本字段
-        :param start_date: 指数开始时间
-        """
-        assert unit_base in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本'], '非法股本字段!'
-        table_name = '自合成指数'
+class IndexCompositor(FactorCompositor):
+    def __init__(self, db_interface: DBInterface, index_composition_policy: utils.IndexCompositionPolicy):
+        super().__init__(db_interface)
+        self.table_name = '自合成指数'
+        self.policy = index_composition_policy
+        self.units_factor = CompactFactor(self.db_interface, index_composition_policy.unit_base)
+        self.stock_ticker_selector = StockTickerSelector(self.db_interface, self.policy.stock_selection_policy)
+
+    def update(self):
+        """ 更新市场收益率 """
         price_table = '股票日行情'
 
+        start_date = self._check_db_timestamp(self.table_name, self.policy.start_date,
+                                              column_condition=('ID', self.policy.ticker))
         end_date = self.db_interface.get_latest_timestamp(price_table)
         dates = self.calendar.select_dates(start_date, end_date)
-        units_factor = CompactFactor(self.db_interface, unit_base)
 
         with tqdm(dates) as pbar:
             for date in dates:
-                ids = set(self.data_reader.stocks.ticker(self.calendar.offset(date, -ignore_new_stock_period.days))) & \
-                      set(self.data_reader.stocks.ticker(date))
-                if ignore_pause:
-                    ids = ids - set(self.data_reader.paused_stocks.get_data(date))
-                if ignore_const_limit:
-                    ids = ids - set(self.data_reader.const_limit.get_data(date))
-                if ignore_st:
-                    ids = ids - set(self.data_reader.risk_warned_stocks.get_data(date=date))
-                ids = list(ids)
+                ids = self.stock_ticker_selector.ticker(date)
 
-                # pre data
-                pre_date = self.calendar.offset(date, -1)
-                pre_units = units_factor.get_data(dates=pre_date, ids=ids)
-                pre_close_data = self.data_reader.close().get_data(dates=pre_date, ids=ids)
-                pre_adj = self.data_reader.adj_factor.get_data(dates=pre_date, ids=ids)
-
-                # data
-                close_data = self.data_reader.close().get_data(dates=date, ids=ids)
-                adj = self.data_reader.adj_factor.get_data(dates=date, ids=ids)
-
-                # computation
-                stock_daily_ret = (close_data * adj).values / (pre_close_data * pre_adj).values - 1
-                weight = pre_units * pre_close_data
-                weight = weight / weight.sum(axis=1).values[0]
-                daily_ret = stock_daily_ret.dot(weight.T.values)[0][0]
+                daily_ret = self._compute_ret(date, ids)
+                index = pd.MultiIndex.from_tuples([(date, self.policy.ticker)], names=['DateTime', 'ID'])
+                ret = pd.Series(daily_ret, index=index, name='收益率')
 
                 # write to db
-                index = pd.MultiIndex.from_tuples([(date, ticker)], names=['DateTime', 'ID'])
-                ret = pd.Series(daily_ret, index=index, name='收益率')
-                self.db_interface.update_df(ret, table_name)
-
+                self.db_interface.update_df(ret, self.table_name)
                 pbar.update()
+
+    def _compute_ret(self, date: dt.datetime, ids: Sequence[str]):
+        # pre data
+        pre_date = self.calendar.offset(date, -1)
+        pre_units = self.units_factor.get_data(dates=pre_date, ids=ids)
+        pre_close_data = self.data_reader.close().get_data(dates=pre_date, ids=ids)
+        pre_adj = self.data_reader.adj_factor.get_data(dates=pre_date, ids=ids)
+        # data
+        close_data = self.data_reader.close().get_data(dates=date, ids=ids)
+        adj = self.data_reader.adj_factor.get_data(dates=date, ids=ids)
+        # computation
+        stock_daily_ret = (close_data * adj).values / (pre_close_data * pre_adj).values - 1
+        weight = pre_units * pre_close_data
+        weight = weight / weight.sum(axis=1).values[0]
+        daily_ret = stock_daily_ret.dot(weight.T.values)[0][0]
+        return daily_ret
+
+
+class AccountingDataCacheCompositor(FactorCompositor):
+    def __init__(self, db_interface):
+        super().__init__(db_interface)
+
+    def update(self):
+        dir_name = os.path.join(Path.home(), '.AShareData')
+        if not os.path.exists(dir_name):
+            os.mkdir(dir_name)
+        output_loc = os.path.join(dir_name, constants.ACCOUNTING_DATE_CACHE_NAME)
+        if os.path.exists(output_loc):
+            with open(output_loc, 'rb') as f:
+                cache = pickle.load(f)
+        else:
+            cache = {'DateTime': {}, 'YOY': SortedDict(), 'QOQ': SortedDict(), 'PreYearly': SortedDict()}
+        table_name = '合并资产负债表'
+        column_name = '货币资金'
+
+        all_ticker = self.db_interface.get_all_id(table_name)
+        # ticker = all_ticker[0]
+        with tqdm(all_ticker) as pbar:
+            for ticker in all_ticker[:5]:
+                if ticker not in cache['DateTime'].keys():
+                    cache_date = dt.datetime(1900, 1, 1)
+                else:
+                    cache_date = cache['DateTime'][ticker]
+                db_date = self.db_interface.get_latest_timestamp(table_name, ('ID', ticker))
+                if db_date > cache_date:
+                    ticker_data = self.db_interface.read_table(table_name, column_name, ids=[ticker])
+                    index = ticker_data.index
+                    new_dates_index = index[index.get_level_values('DateTime') > cache_date]
+                    new_dates = pd.to_datetime(new_dates_index.get_level_values('DateTime').unique())
+                    for date in new_dates:
+                        info = ticker_data.loc[index.get_level_values('DateTime') <= date, :]
+                        newest_entry = info.tail(1)
+                        report_date = pd.to_datetime(newest_entry.index.get_level_values('报告期')[0])
+
+                        # YOY
+                        yoy_date = DateUtils.ReportingDate.yoy_date(report_date)
+                        relevant_entry = info.loc[info.index.get_level_values('报告期') == yoy_date].tail(1)
+                        if not relevant_entry.empty:
+                            cache['YOY'][(ticker, date)] = (relevant_entry.index, newest_entry.index)
+
+                        # QOQ
+                        qoq_date = DateUtils.ReportingDate.qoq_date(report_date)
+                        relevant_entry = info.loc[info.index.get_level_values('报告期') == qoq_date].tail(1)
+                        if not relevant_entry.empty:
+                            cache['QOQ'][(ticker, date)] = (relevant_entry.index, newest_entry.index)
+
+                        # yearly
+                        pre_yearly_date = DateUtils.ReportingDate.pre_yearly_dates(report_date)
+                        relevant_entry = info.loc[info.index.get_level_values('报告期') == pre_yearly_date].tail(1)
+                        if not relevant_entry.empty:
+                            cache['PreYearly'][(ticker, date)] = (relevant_entry.index, newest_entry.index)
+                    cache['DateTime'][ticker] = new_dates[-1]
+
+                    pbar.update()
+
+        with open(output_loc, 'wb') as f:
+            pickle.dump(cache, f)
+
+
+
+

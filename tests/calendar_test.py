@@ -2,7 +2,7 @@ import datetime as dt
 import unittest
 
 from AShareData.DBInterface import MySQLInterface, prepare_engine
-from AShareData.TradingCalendar import TradingCalendar
+from AShareData.DateUtils import TradingCalendar
 
 
 class MyTestCase(unittest.TestCase):

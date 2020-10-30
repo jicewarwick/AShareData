@@ -1,24 +1,8 @@
 import logging
 
+import AShareData.DateUtils
 from .Factor import *
 from .Tickers import StockTickers
-from .TradingCalendar import TradingCalendar
-
-
-class StockTickerSelector(object):
-    def __init__(self, db_interface: DBInterface):
-        super().__init__()
-        self.db_interface = db_interface
-        self.stock_ticker = StockTickers(self.db_interface)
-        self.const_limit_selector = OnTheRecordFactor(self.db_interface, '一字涨跌停')
-
-        tmp = CompactFactor(self.db_interface, '证券名称')
-        tmp.data = tmp.data.map(lambda x: 'PT' in x or 'ST' in x or '退' in x)
-        self.risk_warned_stock_selector = CompactRecordFactor(tmp, '风险警示股')
-
-    def ticker(self, ignore_st: bool = True, ignore_new_stock_period: dt.timedelta = None,
-               ignore_pause: bool = True, ignore_const_limit: bool = True):
-        pass
 
 
 class AShareDataReader(object):
@@ -33,9 +17,9 @@ class AShareDataReader(object):
         self.db_interface = db_interface
 
     @cached_property
-    def calendar(self) -> TradingCalendar:
+    def calendar(self) -> DateUtils.TradingCalendar:
         """Trading Calendar"""
-        return TradingCalendar(self.db_interface)
+        return DateUtils.TradingCalendar(self.db_interface)
 
     @cached_property
     def stocks(self) -> StockTickers:
@@ -44,17 +28,6 @@ class AShareDataReader(object):
     @cached_property
     def sec_name(self):
         return CompactFactor(self.db_interface, '证券名称')
-
-    @cached_property
-    def risk_warned_stocks(self) -> CompactRecordFactor:
-        tmp = CompactFactor(self.db_interface, '证券名称')
-        tmp.data = tmp.data.map(lambda x: 'PT' in x or 'ST' in x or '退' in x)
-        compact_record_factor = CompactRecordFactor(tmp, '风险警示股')
-        return compact_record_factor
-
-    @cached_property
-    def paused_stocks(self) -> OnTheRecordFactor:
-        return OnTheRecordFactor(self.db_interface, '股票停牌')
 
     @cached_property
     def adj_factor(self) -> CompactFactor:
@@ -72,7 +45,8 @@ class AShareDataReader(object):
         return ContinuousFactor(self.db_interface, '股票日行情', '收盘价')
 
     # financial statements
-    def query_financial_statements(self, table_type: str, factor_name: str, report_period: utils.DateType,
+    def query_financial_statements(self, table_type: str, factor_name: str,
+                                   report_period: AShareData.DateUtils.DateType,
                                    combined: bool = True, quarterly: bool = False) -> pd.Series:
         """Query financial statements
 
@@ -87,7 +61,7 @@ class AShareDataReader(object):
         table_name = self._generate_table_name(table_type, combined, quarterly)
         self._check_args(table_name, factor_name)
 
-        report_period = utils.date_type2datetime(report_period)
+        report_period = AShareData.DateUtils.date_type2datetime(report_period)
 
         logging.debug('开始读取数据.')
         df = self.db_interface.read_table(table_name, columns=factor_name, report_period=report_period)
@@ -95,7 +69,8 @@ class AShareDataReader(object):
         df = df.groupby(df.index.get_level_values('ID')).tail(1)
         return df
 
-    def get_financial_snapshot(self, table_type: str, factor_name: str, date: utils.DateType = dt.date.today(),
+    def get_financial_snapshot(self, table_type: str, factor_name: str,
+                               date: AShareData.DateUtils.DateType = dt.date.today(),
                                combined: bool = True, quarterly: bool = False, yearly=False) -> pd.Series:
         """Query financial latest info until ``date``
 
@@ -114,7 +89,8 @@ class AShareDataReader(object):
 
         logging.debug('开始读取数据.')
         df = self.db_interface.read_table(table_name, columns=factor_name,
-                                          start_date=utils.date_type2datetime(date) - dt.timedelta(365 * 2),
+                                          start_date=AShareData.DateUtils.date_type2datetime(date) - dt.timedelta(
+                                              365 * 2),
                                           end_date=date)
         stock_list = get_listed_stocks(self.db_interface, date)
         logging.debug('数据读取完成.')
@@ -126,8 +102,10 @@ class AShareDataReader(object):
         return df
 
     def get_financial_factor(self, table_type: str, factor_name: str, agg_func: Callable, combined: bool = True,
-                             quarterly: bool = False, yearly: bool = True, start_date: utils.DateType = None,
-                             end_date: utils.DateType = None, stock_list: Sequence[str] = None) -> pd.DataFrame:
+                             quarterly: bool = False, yearly: bool = True,
+                             start_date: AShareData.DateUtils.DateType = None,
+                             end_date: AShareData.DateUtils.DateType = None,
+                             stock_list: Sequence[str] = None) -> pd.DataFrame:
         """ Query ``factor_name`` from ``start_date`` to ``end_date``
         WARNING: This function takes a very long time to process all the data. Please cache your results.
 
@@ -147,7 +125,8 @@ class AShareDataReader(object):
         table_name = self._generate_table_name(table_type, combined, quarterly)
         self._check_args(table_name, factor_name)
 
-        query_start_date = utils.date_type2datetime(start_date) - dt.timedelta(365 * 2) if start_date else None
+        query_start_date = AShareData.DateUtils.date_type2datetime(start_date) - dt.timedelta(
+            365 * 2) if start_date else None
         data = self.db_interface.read_table(table_name, factor_name, start_date=query_start_date, end_date=end_date)
         if yearly:
             data = data.loc[data.index.get_level_values('报告期').month == 12, :]

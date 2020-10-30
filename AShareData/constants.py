@@ -20,6 +20,7 @@ BALANCE_SHEETS = ['合并资产负债表', '母公司资产负债表']
 INCOME_STATEMENTS = ['合并利润表', '合并单季度利润表', '母公司单季度利润表']
 CASH_FLOW_STATEMENTS = ['合并现金流量表', '合并单季度现金流量表', '母公司单季度现金流量表']
 FINANCIAL_STATEMENTS = BALANCE_SHEETS + INCOME_STATEMENTS + CASH_FLOW_STATEMENTS
+ACCOUNTING_DATE_CACHE_NAME = 'accounting_date_cache.pkl'
 
 # industry constants
 INDUSTRY_DATA_PROVIDER = ['中信', '申万', '中证', 'Wind']
@@ -28,8 +29,23 @@ INDUSTRY_LEVEL = {'中信': 3, '申万': 3, '中证': 4, 'Wind': 4}
 INDUSTRY_START_DATE = {'中信': dt.datetime(2003, 1, 2), '申万': dt.datetime(2005, 5, 27), '中证': dt.datetime(2016, 12, 12),
                        'Wind': dt.datetime(2005, 1, 5)}
 
+
 # market return index
-MARKET_RETURN_INDEXES = {
-    '000001.IND': {'name': '市场全收益指数', 'ignore_st': True, 'ignore_new_stock_period': dt.timedelta(days=356),
-                   'ignore_pause': True, 'ignore_const_limit': True},
-}
+MARKET_RETURN_INDEXES = {'000001.IND': {'name': '市场全收益指数',
+                                        'unit_base': '自由流通股本',
+                                        'industry_provider': None,
+                                        'industry_level': None,
+                                        'industry': None,
+                                        'ignore_new_stock_period': 365,
+                                        'ignore_st': True,
+                                        'ignore_pause': True,
+                                        'ignore_const_limit': True},
+                         '000002.IND': {'name': '券商全收益',
+                                        'unit_base': '自由流通股本',
+                                        'industry_provider': '中信',
+                                        'industry_level': 2.0,
+                                        'industry': '证券',
+                                        'ignore_new_stock_period': 90,
+                                        'ignore_st': True,
+                                        'ignore_pause': True,
+                                        'ignore_const_limit': False}}

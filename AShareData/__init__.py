@@ -3,11 +3,11 @@ import logging
 
 from .AShareDataReader import AShareDataReader
 from .DBInterface import MySQLInterface, prepare_engine
-from .TradingCalendar import TradingCalendar
+from .DateUtils import TradingCalendar
 from .TushareData import TushareData
 from .WebData import WebDataCrawler
 from .FactorCompositor import FactorCompositor
-from .PortfolioAnalysis import ASharePortfolioAnalysis
+# from .PortfolioAnalysis import ASharePortfolioAnalysis
 
 spam_spec = importlib.util.find_spec("WindPy")
 windpy_installed = spam_spec is not None
