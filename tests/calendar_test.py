@@ -1,8 +1,7 @@
-import datetime as dt
 import unittest
 
+from AShareData.DateUtils import *
 from AShareData.DBInterface import MySQLInterface, prepare_engine
-from AShareData.DateUtils import TradingCalendar
 
 
 class MyTestCase(unittest.TestCase):
@@ -41,6 +40,15 @@ class MyTestCase(unittest.TestCase):
         start = dt.datetime(2019, 9, 2)
         end = dt.datetime(2019, 9, 3)
         self.assertEqual(self.calendar.select_dates(start, end), [start, end])
+
+    @staticmethod
+    def test_format_dt():
+        @format_input_dates
+        def func(date, dates=None):
+            print(date)
+            print(dates)
+
+        func(dt.date(2000, 1, 1), dates=dt.date(2010, 1, 1))
 
 
 if __name__ == '__main__':

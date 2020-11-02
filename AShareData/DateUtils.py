@@ -1,7 +1,7 @@
 import datetime as dt
+import inspect
 from functools import wraps
 from typing import Callable, List, Optional, Sequence, Tuple, Union
-import bisect
 
 from .DBInterface import DBInterface
 
@@ -36,11 +36,17 @@ def _date_type2datetime(date: DateType) -> Optional[dt.datetime]:
 def format_input_dates(func):
     @wraps(func)
     def inner(*args, **kwargs):
-        # func_arg_names = inspect.getargspec(func).args
-        for it in ['start_date', 'end_date', 'dates', 'date', 'report_period']:
-            if it in kwargs.keys():
+        signature = inspect.signature(func)
+        for arg, (arg_name, _) in zip(args, signature.parameters.items()):
+            if arg in ['start_date', 'end_date', 'dates', 'date', 'report_period']:
+                kwargs[arg_name] = date_type2datetime(arg)
+            else:
+                kwargs[arg_name] = arg
+
+        for it in kwargs.keys():
+            if it in ['start_date', 'end_date', 'dates', 'date', 'report_period']:
                 kwargs[it] = date_type2datetime(kwargs[it])
-        return func(*args, **kwargs)
+        return func(**kwargs)
 
     return inner
 
