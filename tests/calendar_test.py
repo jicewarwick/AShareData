@@ -41,6 +41,35 @@ class MyTestCase(unittest.TestCase):
         end = dt.datetime(2019, 9, 3)
         self.assertEqual(self.calendar.select_dates(start, end), [start, end])
 
+        start = dt.datetime(2020, 11, 2)
+        end = dt.datetime(2020, 11, 7)
+        dates = self.calendar.select_dates(start, end)
+        self.assertEqual(dates[0], start)
+        self.assertEqual(dates[-1], dt.datetime(2020, 11, 6))
+
+        start = dt.datetime(2020, 11, 1)
+        end = dt.datetime(2020, 11, 6)
+        dates = self.calendar.select_dates(start, end)
+        self.assertEqual(dates[0], dt.datetime(2020, 11, 2))
+        self.assertEqual(dates[-1], dt.datetime(2020, 11, 6))
+
+        start = dt.datetime(2020, 11, 1)
+        end = dt.datetime(2020, 11, 7)
+        dates = self.calendar.select_dates(start, end)
+        self.assertEqual(dates[0], dt.datetime(2020, 11, 2))
+        self.assertEqual(dates[-1], dt.datetime(2020, 11, 6))
+
+    def test_offset(self):
+        start_date = dt.datetime(2020, 11, 2)
+        self.assertEqual(self.calendar.offset(start_date, 1), dt.datetime(2020, 11, 3))
+        self.assertEqual(self.calendar.offset(start_date, 0), dt.datetime(2020, 11, 2))
+        self.assertEqual(self.calendar.offset(start_date, -1), dt.datetime(2020, 10, 30))
+
+        start_date = dt.datetime(2020, 11, 1)
+        self.assertEqual(self.calendar.offset(start_date, 1), dt.datetime(2020, 11, 2))
+        self.assertEqual(self.calendar.offset(start_date, 0), dt.datetime(2020, 11, 2))
+        self.assertEqual(self.calendar.offset(start_date, -1), dt.datetime(2020, 10, 30))
+
     @staticmethod
     def test_format_dt():
         @format_input_dates

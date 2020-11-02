@@ -1,3 +1,4 @@
+import bisect
 import datetime as dt
 import inspect
 from functools import wraps
@@ -63,25 +64,22 @@ class TradingCalendar(object):
         """return if ``date`` is a trading date"""
         return date in self.calendar
 
-    def _select_dates(self, start_date: DateType = None, end_date: DateType = None,
+    def _select_dates(self, start_date: dt.datetime = None, end_date: dt.datetime = None,
                       func: Callable[[dt.datetime, dt.datetime, dt.datetime], bool] = None) -> List[dt.datetime]:
-        calendar_len = len(self.calendar)
-        # i = bisect.bisect_left(self.calendar, start_date)
-        # j = bisect.bisect_left(self.calendar, end_date)
-        i = 0
-        for i in range(calendar_len):
-            if self.calendar[i] >= start_date:
-                break
+        i = bisect.bisect_left(self.calendar, start_date)
+        j = bisect.bisect_right(self.calendar, end_date)
+        if self.calendar[j] == end_date:
+            j = j + 1
 
-        storage = []
-        while i < calendar_len:
-            if self.calendar[i] <= end_date:
+        if func:
+            storage = []
+            while i < j:
                 if func(self.calendar[i - 1], self.calendar[i], self.calendar[i + 1]):
                     storage.append(self.calendar[i])
                 i = i + 1
-            else:
-                break
-        return storage
+            return storage
+        else:
+            return self.calendar[i:j]
 
     @format_input_dates
     def select_dates(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
@@ -128,7 +126,10 @@ class TradingCalendar(object):
 
         Note: ``date`` has to be a trading day
         """
-        return self.calendar[self.calendar.index(date) + days]
+        loc = bisect.bisect_left(self.calendar, date)
+        if self.calendar[loc] != date and days > 0:
+            days = days - 1
+        return self.calendar[loc + days]
 
     @format_input_dates
     def middle(self, start_date: DateType, end_date: DateType) -> dt.datetime:
