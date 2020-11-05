@@ -36,7 +36,7 @@ class StockTickers(Tickers):
     def all_ticker(self) -> List[str]:
         return sorted(self.cache.ID.unique().tolist())
 
-    @DateUtils.format_input_dates
+    @DateUtils.dtlize_input_dates
     def ticker(self, date: DateUtils.DateType = dt.date.today()) -> List[str]:
         """Get stocks still listed at ``date``"""
         stock_ticker_df = self.cache.loc[self.cache.DateTime <= date]
@@ -56,7 +56,7 @@ class FutureTickers(Tickers):
     def all_ticker(self) -> List[str]:
         return self.cache.ID.tolist()
 
-    @DateUtils.format_input_dates
+    @DateUtils.dtlize_input_dates
     def ticker(self, date: DateUtils.DateType = dt.date.today()) -> List[str]:
         ticker_df = self.cache.loc[(self.cache['合约上市日期'] <= date) & (self.cache['最后交易日'] >= date), :]
         return sorted(ticker_df.ID.tolist())
@@ -73,7 +73,7 @@ class OptionTickers(Tickers):
     def all_ticker(self) -> List[str]:
         return self.cache.ID.tolist()
 
-    @DateUtils.format_input_dates
+    @DateUtils.dtlize_input_dates
     def ticker(self, date: DateUtils.DateType = dt.date.today()) -> List[str]:
         ticker_df = self.cache.loc[(self.cache['上市日期'] <= date) & (self.cache['行权日期'] > date), :]
         return sorted(ticker_df.ID.tolist())
@@ -90,7 +90,7 @@ class ETFTickers(Tickers):
     def all_ticker(self) -> List[str]:
         return self.cache.ID.tolist()
 
-    @DateUtils.format_input_dates
+    @DateUtils.dtlize_input_dates
     def ticker(self, date: DateUtils.DateType = dt.date.today()) -> List[str]:
         ticker_df = self.cache.loc[(self.cache['DateTime'] <= date) & (self.cache['DateTime'] > date), :]
         return sorted(ticker_df.ID.tolist())
@@ -129,7 +129,7 @@ class StockTickerSelector(object):
         if self.policy.industry:
             return IndustryFactor(self.db_interface, self.policy.industry_provider, self.policy.industry_level)
 
-    @DateUtils.format_input_dates
+    @DateUtils.dtlize_input_dates
     def ticker(self, date: DateUtils.DateType, ids: Sequence[str] = None) -> List[str]:
         if not ids:
             ids = set(self.stock_ticker.ticker(date))

@@ -99,7 +99,7 @@ class WindWrapper(object):
         self._api_error(data)
         return self._to_df(data)
 
-    @DateUtils.format_input_dates
+    @DateUtils.dtlize_input_dates
     def wss(self, codes: Union[str, List[str]], fields: Union[str, List[str]], options: str = '',
             date: DateUtils.DateType = None, **kwargs) -> pd.DataFrame:
         if date:

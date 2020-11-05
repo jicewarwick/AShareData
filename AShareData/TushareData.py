@@ -15,8 +15,7 @@ from .Tickers import StockTickers
 
 
 class TushareData(DataSource):
-    def __init__(self, tushare_token: str, db_interface: DBInterface,
-                 param_json_loc: str = None, init: bool = False) -> None:
+    def __init__(self, tushare_token: str, db_interface: DBInterface, param_json_loc: str = None) -> None:
         """
         Tushare to Database. 将tushare下载的数据写入数据库中
 
@@ -28,14 +27,12 @@ class TushareData(DataSource):
         self._pro = ts.pro_api(tushare_token)
         self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
 
-        if init:
-            self.update_calendar()
-
-        if self.db_interface.get_latest_timestamp('股票上市退市') < dt.datetime.today() - dt.timedelta(10):
-            self._get_all_stocks()
+        self.update_calendar()
+        if self.db_interface.get_latest_timestamp('股票上市退市') < dt.datetime.today():
+            self.update_stock_list_date()
 
     @cached_property
-    def stock_list(self):
+    def stock_tickers(self) -> StockTickers:
         return StockTickers(self.db_interface)
 
     def update_routine(self) -> None:
@@ -145,7 +142,7 @@ class TushareData(DataSource):
                     self.db_interface.update_compact_df(df[col_name], col_name, value)
                     pre_dict[key] = df[col_name]
 
-                pbar.update(1)
+                pbar.update()
 
     # todo: TBD
     def get_financial_index(self, ticker: str, period: str) -> pd.DataFrame:
@@ -162,6 +159,7 @@ class TushareData(DataSource):
         df = self._standardize_df(df, column_desc)
         return df
 
+    @DateUtils.strlize_input_dates
     def get_past_names(self, ticker: str = None, start_date: DateUtils.DateType = None) -> pd.DataFrame:
         """获取曾用名
 
@@ -173,7 +171,6 @@ class TushareData(DataSource):
         data_category = '证券名称'
         column_desc = self._factor_param[data_category]['输出参数']
         fields = list(column_desc.keys())
-        start_date = DateUtils.date_type2str(start_date)
 
         logging.debug(f'开始下载{ticker if ticker else ""}{data_category}.')
         df = self._pro.namechange(ts_code=ticker, start_date=start_date, fields=fields)
@@ -187,13 +184,13 @@ class TushareData(DataSource):
         interval = 60.0 / 100.0
         raw_df = self.get_past_names()
         raw_df_start_dates = raw_df.index.get_level_values('DateTime').min()
-        uncovered_stocks = self.stock_list.ticker(raw_df_start_dates)
+        uncovered_stocks = self.stock_tickers.ticker(raw_df_start_dates)
 
         with tqdm(uncovered_stocks) as pbar:
             for stock in uncovered_stocks:
                 pbar.set_description(f'下载{stock}的股票名称')
                 self.get_past_names(stock)
-                pbar.update(1)
+                pbar.update()
                 sleep(interval)
         logging.info('股票曾用名下载完成.')
 
@@ -205,7 +202,7 @@ class TushareData(DataSource):
         fields = list(column_desc.keys())
 
         logging.debug(f'开始下载{data_category}.')
-        tickers = self.stock_list.ticker()
+        tickers = self.stock_tickers.ticker()
         with tqdm(tickers) as pbar:
             for stock in tickers:
                 pbar.set_description(f'下载{stock}的分红送股数据')
@@ -217,14 +214,13 @@ class TushareData(DataSource):
                 df = self._standardize_df(df, column_desc)
                 self.db_interface.update_df(df, data_category)
                 sleep(interval)
-                pbar.update(1)
+                pbar.update()
 
         logging.info(f'{data_category}信息下载完成.')
 
+    @DateUtils.strlize_input_dates
     def get_ipo_info(self, start_date: DateUtils.DateType = None) -> pd.DataFrame:
         """ IPO新股列表 """
-        start_date = DateUtils.date_type2str(start_date)
-
         data_category = 'IPO新股列表'
         column_desc = self._factor_param[data_category]['输出参数']
 
@@ -274,7 +270,7 @@ class TushareData(DataSource):
                 df = self._pro.hk_hold(trade_date=current_date_str, fields=fields)
                 df = self._standardize_df(df, desc)
                 self.db_interface.update_df(df, data_category)
-                pbar.update(1)
+                pbar.update()
                 sleep(interval)
         logging.info(f'{data_category}下载完成.')
 
@@ -317,6 +313,7 @@ class TushareData(DataSource):
         self.db_interface.update_df(df, db_table_name)
         logging.info(f'{db_table_name}下载完成')
 
+    @DateUtils.strlize_input_dates
     def get_financial(self, stock_list: Sequence[str] = None, start_date: DateUtils.DateType = '19900101') -> None:
         """
         获取公司的 资产负债表, 现金流量表 和 利润表, 并写入数据库
@@ -328,7 +325,6 @@ class TushareData(DataSource):
         balance_sheet = '资产负债表'
         income = '利润表'
         cash_flow = '现金流量表'
-        start_date = DateUtils.date_type2str(start_date)
 
         balance_sheet_desc = self._factor_param[balance_sheet]['输出参数']
         income_desc = self._factor_param[income]['输出参数']
@@ -349,7 +345,7 @@ class TushareData(DataSource):
 
         # 分 合并/母公司, 单季/年
         if stock_list is None:
-            stock_list = self.stock_list.ticker()
+            stock_list = self.stock_tickers.ticker()
         logging.debug(f'开始下载财报.')
         with tqdm(stock_list) as pbar:
             loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cash_flow_desc, cash_flow)]
@@ -362,23 +358,23 @@ class TushareData(DataSource):
                     download_data(f, ['6', '9', '10'], desc, f'母公司{table}')
                     download_data(f, ['2', '3'], desc, f'合并单季度{table}')
                     download_data(f, ['1', '4', '5'], desc, f'合并{table}')
-                pbar.update(1)
+                pbar.update()
         logging.info(f'财报下载完成')
 
+    @DateUtils.strlize_input_dates
     def get_shibor(self, start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None) -> pd.DataFrame:
         """ Shibor利率数据 """
         data_category = 'Shibor利率数据'
         desc = self._factor_param[data_category]['输出参数']
 
         logging.debug(f'开始下载{data_category}.')
-        start_date, end_date = DateUtils.date_type2str(start_date), DateUtils.date_type2str(end_date)
         df = self._pro.shibor(start_date=start_date, end_date=end_date)
         df = self._standardize_df(df, desc)
         self.db_interface.update_df(df, data_category)
         logging.info(f'{data_category}下载完成.')
         return df
 
-    @DateUtils.format_input_dates
+    @DateUtils.dtlize_input_dates
     def get_index_weight(self, indexes: Sequence[str] = None,
                          start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = dt.date.today()) -> None:
         """ 指数成分和权重
@@ -411,7 +407,7 @@ class TushareData(DataSource):
                     sleep(interval)
                 df = self._standardize_df(pd.concat(storage), column_desc)
                 self.db_interface.update_df(df, '指数成分股权重')
-                pbar.update(1)
+                pbar.update()
         logging.info(f'{data_category}下载完成.')
 
     # utilities
@@ -429,7 +425,7 @@ class TushareData(DataSource):
             df = df.iloc[:, 0]
         return df
 
-    def _get_all_stocks(self) -> None:
+    def update_stock_list_date(self) -> None:
         """ 获取所有股票列表, 包括上市, 退市和暂停上市的股票
 
         ref: https://tushare.pro/document/2?doc_id=25
@@ -453,7 +449,6 @@ class TushareData(DataSource):
 
         output = self._standardize_df(output, desc)
         self.db_interface.update_df(output, '股票上市退市')
-        # del self.__dict__['stock_list']
         logging.info(f'{data_category}下载完成.')
 
     def update_calendar(self) -> None:
@@ -465,4 +460,4 @@ class TushareData(DataSource):
         cal_date = cal_date.map(DateUtils.date_type2datetime)
 
         self.db_interface.purge_table(table_name)
-        self.db_interface.update_df(cal_date, table_name)
+        self.db_interface.insert_df(cal_date, table_name)

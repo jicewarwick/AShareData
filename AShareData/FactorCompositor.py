@@ -1,14 +1,15 @@
 import datetime as dt
 import os
 import pickle
+import zipfile
 from pathlib import Path
 from typing import Sequence
 
 import pandas as pd
-from tqdm import tqdm
 from sortedcontainers import SortedDict
+from tqdm import tqdm
 
-from . import AShareDataReader, constants, DBInterface, utils, DateUtils
+from . import AShareDataReader, constants, DateUtils, DBInterface, utils
 from .DataSource import DataSource
 from .Factor import CompactFactor
 from .Tickers import StockTickerSelector
@@ -129,7 +130,7 @@ class IndexCompositor(FactorCompositor):
         return daily_ret
 
 
-class AccountingDataCacheCompositor(FactorCompositor):
+class AccountingDateCacheCompositor(FactorCompositor):
     def __init__(self, db_interface):
         super().__init__(db_interface)
 
@@ -139,15 +140,15 @@ class AccountingDataCacheCompositor(FactorCompositor):
             os.mkdir(dir_name)
         output_loc = os.path.join(dir_name, constants.ACCOUNTING_DATE_CACHE_NAME)
         if os.path.exists(output_loc):
-            with open(output_loc, 'rb') as f:
-                cache = pickle.load(f)
+            with zipfile.ZipFile(output_loc, 'r', compression=zipfile.ZIP_DEFLATED) as zf:
+                with zf.open('cache.pkl') as f:
+                    cache = pickle.load(f)
         else:
-            cache = {'DateTime': {}, 'YOY': SortedDict(), 'QOQ': SortedDict(), 'PreYearly': SortedDict()}
+            cache = {'DateTime': {}, 'cache_date': SortedDict()}
         table_name = '合并资产负债表'
         column_name = '货币资金'
 
         all_ticker = self.db_interface.get_all_id(table_name)
-        # ticker = all_ticker[0]
         with tqdm(all_ticker) as pbar:
             for ticker in all_ticker[:5]:
                 if ticker not in cache['DateTime'].keys():
@@ -164,31 +165,48 @@ class AccountingDataCacheCompositor(FactorCompositor):
                         info = ticker_data.loc[index.get_level_values('DateTime') <= date, :]
                         newest_entry = info.tail(1)
                         report_date = pd.to_datetime(newest_entry.index.get_level_values('报告期')[0])
+                        date = self.calendar.offset(date, 0)
 
-                        # YOY
-                        yoy_date = DateUtils.ReportingDate.yoy_date(report_date)
-                        relevant_entry = info.loc[info.index.get_level_values('报告期') == yoy_date].tail(1)
-                        if not relevant_entry.empty:
-                            cache['YOY'][(ticker, date)] = (relevant_entry.index, newest_entry.index)
-
-                        # QOQ
+                        # q1
                         qoq_date = DateUtils.ReportingDate.qoq_date(report_date)
-                        relevant_entry = info.loc[info.index.get_level_values('报告期') == qoq_date].tail(1)
-                        if not relevant_entry.empty:
-                            cache['QOQ'][(ticker, date)] = (relevant_entry.index, newest_entry.index)
+                        qoq_relevant_entry = info.loc[info.index.get_level_values('报告期') == qoq_date].tail(1)
+                        q1 = None if qoq_relevant_entry.empty else qoq_relevant_entry.index.values[0]
+                        # q2
+                        qoq2_date = DateUtils.ReportingDate.qoq_date(qoq_date)
+                        qoq2_relevant_entry = info.loc[info.index.get_level_values('报告期') == qoq2_date].tail(1)
+                        q2 = None if qoq2_relevant_entry.empty else qoq2_relevant_entry.index.values[0]
+                        # q4
+                        yoy_date = DateUtils.ReportingDate.yoy_date(report_date)
+                        yoy_relevant_entry = info.loc[info.index.get_level_values('报告期') == yoy_date].tail(1)
+                        q4 = None if yoy_relevant_entry.empty else yoy_relevant_entry.index.values[0]
+                        # q5
+                        qoq_date = DateUtils.ReportingDate.qoq_date(report_date)
+                        qoq_relevant_entry = info.loc[info.index.get_level_values('报告期') == qoq_date].tail(1)
+                        q5 = None if qoq_relevant_entry.empty else qoq_relevant_entry.index.values[0]
 
                         # yearly
-                        pre_yearly_date = DateUtils.ReportingDate.pre_yearly_dates(report_date)
-                        relevant_entry = info.loc[info.index.get_level_values('报告期') == pre_yearly_date].tail(1)
-                        if not relevant_entry.empty:
-                            cache['PreYearly'][(ticker, date)] = (relevant_entry.index, newest_entry.index)
+                        pre_yearly_date = DateUtils.ReportingDate.yearly_dates_offset(report_date)
+                        pre_yearly_relevant_entry = info.loc[
+                            info.index.get_level_values('报告期') == pre_yearly_date].tail(1)
+                        y1 = None if pre_yearly_relevant_entry.empty else pre_yearly_relevant_entry.index.values[0]
+                        # 3 yrs ago
+                        pre_3_yearly_date = DateUtils.ReportingDate.yearly_dates_offset(report_date, 3)
+                        pre_3_yearly_relevant_entry = info.loc[
+                            info.index.get_level_values('报告期') == pre_3_yearly_date].tail(1)
+                        y3 = None if pre_3_yearly_relevant_entry.empty else pre_3_yearly_relevant_entry.index.values[0]
+                        # 5 yrs ago
+                        pre_5_yearly_date = DateUtils.ReportingDate.yearly_dates_offset(report_date, 5)
+                        pre_5_yearly_relevant_entry = info.loc[
+                            info.index.get_level_values('报告期') == pre_5_yearly_date].tail(1)
+                        y5 = None if pre_5_yearly_relevant_entry.empty else pre_5_yearly_relevant_entry.index.values[0]
+
+                        # cache_date
+                        cache['cache_date'][(ticker, date)] = \
+                            utils.DateCache(newest_entry.index.values[0], q1, q2, y1, q4, q5, y3, y5)
+
                     cache['DateTime'][ticker] = new_dates[-1]
 
-                    pbar.update()
+                pbar.update()
 
-        with open(output_loc, 'wb') as f:
-            pickle.dump(cache, f)
-
-
-
-
+        with zipfile.ZipFile(output_loc, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr('cache.pkl', pickle.dumps(cache))

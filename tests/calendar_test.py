@@ -72,7 +72,7 @@ class MyTestCase(unittest.TestCase):
 
     @staticmethod
     def test_format_dt():
-        @format_input_dates
+        @dtlize_input_dates
         def func(date, dates=None):
             print(date)
             print(dates)

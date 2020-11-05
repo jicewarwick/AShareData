@@ -1,8 +1,6 @@
-import datetime as dt
 import unittest
 
 import AShareData.DateUtils
-from AShareData import utils
 from AShareData.DBInterface import MySQLInterface, prepare_engine
 from AShareData.FactorCompositor import *
 
@@ -25,7 +23,8 @@ class MyTestCase(unittest.TestCase):
                                                     start_date=start_date)
 
     def test_accounting_cache(self):
-        cache = AccountingDataCacheCompositor(self.factor_compositor.db_interface)
+        cache = AccountingDateCacheCompositor(self.factor_compositor.db_interface)
+        cache.update()
 
 
 if __name__ == '__main__':

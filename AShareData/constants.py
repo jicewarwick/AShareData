@@ -20,7 +20,7 @@ BALANCE_SHEETS = ['合并资产负债表', '母公司资产负债表']
 INCOME_STATEMENTS = ['合并利润表', '合并单季度利润表', '母公司单季度利润表']
 CASH_FLOW_STATEMENTS = ['合并现金流量表', '合并单季度现金流量表', '母公司单季度现金流量表']
 FINANCIAL_STATEMENTS = BALANCE_SHEETS + INCOME_STATEMENTS + CASH_FLOW_STATEMENTS
-ACCOUNTING_DATE_CACHE_NAME = 'accounting_date_cache.pkl'
+ACCOUNTING_DATE_CACHE_NAME = 'accounting_date_cache.pkl.zip'
 
 # industry constants
 INDUSTRY_DATA_PROVIDER = ['中信', '申万', '中证', 'Wind']

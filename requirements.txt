@@ -7,3 +7,5 @@ sqlalchemy
 pandas
 numpy
 statsmodels
+setuptools
+sortedcontainers

@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+from collections import namedtuple
 from dataclasses import dataclass
 from importlib.resources import open_text
 from typing import Any, Dict, Optional
@@ -87,3 +88,6 @@ class IndexCompositionPolicy:
 
     def __post_init__(self):
         assert self.unit_base in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本'], '非法股本字段!'
+
+
+DateCache = namedtuple('DateCache', ['q0', 'q1', 'q2', 'y1', 'q4', 'q5', 'y3', 'y5'])

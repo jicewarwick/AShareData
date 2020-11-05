@@ -53,7 +53,7 @@ class WebDataCrawler(DataSource):
         raw_data.set_index(['DateTime', 'ID'], inplace=True)
         self.db_interface.update_df(raw_data[['行业名称']], '申万一级行业')
 
-    @AShareData.DateUtils.format_input_dates
+    @AShareData.DateUtils.dtlize_input_dates
     def get_zz_industry(self, date: AShareData.DateUtils.DateType) -> None:
         """获取中证4级行业"""
         referer_template = 'http://www.csindex.com.cn/zh-CN/downloads/industry-price-earnings-ratio?type=zz1&date='
