@@ -1,5 +1,9 @@
-config.json
+tests/config.json
 param_raw.json
 *.xls
 .idea/
 __pycache__/
+*.egg-info/
+AShareData/complimentary_code/
+docs/build
+docs/source/_.*/

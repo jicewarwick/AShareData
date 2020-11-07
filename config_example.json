@@ -1,8 +1,9 @@
 {
-	"tushare_token": "**********",
-	"ip": "localhost",
-	"port": 3306,
-	"db_name": "tushare",
-	"username": "******",
-	"password": "******"
+    "tushare_token": "********",
+    "driver": "********",
+    "host": "********",
+    "port": 0,
+    "database": "********",
+    "username": "********",
+    "password": "********"
 }
