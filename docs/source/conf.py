@@ -7,15 +7,15 @@ sys.path.insert(0, os.path.abspath('../../AShareData'))
 project = 'AShareData'
 copyright = '2019, Ce Ji'
 author = 'Ce Ji'
-release = '0.0.1'
+release = '0.1.0'
 # -- General configuration ---------------------------------------------------
 extensions = ['IPython.sphinxext.ipython_directive',
               'IPython.sphinxext.ipython_console_highlighting',
               'sphinx.ext.mathjax',
               'sphinx.ext.autodoc',
               'sphinx.ext.inheritance_diagram',
-              'sphinx.ext.autosummary'
-              # 'numpydoc'
+              'sphinx.ext.autosummary',
+              # 'sphinx.ext.napoleon'
               ]
 templates_path = ['_templates']
 exclude_patterns = []
@@ -27,9 +27,16 @@ html_use_modindex = True
 # If false, no index is generated.
 html_use_index = True
 
+# autodoc
+autodoc_type_aliases = {'AShare.DateUtils.DateType': 'DateType'}
 autodoc_default_options = {
     'member-order': 'bysource',
 }
+autodoc_mock_imports = ["WindPy"]
+
+# autosummary
+autosummary_generate = True
+autosummary_imported_members = True
 
 # -- Options for LaTeX output --------------------------------------------------
 latex_paper_size = 'a4'
@@ -38,10 +45,7 @@ latex_paper_size = 'a4'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [
-    ('index', 'sampledoc.tex', u'sampledoc Documentation',
-     u'John Hunter, Fernando Perez, Michael Droettboom', 'manual'),
-]
+latex_documents = [('index',), ]
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
 # latex_use_parts = False

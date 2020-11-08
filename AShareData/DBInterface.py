@@ -228,7 +228,7 @@ class MySQLInterface(DBInterface):
         else:
             current_date = df.index.get_level_values('DateTime').to_pydatetime()[0]
             existing_data = existing_data.loc[existing_data.index.get_level_values('DateTime') < current_date]
-            new_info = utils.compute_diff(df, existing_data)
+            new_info = compute_diff(df, existing_data)
             self.update_df(new_info, table_name)
 
     def get_latest_timestamp(self, table_name: str, column_condition: (str, str) = None) -> Optional[dt.datetime]:
@@ -372,3 +372,13 @@ class MySQLInterface(DBInterface):
         primary_key = [it.name for it in table.primary_key]
         if primary_key:
             return primary_key
+
+
+def compute_diff(input_data: pd.Series, db_data: pd.Series) -> Optional[pd.Series]:
+    if db_data.empty:
+        return input_data
+
+    db_data = db_data.groupby('ID').tail(1)
+    combined_data = pd.concat([db_data.droplevel('DateTime'), input_data.droplevel('DateTime')], axis=1, sort=True)
+    stocks = combined_data.iloc[:, 0] != combined_data.iloc[:, 1]
+    return input_data.loc[slice(None), stocks, :]

@@ -21,6 +21,9 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(self.calendar.days_count(end, start), -1)
         self.assertEqual(self.calendar.days_count(start, start), 0)
 
+        self.assertEqual(self.calendar.days_count(dt.datetime(2015, 9, 30), dt.datetime(2015, 10, 8)), 1)
+        self.assertEqual(self.calendar.days_count(dt.datetime(2015, 10, 1), dt.datetime(2015, 10, 8)), 1)
+
     def test_first_day_of_month(self):
         start = dt.datetime(2019, 3, 2)
         end = dt.datetime(2019, 4, 2)

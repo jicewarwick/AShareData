@@ -1,10 +1,8 @@
 import pandas as pd
 
-from .FactorZoo import FactorZoo
-
 
 class BarraDescriptor(object):
-    def __init__(self, factor_zoo: FactorZoo):
+    def __init__(self, factor_zoo):
         self.factor_zoo = factor_zoo
 
     def nature_log_of_market_cap(self):

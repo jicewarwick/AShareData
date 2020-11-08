@@ -33,8 +33,7 @@ def strlize_input_dates(func):
     return inner
 
 
-def date_type2datetime(date: Union[str, dt.date, dt.datetime, Sequence]) \
-        -> Union[dt.datetime, Sequence[dt.datetime], None]:
+def date_type2datetime(date: Union[DateType, Sequence]) -> Optional[Union[dt.datetime, Sequence[dt.datetime]]]:
     if isinstance(date, Sequence):
         return [_date_type2datetime(it) for it in date]
     else:
@@ -91,17 +90,16 @@ class TradingCalendar(object):
 
         if func:
             storage = []
-            while i < j:
-                if func(self.calendar[i - 1], self.calendar[i], self.calendar[i + 1]):
-                    storage.append(self.calendar[i])
-                i = i + 1
+            for k in range(i, j):
+                if func(self.calendar[k - 1], self.calendar[k], self.calendar[k + 1]):
+                    storage.append(self.calendar[k])
             return storage
         else:
             return self.calendar[i:j]
 
     @dtlize_input_dates
     def select_dates(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get list of all trading days during[``start_date``, ``end_date``]"""
+        """Get list of all trading days during[``start_date``, ``end_date``] inclusive"""
         if not start_date:
             start_date = self.calendar[0]
         if not end_date:
@@ -110,30 +108,30 @@ class TradingCalendar(object):
 
     @dtlize_input_dates
     def first_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get first trading day of the months during[``start_date``, ``end_date``]"""
+        """Get first trading day of weeks between [``start_date``, ``end_date``]"""
         return self._select_dates(start_date, end_date,
                                   lambda pre, curr, next_: pre.isocalendar()[1] != curr.isocalendar()[1])
 
     @dtlize_input_dates
     def last_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get last trading day of the months during[``start_date``, ``end_date``]"""
+        """Get last trading day of weeks between [``start_date``, ``end_date``]"""
         return self._select_dates(start_date, end_date,
                                   lambda pre, curr, next_: curr.isocalendar()[1] != next_.isocalendar()[1])
 
     @dtlize_input_dates
     def first_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get first trading day of the months during[``start_date``, ``end_date``]"""
+        """Get first trading day of months between [``start_date``, ``end_date``]"""
         return self._select_dates(start_date, end_date, lambda pre, curr, next_: pre.month != curr.month)
 
     @dtlize_input_dates
     def last_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get last trading day of the months during[``start_date``, ``end_date``]"""
+        """Get last trading day of months between [``start_date``, ``end_date``]"""
         return self._select_dates(start_date, end_date,
                                   lambda pre, curr, next_: curr.month != next_.month)
 
     @dtlize_input_dates
     def last_day_of_year(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get last trading day of the year during[``start_date``, ``end_date``]"""
+        """Get last trading day of the year between [``start_date``, ``end_date``]"""
         return self._select_dates(start_date, end_date, lambda pre, curr, next_: curr.year != next_.year)
 
     @dtlize_input_dates
@@ -141,8 +139,8 @@ class TradingCalendar(object):
         """offset ``date`` by number of days
 
         Push days forward if ``days`` is positive and backward if ``days`` is negative.
-
-        Note: ``date`` has to be a trading day
+        If `days = 0` and date is a trading day, date is returned
+        If `days = 0` and date is not a trading day, the next trading day is returned
         """
         loc = bisect.bisect_left(self.calendar, date)
         if self.calendar[loc] != date and days > 0:
@@ -156,8 +154,15 @@ class TradingCalendar(object):
 
     @dtlize_input_dates
     def days_count(self, start_date: DateType, end_date: DateType) -> int:
-        """Count number of trading days during [``start_date``, ``end_date``]"""
-        return self.calendar.index(end_date) - self.calendar.index(start_date)
+        """Count number of trading days during [``start_date``, ``end_date``]
+        Note: ``end_date`` need to be a trading day
+        """
+        i = bisect.bisect_left(self.calendar, start_date)
+        if self.calendar[i] != start_date:
+            i = i - 1
+        j = self.calendar.index(end_date)
+
+        return j - i
 
     def yesterday(self) -> dt.datetime:
         return self.offset(dt.date.today(), -1)
@@ -176,11 +181,21 @@ class ReportingDate(object):
     @staticmethod
     @dtlize_input_dates
     def yoy_date(date: DateType) -> dt.datetime:
+        """
+        返回去年同期的报告期
+        :param date: 报告期
+        :return: 去年同期的报告期
+        """
         return dt.datetime(date.year - 1, date.month, date.day)
 
     @staticmethod
     @dtlize_input_dates
     def qoq_date(date: DateType) -> dt.datetime:
+        """
+        返回上个报告期
+        :param date: 报告期
+        :return: 去年上个报告期
+        """
         qoq_dict = {3: dt.datetime(date.year - 1, 12, 31),
                     6: dt.datetime(date.year, 3, 31),
                     9: dt.datetime(date.year, 6, 30),
@@ -190,4 +205,10 @@ class ReportingDate(object):
     @staticmethod
     @dtlize_input_dates
     def yearly_dates_offset(date: DateType, delta: int = 1) -> dt.datetime:
+        """
+        返回前``delta``个年报的报告期
+        :param date: 报告期
+        :param delta: 回溯时长（年）
+        :return: 前``delta``个年报的报告期
+        """
         return dt.datetime(date.year - delta, 12, 31)

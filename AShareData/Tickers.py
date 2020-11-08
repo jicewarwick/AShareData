@@ -3,23 +3,20 @@ from functools import cached_property
 from typing import Dict, List, Sequence
 
 from . import DateUtils
-from .Factor import CompactFactor, CompactRecordFactor, OnTheRecordFactor
-from .utils import StockSelectionPolicy
-
-from . import utils
 from .DBInterface import DBInterface
-from .Factor import IndustryFactor
+from .Factor import CompactFactor, CompactRecordFactor, IndustryFactor, OnTheRecordFactor
+from .utils import StockSelectionPolicy
 
 
 class Tickers(object):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface) -> None:
         self.db_interface = db_interface
 
     def all_ticker(self) -> List[str]:
         """ return ALL ticker for the asset class"""
         raise NotImplementedError()
 
-    def ticker(self, date: DateUtils.DateType = dt.date.today()) -> List[str]:
+    def ticker(self, date: DateUtils.DateType = dt.datetime.today()) -> List[str]:
         """ return tickers that are alive on `date`"""
         raise NotImplementedError()
 
@@ -29,16 +26,15 @@ class Tickers(object):
 
 
 class StockTickers(Tickers):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface)
         self.cache = db_interface.read_table('股票上市退市').reset_index()
 
     def all_ticker(self) -> List[str]:
-        return sorted(self.cache.ID.unique().tolist())
+        return self.cache.ID.unique().tolist()
 
     @DateUtils.dtlize_input_dates
-    def ticker(self, date: DateUtils.DateType = dt.date.today()) -> List[str]:
-        """Get stocks still listed at ``date``"""
+    def ticker(self, date: DateUtils.DateType = dt.datetime.today()) -> List[str]:
         stock_ticker_df = self.cache.loc[self.cache.DateTime <= date]
         tmp = stock_ticker_df.groupby('ID').tail(1)
         return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
@@ -49,15 +45,15 @@ class StockTickers(Tickers):
 
 
 class FutureTickers(Tickers):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface)
         self.cache = db_interface.read_table('期货合约', ['合约上市日期', '最后交易日']).reset_index()
 
     def all_ticker(self) -> List[str]:
-        return self.cache.ID.tolist()
+        return sorted(self.cache.ID.tolist())
 
     @DateUtils.dtlize_input_dates
-    def ticker(self, date: DateUtils.DateType = dt.date.today()) -> List[str]:
+    def ticker(self, date: DateUtils.DateType = dt.datetime.today()) -> List[str]:
         ticker_df = self.cache.loc[(self.cache['合约上市日期'] <= date) & (self.cache['最后交易日'] >= date), :]
         return sorted(ticker_df.ID.tolist())
 
@@ -66,15 +62,15 @@ class FutureTickers(Tickers):
 
 
 class OptionTickers(Tickers):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface)
         self.cache = db_interface.read_table('期权合约', ['上市日期', '行权日期']).reset_index()
 
     def all_ticker(self) -> List[str]:
-        return self.cache.ID.tolist()
+        return sorted(self.cache.ID.tolist())
 
     @DateUtils.dtlize_input_dates
-    def ticker(self, date: DateUtils.DateType = dt.date.today()) -> List[str]:
+    def ticker(self, date: DateUtils.DateType = dt.datetime.today()) -> List[str]:
         ticker_df = self.cache.loc[(self.cache['上市日期'] <= date) & (self.cache['行权日期'] > date), :]
         return sorted(ticker_df.ID.tolist())
 
@@ -83,15 +79,15 @@ class OptionTickers(Tickers):
 
 
 class ETFTickers(Tickers):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface)
         self.cache = db_interface.read_table('etf上市日期').reset_index()
 
     def all_ticker(self) -> List[str]:
-        return self.cache.ID.tolist()
+        return sorted(self.cache.ID.tolist())
 
     @DateUtils.dtlize_input_dates
-    def ticker(self, date: DateUtils.DateType = dt.date.today()) -> List[str]:
+    def ticker(self, date: DateUtils.DateType = dt.datetime.today()) -> List[str]:
         ticker_df = self.cache.loc[(self.cache['DateTime'] <= date) & (self.cache['DateTime'] > date), :]
         return sorted(ticker_df.ID.tolist())
 
@@ -100,7 +96,7 @@ class ETFTickers(Tickers):
 
 
 class StockTickerSelector(object):
-    def __init__(self, db_interface: DBInterface, policy: StockSelectionPolicy):
+    def __init__(self, db_interface: DBInterface, policy: StockSelectionPolicy) -> None:
         super().__init__()
         self.db_interface = db_interface
         self.stock_ticker = StockTickers(self.db_interface)
@@ -149,7 +145,7 @@ class StockTickerSelector(object):
         if self.policy.select_st:
             ids = ids & set(self.risk_warned_stock_selector.get_data(date))
         elif self.policy.ignore_st:
-            ids = ids - set(self.risk_warned_stock_selector.get_data(date=date))
+            ids = ids - set(self.risk_warned_stock_selector.get_data(date))
 
         ids = list(ids)
         return ids

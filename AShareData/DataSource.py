@@ -1,19 +1,19 @@
 import datetime as dt
 from functools import cached_property
 
-from .DBInterface import DBInterface
 from . import DateUtils
+from .DBInterface import DBInterface
 
 
 class DataSource(object):
     """Data Source Base Class"""
 
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface) -> None:
         self.db_interface = db_interface
 
     @cached_property
     def calendar(self) -> DateUtils.TradingCalendar:
-        """获取交易日历"""
+        """交易日历"""
         return DateUtils.TradingCalendar(self.db_interface)
 
     def _check_db_timestamp(self, table_name: str, default_timestamp: DateUtils.DateType,

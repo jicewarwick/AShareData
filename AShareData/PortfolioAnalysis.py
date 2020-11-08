@@ -1,29 +1,26 @@
 import alphalens
 import numpy as np
 import pandas as pd
-import statsmodels as sm
+from statsmodels.stats import descriptivestats
 
-import AShareData.DateUtils
-from . import AShareDataReader, MySQLInterface, prepare_engine, utils
-from .DateUtils import TradingCalendar
+from . import AShareDataReader, DateUtils
+from .DBInterface import DBInterface
 
 
 class ASharePortfolioAnalysis(object):
-    def __init__(self, config_loc):
+    def __init__(self, db_interface: DBInterface):
         super().__init__()
-        engine = prepare_engine(config_loc)
-        mysql_writer = MySQLInterface(engine, init=True)
-        self.data_reader = AShareDataReader(mysql_writer)
-        self.calendar = TradingCalendar(mysql_writer)
+        self.db_interface = db_interface
+        self.data_reader = AShareDataReader(db_interface)
 
-    def market_return(self, start_date: AShareData.DateUtils.DateType, end_date: AShareData.DateUtils.DateType):
+    def market_return(self, start_date: DateUtils.DateType, end_date: DateUtils.DateType):
         pass
 
     def beta_portfolio(self):
         pass
 
-    def size_portfolio(self, start_date: AShareData.DateUtils.DateType, end_date: AShareData.DateUtils.DateType) -> pd.DataFrame:
-        dates = self.calendar.last_day_of_month(start_date, end_date)
+    def size_portfolio(self, start_date: DateUtils.DateType, end_date: DateUtils.DateType) -> pd.DataFrame:
+        dates = self.data_reader.calendar.last_day_of_month(start_date, end_date)
         price = self.data_reader.close.get_data(dates=dates)
         adj_factor = self.data_reader.adj_factor.get_data(dates=dates)
         units = self.data_reader.free_a_shares.get_data(dates=dates)
@@ -38,7 +35,7 @@ class ASharePortfolioAnalysis(object):
     def summary_statistics(factor_data: pd.DataFrame) -> pd.DataFrame:
         storage = []
         for name, group in factor_data['factor'].groupby('date'):
-            content = sm.stats.descriptivestats.describe(group).T
+            content = descriptivestats.describe(group).T
             content.index = [name]
             storage.append(content)
         cross_section_info = pd.concat(storage)

@@ -81,7 +81,7 @@ class TushareData(DataSource):
         return df
 
     def get_daily_hq(self, trade_date: DateUtils.DateType = None,
-                     start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = dt.datetime.now()) -> None:
+                     start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None) -> None:
         """更新每日行情, 写入数据库, 不返回
 
         行情信息包括: 开高低收, 量额, 复权因子, 股本
@@ -96,6 +96,8 @@ class TushareData(DataSource):
         """
         if (not trade_date) & (not start_date):
             raise ValueError('trade_date 和 start_date 必填一个!')
+        if not end_date:
+            end_date = dt.datetime.today()
         dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
         pre_date = self.calendar.offset(dates[0], -1)
 
@@ -376,7 +378,7 @@ class TushareData(DataSource):
 
     @DateUtils.dtlize_input_dates
     def get_index_weight(self, indexes: Sequence[str] = None,
-                         start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = dt.date.today()) -> None:
+                         start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None) -> None:
         """ 指数成分和权重
 
         默认指数为 ['000016.SH', '399300.SH', '000905.SH'], 即50, 300, 500
@@ -391,6 +393,8 @@ class TushareData(DataSource):
         column_desc = self._factor_param[data_category]['输出参数']
         indexes = constants.BOARD_INDEXES if indexes is None else indexes
 
+        if not end_date:
+            end_date = dt.datetime.today()
         dates = self.calendar.last_day_of_month(start_date, end_date)
         dates = sorted(list(set([start_date] + dates + [end_date])))
 

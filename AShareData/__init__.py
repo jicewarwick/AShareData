@@ -1,19 +1,17 @@
-import importlib
+import importlib.util
 import logging
 
 from .AShareDataReader import AShareDataReader
-from .DBInterface import MySQLInterface, prepare_engine
 from .DateUtils import TradingCalendar
+from .DBInterface import MySQLInterface, prepare_engine
+from .FactorCompositor import FactorCompositor
 from .TushareData import TushareData
 from .WebData import WebDataCrawler
-from .FactorCompositor import FactorCompositor
-# from .PortfolioAnalysis import ASharePortfolioAnalysis
 
 spam_spec = importlib.util.find_spec("WindPy")
-windpy_installed = spam_spec is not None
-
-if windpy_installed:
+if spam_spec is not None:
     from .WindData import WindData
+
     logging.info('WindPy Found')
 else:
     logging.debug('WindPy not found!!')

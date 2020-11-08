@@ -117,11 +117,13 @@ class IndexCompositor(FactorCompositor):
         # pre data
         pre_date = self.calendar.offset(date, -1)
         pre_units = self.units_factor.get_data(dates=pre_date, ids=ids)
-        pre_close_data = self.data_reader.close().get_data(dates=pre_date, ids=ids)
+        pre_close_data = self.data_reader.close.get_data(dates=pre_date, ids=ids)
         pre_adj = self.data_reader.adj_factor.get_data(dates=pre_date, ids=ids)
+
         # data
-        close_data = self.data_reader.close().get_data(dates=date, ids=ids)
+        close_data = self.data_reader.close.get_data(dates=date, ids=ids)
         adj = self.data_reader.adj_factor.get_data(dates=date, ids=ids)
+
         # computation
         stock_daily_ret = (close_data * adj).values / (pre_close_data * pre_adj).values - 1
         weight = pre_units * pre_close_data
@@ -150,7 +152,7 @@ class AccountingDateCacheCompositor(FactorCompositor):
 
         all_ticker = self.db_interface.get_all_id(table_name)
         with tqdm(all_ticker) as pbar:
-            for ticker in all_ticker[:5]:
+            for ticker in all_ticker:
                 if ticker not in cache['DateTime'].keys():
                     cache_date = dt.datetime(1900, 1, 1)
                 else:
