@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath('../../AShareData'))
 
 # -- Project information -----------------------------------------------------
 project = 'AShareData'
-copyright = '2019, Ce Ji'
+copyright = '2020, Ce Ji'
 author = 'Ce Ji'
 release = '0.1.0'
 # -- General configuration ---------------------------------------------------

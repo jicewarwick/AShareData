@@ -4,12 +4,12 @@ import logging
 from .AShareDataReader import AShareDataReader
 from .DateUtils import TradingCalendar
 from .DBInterface import MySQLInterface, prepare_engine
-from .FactorCompositor import FactorCompositor
+from .FactorCompositor import AccountingDateCacheCompositor, ConstLimitStockFactorCompositor, IndexCompositor
 from .TushareData import TushareData
 from .WebData import WebDataCrawler
 
-spam_spec = importlib.util.find_spec("WindPy")
-if spam_spec is not None:
+wind_spec = importlib.util.find_spec("WindPy")
+if wind_spec:
     from .WindData import WindData
 
     logging.info('WindPy Found')
