@@ -2,9 +2,10 @@
 	"交易日历": {
 		"交易日历": "datetime"
 	},
-	"股票上市退市": {
+	"证券代码": {
 		"DateTime": "datetime",
 		"ID": "varchar",
+		"证券类型": "varchar",
 		"上市状态": "boolean"
 	},
 	"证券名称": {

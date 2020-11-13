@@ -413,21 +413,16 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"symbol": "交易标识",
-			"exchange": "交易市场",
-			"name": "中文简称",
-			"fut_code": "合约产品代码",
+			"symbol": "合约代码",
+			"name": "合约名称",
+			"fut_code": "产品代码",
 			"multiplier": "合约乘数",
-			"trade_unit": "交易计量单位",
 			"per_unit": "交易单位(每手)",
-			"quote_unit": "报价单位",
 			"quote_unit_desc": "最小报价单位说明",
-			"d_mode_desc": "交割方式说明",
 			"list_date": "上市日期",
 			"delist_date": "最后DateTime",
 			"d_month": "交割月份",
-			"last_ddate": "最后交割日",
-			"trade_time_desc": "交易时间说明"
+			"last_ddate": "最后交割日"
 		}
 	},
 	"交易日历": {
@@ -760,22 +755,19 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"exchange": "交易市场",
 			"name": "合约名称",
-			"per_unit": "合约单位",
-			"opt_code": "标准ID",
-			"opt_type": "合约类型",
+			"per_unit": "合约乘数",
+			"opt_code": "标的ID",
+			"opt_type": "证券类型",
 			"call_put": "期权类型",
 			"exercise_type": "行权方式",
 			"exercise_price": "行权价格",
-			"s_month": "结算月",
 			"maturity_date": "到期日",
 			"list_price": "挂牌基准价",
-			"list_date": "开始DateTime",
-			"delist_date": "最后DateTime",
+			"list_date": "上市时间",
+			"delist_date": "最后交易日",
 			"last_edate": "最后行权日期",
 			"last_ddate": "最后交割日期",
-			"quote_unit": "报价单位",
 			"min_price_chg": "最小价格波幅"
 		}
 	},
@@ -2168,6 +2160,33 @@
 			"con_code": "ID",
 			"trade_date": "DateTime",
 			"weight": "权重"
+		}
+	},
+	"可转债基本信息": {
+		"输入参数": {
+			"index_code": "指数代码(二选一)",
+			"list_date": "上市日期",
+			"exchange": "上市地点"
+		},
+		"输出参数": {
+			"ts_code": "ID",
+			"bond_full_name": "转债名称",
+			"bond_short_name": "转债简称",
+			"cb_code": "转股申报代码",
+			"stk_code": "正股代码",
+			"maturity": "发行期限（年）",
+			"par": "面值",
+			"issue_size": "发行总额（元）",
+			"value_date": "起息日期",
+			"maturity_date": "到期日期",
+			"pay_per_year": "年付息次数",
+			"list_date": "上市日期",
+			"delist_date": "摘牌日",
+			"conv_start_date": "转股起始日",
+			"conv_end_date": "转股截止日",
+			"first_conv_price": "初始转股价",
+			"conv_price": "最新转股价",
+			"maturity_put_price": "到期赎回价格(含税)"
 		}
 	}
 }
