@@ -1,6 +1,6 @@
 import datetime as dt
 import logging
-from functools import cached_property
+from cached_property import cached_property
 from time import sleep
 from typing import Callable, Mapping, Sequence, Union
 

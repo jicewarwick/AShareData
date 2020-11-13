@@ -34,7 +34,9 @@ def strlize_input_dates(func):
 
 
 def date_type2datetime(date: Union[DateType, Sequence]) -> Optional[Union[dt.datetime, Sequence[dt.datetime]]]:
-    if isinstance(date, Sequence):
+    if isinstance(date, str):
+        return _date_type2datetime(date)
+    elif isinstance(date, Sequence):
         return [_date_type2datetime(it) for it in date]
     else:
         return _date_type2datetime(date)

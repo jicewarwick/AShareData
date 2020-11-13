@@ -1,5 +1,5 @@
 import datetime as dt
-from functools import cached_property
+from cached_property import cached_property
 from typing import Dict, List, Sequence
 
 from . import DateUtils
@@ -9,6 +9,7 @@ from .utils import StockSelectionPolicy
 
 
 class Tickers(object):
+    """证券代码基类"""
     def __init__(self, db_interface: DBInterface) -> None:
         self.db_interface = db_interface
 
@@ -26,6 +27,7 @@ class Tickers(object):
 
 
 class StockTickers(Tickers):
+    """股票代码"""
     def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface)
         self.cache = db_interface.read_table('股票上市退市').reset_index()
@@ -45,6 +47,7 @@ class StockTickers(Tickers):
 
 
 class FutureTickers(Tickers):
+    """期货合约代码"""
     def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface)
         self.cache = db_interface.read_table('期货合约', ['合约上市日期', '最后交易日']).reset_index()
@@ -62,6 +65,7 @@ class FutureTickers(Tickers):
 
 
 class OptionTickers(Tickers):
+    """期权合约代码"""
     def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface)
         self.cache = db_interface.read_table('期权合约', ['上市日期', '行权日期']).reset_index()
@@ -79,6 +83,7 @@ class OptionTickers(Tickers):
 
 
 class ETFTickers(Tickers):
+    """ETF基金代码"""
     def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface)
         self.cache = db_interface.read_table('etf上市日期').reset_index()
@@ -96,7 +101,12 @@ class ETFTickers(Tickers):
 
 
 class StockTickerSelector(object):
+    """股票代码选择器"""
     def __init__(self, db_interface: DBInterface, policy: StockSelectionPolicy) -> None:
+        """
+        :param db_interface: BDInterface
+        :param policy: 选股条件
+        """
         super().__init__()
         self.db_interface = db_interface
         self.stock_ticker = StockTickers(self.db_interface)

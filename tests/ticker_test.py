@@ -10,10 +10,10 @@ class MyTestCase(unittest.TestCase):
         config_loc = 'config.json'
         engine = prepare_engine(config_loc)
         db_interface = MySQLInterface(engine)
-        self.stock_ticker = StockTicker(db_interface)
-        self.future_ticker = FutureTicker(db_interface)
-        self.option_ticker = OptionTicker(db_interface)
-        self.etf_ticker = ETFTicker(db_interface)
+        self.stock_ticker = StockTickers(db_interface)
+        self.future_ticker = FutureTickers(db_interface)
+        self.option_ticker = OptionTickers(db_interface)
+        self.etf_ticker = ETFTickers(db_interface)
 
     def test_stock_ticker(self):
         self.stock_ticker.all_ticker()

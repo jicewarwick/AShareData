@@ -27,14 +27,14 @@ class DBInterface(object):
         raise NotImplementedError()
 
     def drop_all_tables(self) -> None:
-        """Drop *ALL TABLES AND THEIR DATA* in the database"""
+        """[CAUTION] Drop *ALL TABLES AND THEIR DATA* in the database"""
         raise NotImplementedError()
 
     def purge_table(self, table_name: str) -> None:
-        """Drop *ALL DATA* in the table, *BE CAUTIOUS*"""
+        """[CAUTION] Drop *ALL DATA* in the table"""
         raise NotImplementedError()
 
-    def insert_df(self, df: pd.DataFrame, table_name: str) -> None:
+    def insert_df(self, df: Union[pd.DataFrame, pd.Series], table_name: str) -> None:
         """Insert pandas.DataFrame(df) into table ``table_name``"""
         raise NotImplementedError()
 
@@ -74,7 +74,7 @@ class DBInterface(object):
         """Get primary keys of a table"""
         raise NotImplementedError()
 
-    def get_table_list(self) -> list:
+    def get_table_names(self) -> List[str]:
         """List ALL tables in the database"""
         raise NotImplementedError()
 
@@ -134,11 +134,10 @@ class MySQLInterface(DBInterface):
         for table_name, table_schema in self._db_parameters.items():
             self.create_table(table_name, table_schema)
 
-    def get_table_list(self) -> List[str]:
+    def get_table_names(self) -> List[str]:
         return list(self.meta.tables.keys())
 
     def get_columns_names(self, table_name: str) -> List[str]:
-        """ 数据库中表中的所有列"""
         table = sa.Table(table_name, self.meta)
         return [str(it.name) for it in table.columns]
 
@@ -172,7 +171,6 @@ class MySQLInterface(DBInterface):
         self.meta.reflect()
 
     def purge_table(self, table_name: str) -> None:
-        """Drop *ALL DATA* in the table, *BE CAUTIOUS*"""
         assert table_name in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name]
         conn = self.engine.connect()

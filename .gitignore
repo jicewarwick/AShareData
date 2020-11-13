@@ -1,4 +1,4 @@
-tests/config.json
+config.json
 param_raw.json
 *.xls
 .idea/
@@ -7,3 +7,4 @@ __pycache__/
 AShareData/complimentary_code/
 docs/build
 docs/source/_.*/
+docs/source/modules

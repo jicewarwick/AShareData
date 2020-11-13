@@ -1,4 +1,4 @@
-from functools import cached_property
+from cached_property import cached_property
 
 import numpy as np
 
@@ -21,42 +21,51 @@ class AShareDataReader(object):
 
     @cached_property
     def calendar(self) -> DateUtils.TradingCalendar:
-        """Trading Calendar"""
+        """交易日历"""
         return DateUtils.TradingCalendar(self.db_interface)
 
     @cached_property
     def stocks(self) -> StockTickers:
+        """股票列表"""
         return StockTickers(self.db_interface)
 
     @cached_property
     def sec_name(self) -> CompactFactor:
+        """股票名称"""
         return CompactFactor(self.db_interface, '证券名称')
 
     @cached_property
     def adj_factor(self) -> CompactFactor:
+        """复权因子"""
         return CompactFactor(self.db_interface, '复权因子')
 
     @cached_property
     def free_a_shares(self) -> CompactFactor:
+        """A股流通股本"""
         return CompactFactor(self.db_interface, 'A股流通股本')
 
     @cached_property
     def const_limit(self) -> OnTheRecordFactor:
+        """一字涨跌停"""
         return OnTheRecordFactor(self.db_interface, '一字涨跌停')
 
     @cached_property
     def close(self) -> ContinuousFactor:
+        """收盘价"""
         return ContinuousFactor(self.db_interface, '股票日行情', '收盘价')
 
     @cached_property
     def total_share(self) -> CompactFactor:
+        """总股本"""
         return CompactFactor(self.db_interface, '总股本')
 
     def floating_share(self) -> CompactFactor:
+        """流通股本"""
         return CompactFactor(self.db_interface, '流通股本')
 
     # @cached_property
     def market_cap(self):
+        """市值"""
         pass
 
     def log_cap(self):

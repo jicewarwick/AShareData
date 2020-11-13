@@ -55,7 +55,7 @@ class StockSelectionPolicy:
 @dataclass
 class IndexCompositionPolicy:
     """
-
+    自建指数信息
         :param ticker: 新建指数入库代码. 建议以`.IND`结尾, 代表自合成指数
         :param stock_selection_policy: 股票筛选条件
     """

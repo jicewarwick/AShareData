@@ -27,6 +27,7 @@ class FactorCompositor(DataSource):
         self.data_reader = AShareDataReader(db_interface)
 
     def update(self):
+        """更新数据"""
         raise NotImplementedError()
 
 
@@ -86,6 +87,7 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
 
 class IndexCompositor(FactorCompositor):
     def __init__(self, db_interface: DBInterface, index_composition_policy: utils.IndexCompositionPolicy):
+        """自建指数收益计算器"""
         super().__init__(db_interface)
         self.table_name = '自合成指数'
         self.policy = index_composition_policy
@@ -133,6 +135,9 @@ class IndexCompositor(FactorCompositor):
 
 
 class AccountingDateCacheCompositor(FactorCompositor):
+    """
+    财报日期缓存工具
+    """
     def __init__(self, db_interface):
         super().__init__(db_interface)
 
@@ -152,7 +157,7 @@ class AccountingDateCacheCompositor(FactorCompositor):
 
         all_ticker = self.db_interface.get_all_id(table_name)
         with tqdm(all_ticker) as pbar:
-            for ticker in all_ticker:
+            for ticker in all_ticker[:2000]:
                 if ticker not in cache['DateTime'].keys():
                     cache_date = dt.datetime(1900, 1, 1)
                 else:

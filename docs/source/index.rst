@@ -1,19 +1,6 @@
 Welcome to AShareData's documentation!
 ======================================
 
-
-Table of Contents
-=================
-
-
-
-Modules
-========
-.. autosummary:: AShareData
-   :recursive:
-   :toctree: modules
-
-
 Introduction
 ============
 
@@ -27,7 +14,9 @@ Setting up
 ----------
 Filling out ``config.json`` file. Example can be found in repo root
 
-Typical Work flow flows:
+
+
+
 
 Indices and tables
 ==================

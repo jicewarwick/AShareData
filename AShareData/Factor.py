@@ -2,7 +2,7 @@ import datetime as dt
 import os
 import pickle
 import zipfile
-from functools import cached_property
+from cached_property import cached_property
 from pathlib import Path
 from typing import List, Sequence, Union
 
@@ -27,6 +27,7 @@ class Factor(object):
         self.calendar = DateUtils.TradingCalendar(db_interface)
 
     def get_data(self, *args, **kwargs):
+        """获取数据"""
         raise NotImplementedError()
 
     # helper functions
@@ -114,7 +115,6 @@ class IndustryFactor(CompactFactor):
 
     def __init__(self, db_interface: DBInterface, provider: str, level: int) -> None:
         """
-
         :param db_interface: DB Interface
         :param provider: Industry classification data provider
         :param level: Level of industry classification
@@ -133,6 +133,12 @@ class IndustryFactor(CompactFactor):
 
     @DateUtils.dtlize_input_dates
     def list_constitutes(self, date: DateUtils.DateType, industry: str) -> List[str]:
+        """
+        获取行业内的股票构成
+        :param date: 查询日期
+        :param industry: 行业名称
+        :return:
+        """
         date_data = self.get_data(dates=date)
         data = date_data.loc[:, (date_data == industry).values[0]]
         return data.columns.tolist()
@@ -144,7 +150,7 @@ class IndustryFactor(CompactFactor):
 
 class OnTheRecordFactor(NonFinancialFactor):
     """
-        有记录的因子, 例如涨跌停, 一字板, 停牌等
+        有记录的数据, 例如涨跌停, 一字板, 停牌等
     """
 
     def __init__(self, db_interface: DBInterface, factor_name: str):
@@ -179,7 +185,7 @@ class CompactRecordFactor(NonFinancialFactor):
 
 class ContinuousFactor(NonFinancialFactor):
     """
-    Continuous Factors
+    有连续记录的数据
     """
 
     def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
@@ -288,6 +294,10 @@ class AccountingFactor(Factor):
 
 
 class QuarterlyFactor(AccountingFactor):
+    """
+    季报数据
+    """
+
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
         self.func = self.balance_sheet_func if self.table_name == '合并资产负债表' else self.cash_flow_or_profit_func
@@ -306,6 +316,7 @@ class QuarterlyFactor(AccountingFactor):
 
 
 class LatestAccountingFactor(AccountingFactor):
+    """最新财报数据"""
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -315,6 +326,7 @@ class LatestAccountingFactor(AccountingFactor):
 
 
 class LatestQuarterAccountingFactor(QuarterlyFactor):
+    """最新财报季度数据"""
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -345,6 +357,7 @@ class YearlyReportAccountingFactor(AccountingFactor):
 
 
 class QOQAccountingFactor(QuarterlyFactor):
+    """环比数据"""
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -361,6 +374,7 @@ class QOQAccountingFactor(QuarterlyFactor):
 
 
 class YOYPeriodAccountingFactor(AccountingFactor):
+    """同比数据"""
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -371,6 +385,7 @@ class YOYPeriodAccountingFactor(AccountingFactor):
 
 
 class YOYQuarterAccountingFactor(QuarterlyFactor):
+    """季度同比数据"""
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -387,6 +402,7 @@ class YOYQuarterAccountingFactor(QuarterlyFactor):
 
 
 class TTMAccountingFactor(AccountingFactor):
+    """TTM数据"""
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 

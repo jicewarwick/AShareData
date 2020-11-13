@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 import tempfile
-from functools import cached_property
+from cached_property import cached_property
 from typing import Dict, List, Sequence, Union
 
 import numpy as np
@@ -251,11 +251,12 @@ class WindData(DataSource):
         table_name = '股票分钟行情'
         replace_dict = self._factor_param[table_name]
 
-        data = self.w.wsi(self.stock_list.ticker(), "open,high,low,close,volume,amt", start_time, end_time, "")
-        data.set_index('windcode', append=True, inplace=True)
-        data.index.names = ['DateTime', 'ID']
-        data.rename(replace_dict, axis=1, inplace=True)
-        self.db_interface.insert_df(data, table_name)
+        for section in utils.chunk_list(self.stock_list.ticker(), 80):
+            data = self.w.wsi(section, "open,high,low,close,volume,amt", start_time, end_time, "").dropna()
+            data.set_index('windcode', append=True, inplace=True)
+            data.index.names = ['DateTime', 'ID']
+            data.rename(replace_dict, axis=1, inplace=True)
+            self.db_interface.insert_df(data, table_name)
 
         logging.debug(f'{start_time} - {end_time} 的分钟数据下载完成')
 
