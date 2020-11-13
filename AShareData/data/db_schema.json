@@ -545,5 +545,12 @@
 		"DateTime": "datetime",
 		"ID": "varchar",
 		"涨跌停": "int"
+	},
+	"可转债信息": {
+		"ID": "varchar",
+		"名称": "varchar",
+		"发行人ID": "varchar",
+		"上市日期": "datetime",
+		"退市日期": "datetime"
 	}
 }

@@ -18,5 +18,5 @@ if __name__ == '__main__':
     downloader = TushareData(tushare_token, db_interface=db_interface)
     downloader.update_routine()
 
-    wind_data = WindData(db_interface)
-    wind_data.update_routine()
+    # wind_data = WindData(db_interface)
+    # wind_data.update_routine()

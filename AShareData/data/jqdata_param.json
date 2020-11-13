@@ -1,0 +1,9 @@
+{
+	"可转债信息": {
+		"code": "ID",
+		"short_name": "名称",
+		"company_code": "发行人ID",
+		"list_date": "上市日期",
+		"delist_Date": "退市日期"
+	}
+}
