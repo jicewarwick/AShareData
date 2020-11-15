@@ -414,13 +414,12 @@
 		"输出参数": {
 			"ts_code": "ID",
 			"symbol": "合约代码",
-			"name": "合约名称",
+			"name": "证券名称",
 			"fut_code": "产品代码",
 			"multiplier": "合约乘数",
-			"per_unit": "交易单位(每手)",
-			"quote_unit_desc": "最小报价单位说明",
+			"quote_unit_desc": "最小报价单位",
 			"list_date": "上市日期",
-			"delist_date": "最后DateTime",
+			"delist_date": "最后交易日",
 			"d_month": "交割月份",
 			"last_ddate": "最后交割日"
 		}
@@ -755,7 +754,7 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"name": "合约名称",
+			"name": "证券名称",
 			"per_unit": "合约乘数",
 			"opt_code": "标的ID",
 			"opt_type": "证券类型",
@@ -1161,30 +1160,19 @@
 			"market": "交易市场:E场内O场外（默认E）"
 		},
 		"输出参数": {
-			"ts_code": "基金代码",
-			"name": "简称",
+			"ts_code": "ID",
+			"name": "证券名称",
 			"management": "管理人",
-			"custodian": "托管人",
 			"fund_type": "投资类型",
 			"found_date": "成立日期",
 			"due_date": "到期日期",
 			"list_date": "上市时间",
 			"issue_date": "发行日期",
 			"delist_date": "退市日期",
-			"issue_amount": "发行份额(亿)",
 			"m_fee": "管理费",
 			"c_fee": "托管费",
-			"duration_year": "存续期",
-			"p_value": "面值",
-			"min_amount": "起点金额(万元)",
-			"exp_return": "预期收益率",
-			"benchmark": "业绩比较基准",
-			"status": "存续状态D摘牌I发行L已上市",
 			"invest_type": "投资风格",
 			"type": "基金类型",
-			"trustee": "受托人",
-			"purc_startdate": "日常申购起始日",
-			"redm_startdate": "日常赎回起始日",
 			"market": "E场内O场外"
 		}
 	},
@@ -2171,12 +2159,12 @@
 		"输出参数": {
 			"ts_code": "ID",
 			"bond_full_name": "转债名称",
-			"bond_short_name": "转债简称",
+			"bond_short_name": "证券名称",
 			"cb_code": "转股申报代码",
 			"stk_code": "正股代码",
 			"maturity": "发行期限（年）",
 			"par": "面值",
-			"issue_size": "发行总额（元）",
+			"issue_size": "发行总额",
 			"value_date": "起息日期",
 			"maturity_date": "到期日期",
 			"pay_per_year": "年付息次数",
@@ -2185,7 +2173,6 @@
 			"conv_start_date": "转股起始日",
 			"conv_end_date": "转股截止日",
 			"first_conv_price": "初始转股价",
-			"conv_price": "最新转股价",
 			"maturity_put_price": "到期赎回价格(含税)"
 		}
 	}

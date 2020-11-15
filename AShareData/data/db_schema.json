@@ -470,13 +470,15 @@
 		"现金及现金等价物净增加额(间接法)": "double"
 	},
 	"期货合约": {
-		"合约名称": "varchar",
+		"ID": "varchar",
 		"合约代码": "varchar",
-		"交割月份": "varchar",
-		"涨跌幅限制": "float",
-		"保证金比例": "float",
-		"合约上市日期": "datetime",
+		"证券名称": "varchar",
+		"产品代码": "varchar",
+		"合约乘数": "int",
+		"最小报价单位": "float",
+		"上市日期": "datetime",
 		"最后交易日": "datetime",
+		"交割月份": "varchar",
 		"最后交割日": "datetime"
 	},
 	"期货日行情": {
@@ -546,5 +548,24 @@
 		"DateTime": "datetime",
 		"ID": "varchar",
 		"涨跌停": "int"
+	},
+	"可转债列表": {
+		"ID": "varchar",
+		"转债名称": "str",
+		"证券名称": "varchar",
+		"转股申报代码": "varchar",
+		"正股代码": "varchar",
+		"发行期限（年）": "float",
+		"面值": "float",
+		"发行总额": "float",
+		"起息日期": "datetime",
+		"到期日期": "datetime",
+		"年付息次数": "int",
+		"上市日期": "datetime",
+		"摘牌日": "datetime",
+		"转股起始日": "datetime",
+		"转股截止日": "datetime",
+		"初始转股价": "float",
+		"到期赎回价格(含税)": "float" 
 	}
 }

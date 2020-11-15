@@ -138,6 +138,7 @@ class AccountingDateCacheCompositor(FactorCompositor):
     """
     财报日期缓存工具
     """
+
     def __init__(self, db_interface):
         super().__init__(db_interface)
 

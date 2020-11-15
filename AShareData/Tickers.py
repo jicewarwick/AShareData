@@ -9,7 +9,7 @@ from .Factor import CompactFactor, CompactRecordFactor, IndustryFactor, OnTheRec
 from .utils import StockSelectionPolicy
 
 
-class Tickers(object):
+class TickersBase(object):
     """证券代码基类"""
 
     def __init__(self, db_interface: DBInterface) -> None:
@@ -33,62 +33,90 @@ class Tickers(object):
         return dict(zip(first_list_info.ID, first_list_info.DateTime))
 
 
-class StockTickers(Tickers):
+class DiscreteTickers(TickersBase):
+    """细类证券代码基类"""
+
+    def __init__(self, db_interface: DBInterface, asset_type: str) -> None:
+        super().__init__(db_interface)
+        self.cache = db_interface.read_table('证券代码', text_statement=f'证券类型="{asset_type}"').reset_index()
+
+
+class StockTickers(DiscreteTickers):
     """股票代码"""
 
     def __init__(self, db_interface: DBInterface) -> None:
-        super().__init__(db_interface)
-        self.cache = db_interface.read_table('证券代码', text_statement='证券类型="A股股票"').reset_index()
+        super().__init__(db_interface, 'A股股票')
 
 
-class FutureTickers(Tickers):
+class FutureTickers(DiscreteTickers):
     """期货合约代码"""
 
     def __init__(self, db_interface: DBInterface) -> None:
-        super().__init__(db_interface)
-        self.cache = db_interface.read_table('证券代码', text_statement='证券类型="期货"').reset_index()
+        super().__init__(db_interface, '期货')
 
 
-class OptionTickers(Tickers):
+class OptionTickers(DiscreteTickers):
     """期权合约代码"""
 
-    def __init__(self, db_interface: DBInterface) -> None:
-        super().__init__(db_interface)
+    def __init__(self, db_interface: DBInterface, asset_type: str) -> None:
+        super().__init__(db_interface, asset_type)
 
 
 class ETFOptionTickers(OptionTickers):
     """期权合约代码"""
 
     def __init__(self, db_interface: DBInterface) -> None:
-        super().__init__(db_interface)
-        self.cache = db_interface.read_table('证券代码', text_statement='证券类型="ETF期权"').reset_index()
+        super().__init__(db_interface, 'ETF期权')
 
 
-class IndexOptionTickers(Tickers):
+class IndexOptionTickers(DiscreteTickers):
     """指数期权合约代码"""
 
     def __init__(self, db_interface: DBInterface) -> None:
-        super().__init__(db_interface)
-        self.cache = db_interface.read_table('证券代码', text_statement='证券类型="指数期权"').reset_index()
+        super().__init__(db_interface, '指数期权')
 
 
-class ETFTickers(Tickers):
-    """ETF基金代码"""
+class FutureOptionTickers(DiscreteTickers):
+    """商品期权合约代码"""
 
     def __init__(self, db_interface: DBInterface) -> None:
+        super().__init__(db_interface, '商品期权')
+
+
+class StockETFTickers(DiscreteTickers):
+    """股票ETF基金代码"""
+
+    def __init__(self, db_interface: DBInterface) -> None:
+        super().__init__(db_interface, '股票ETF基金')
+
+
+class BondETFTickers(DiscreteTickers):
+    """债券ETF基金代码"""
+
+    def __init__(self, db_interface: DBInterface) -> None:
+        super().__init__(db_interface, '债券ETF基金')
+
+
+class ConglomerateTickers(TickersBase):
+    """聚合类证券代码基类"""
+
+    def __init__(self, db_interface: DBInterface, criteria: str) -> None:
         super().__init__(db_interface)
-        self.cache = db_interface.read_table('etf上市日期').reset_index()
+        self.cache = db_interface.read_table('证券代码', text_statement=f'证券类型 like "{criteria}"').reset_index()
 
-    def all_ticker(self) -> List[str]:
-        return sorted(self.cache.ID.tolist())
 
-    @DateUtils.dtlize_input_dates
-    def ticker(self, date: DateUtils.DateType = dt.datetime.today()) -> List[str]:
-        ticker_df = self.cache.loc[(self.cache['DateTime'] <= date) & (self.cache['DateTime'] > date), :]
-        return sorted(ticker_df.ID.tolist())
+class ETFTickers(ConglomerateTickers):
+    """ETF"""
 
-    def list_date(self) -> Dict[str, dt.datetime]:
-        return dict(zip(self.cache.ID, self.cache.DateTime))
+    def __init__(self, db_interface: DBInterface) -> None:
+        super().__init__(db_interface, '%ETF基金')
+
+
+class OptionTickers(ConglomerateTickers):
+    """期权"""
+
+    def __init__(self, db_interface: DBInterface) -> None:
+        super().__init__(db_interface, '%期权')
 
 
 class StockTickerSelector(object):
