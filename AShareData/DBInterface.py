@@ -11,7 +11,7 @@ from sqlalchemy import Boolean, Column, DateTime, extract, Float, Integer, Table
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql.expression import func
+from sqlalchemy.sql.expression import func, text
 
 from . import utils
 
@@ -309,7 +309,7 @@ class MySQLInterface(DBInterface):
                    start_date: dt.datetime = None, end_date: dt.datetime = None,
                    dates: Union[Sequence[dt.datetime], dt.datetime] = None,
                    report_period: dt.datetime = None, report_month: int = None,
-                   ids: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
+                   ids: Sequence[str] = None, text_statement: str = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
         :param table_name: 表名
@@ -350,6 +350,8 @@ class MySQLInterface(DBInterface):
             q = q.filter(t.columns['报告期'] == report_period)
         if report_month is not None:
             q = q.filter(extract('month', t.columns['报告期']) == report_month)
+        if text_statement:
+            q = q.filter(text(text_statement))
         if ids is not None:
             q = q.filter(t.columns['ID'].in_(ids))
 

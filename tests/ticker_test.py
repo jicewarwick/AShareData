@@ -12,20 +12,20 @@ class MyTestCase(unittest.TestCase):
         db_interface = MySQLInterface(engine)
         self.stock_ticker = StockTickers(db_interface)
         self.future_ticker = FutureTickers(db_interface)
-        self.option_ticker = OptionTickers(db_interface)
+        self.etf_option_ticker = ETFOptionTickers(db_interface)
         self.etf_ticker = ETFTickers(db_interface)
 
     def test_stock_ticker(self):
-        self.stock_ticker.all_ticker()
-        self.stock_ticker.ticker(dt.date(2020, 1, 1))
+        print(self.stock_ticker.all_ticker())
+        print(self.stock_ticker.ticker(dt.date(2020, 1, 1)))
 
     def test_future_ticker(self):
         print(self.future_ticker.all_ticker())
-        self.future_ticker.ticker(dt.date(2020, 1, 1))
+        print(self.future_ticker.ticker(dt.date(2020, 1, 1)))
 
-    def test_option_ticker(self):
-        self.option_ticker.all_ticker()
-        self.option_ticker.ticker(dt.date(2020, 1, 1))
+    def test_etf_option_ticker(self):
+        self.etf_option_ticker.all_ticker()
+        print(self.etf_option_ticker.ticker(dt.date(2020, 1, 1)))
 
     def test_etf_ticker(self):
         self.etf_ticker.all_ticker()
