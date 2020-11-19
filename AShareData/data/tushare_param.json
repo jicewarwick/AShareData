@@ -756,15 +756,13 @@
 			"ts_code": "ID",
 			"name": "证券名称",
 			"per_unit": "合约乘数",
-			"opt_code": "标的ID",
+			"opt_code": "期权标的",
 			"opt_type": "证券类型",
-			"call_put": "期权类型",
+			"call_put": "认购认沽",
 			"exercise_type": "行权方式",
 			"exercise_price": "行权价格",
-			"maturity_date": "到期日",
-			"list_price": "挂牌基准价",
-			"list_date": "上市时间",
-			"delist_date": "最后交易日",
+			"list_date": "上市日期",
+			"delist_date": "最后交易日期",
 			"last_edate": "最后行权日期",
 			"last_ddate": "最后交割日期",
 			"min_price_chg": "最小价格波幅"
@@ -1163,7 +1161,7 @@
 			"ts_code": "ID",
 			"name": "证券名称",
 			"management": "管理人",
-			"fund_type": "投资类型",
+			"fund_type": "证券类型",
 			"found_date": "成立日期",
 			"due_date": "到期日期",
 			"list_date": "上市时间",
@@ -1335,7 +1333,8 @@
 			"ebitda": "息税折旧摊销前利润",
 			"insurance_exp": "保险业务支出",
 			"undist_profit": "年初未分配利润",
-			"distable_profit": "可分配利润"
+			"distable_profit": "可分配利润",
+			"update_flag": "更新标识"
 		},
 		"报告类型": {
 			"1": "合并报表",
@@ -1629,7 +1628,8 @@
 			"beg_bal_cash": "现金的期初余额",
 			"end_bal_cash_equ": "现金等价物的期末余额",
 			"beg_bal_cash_equ": "现金等价物的期初余额",
-			"im_n_incr_cash_equ": "现金及现金等价物净增加额(间接法)"
+			"im_n_incr_cash_equ": "现金及现金等价物净增加额(间接法)",
+			"update_flag": "更新标识"
 		}
 	},
 	"业绩预告": {

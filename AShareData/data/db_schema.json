@@ -495,14 +495,19 @@
 	},
 	"期权合约": {
 		"ID": "varchar",
-		"期权名称": "varchar",
+		"证券名称": "str",
+		"证券类型": "varchar",
 		"期权标的": "varchar",
-		"认沽认购": "varchar",
-		"行权价": "float",
+		"认购认沽": "varchar",
+		"行权方式": "varchar",
+		"行权价格": "float",
 		"合约乘数": "float",
-		"到期月份": "varchar",
 		"上市日期": "datetime",
-		"行权日期": "datetime"
+		"到期日期": "datetime",
+		"最后行权日期": "datetime",
+		"最后交易日期": "datetime",
+		"最后交割日期": "datetime",
+		"最小价格波幅": "float"
 	},
 	"期权日行情": {
 		"DateTime": "datetime",
@@ -567,5 +572,19 @@
 		"转股截止日": "datetime",
 		"初始转股价": "float",
 		"到期赎回价格(含税)": "float" 
+	},
+	"基金列表": {
+		"ID": "varchar",
+		"证券名称": "str",
+		"管理人": "varchar",
+		"证券类型": "varchar",
+		"成立日期": "datetime",
+		"到期日期": "datetime",
+		"上市时间": "datetime",
+		"发行日期": "datetime",
+		"退市日期": "datetime",
+		"管理费": "float",
+		"托管费": "float",
+		"投资风格": "varchar"
 	}
 }
