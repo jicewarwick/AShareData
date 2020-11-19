@@ -29,8 +29,8 @@ class TushareData(DataSource):
         self._pro = ts.pro_api(tushare_token)
         self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
 
-        if self._check_db_timestamp('证券代码', dt.datetime(1990, 1, 1)) < dt.datetime.today():
-            self.update_base_info()
+        # if self._check_db_timestamp('证券代码', dt.datetime(1990, 1, 1)) < dt.datetime.today():
+        #     self.update_base_info()
 
     def update_base_info(self):
         self.update_calendar()
@@ -52,6 +52,7 @@ class TushareData(DataSource):
         # self.get_daily_hq(start_date=self._check_db_timestamp('股票日行情', dt.date(2008, 1, 1)), end_date=dt.date.today())
         # self.get_daily_hq(start_date=self._check_db_timestamp('总股本', dt.date(2008, 1, 1)), end_date=dt.date.today())
         self.get_past_names(start_date=self._check_db_timestamp('证券名称', dt.datetime(1990, 1, 1)))
+        self.update_pause_stock_info()
 
         # self.get_index_daily(self._check_db_timestamp('指数日行情', dt.date(2008, 1, 1)))
         # latest = self._check_db_timestamp('指数成分股权重', '20050101')
@@ -153,6 +154,21 @@ class TushareData(DataSource):
                     pre_dict[key] = df[col_name]
 
                 pbar.update()
+
+    def update_pause_stock_info(self):
+        table_name = '股票停牌'
+        renaming_dict = self._factor_param[table_name]['输出参数']
+        start_date = self._check_db_timestamp(table_name, dt.date(1990, 12, 10)) + dt.timedelta(days=1)
+        end_date = self.calendar.yesterday()
+
+        df = self._pro.suspend_d(start_date=DateUtils.date_type2str(start_date),
+                                 end_date=DateUtils.date_type2str(end_date),
+                                 suspend_type='S')
+        output = df.loc[pd.isna(df.suspend_timing), ['ts_code', 'trade_date']]
+        output['停牌类型'] = '停牌一天'
+        output['停牌原因'] = ''
+        output = self._standardize_df(output, renaming_dict)
+        self.db_interface.insert_df(output, table_name)
 
     # todo: TBD
     def get_financial_index(self, ticker: str, period: str) -> pd.DataFrame:

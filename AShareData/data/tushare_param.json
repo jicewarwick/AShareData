@@ -2175,5 +2175,20 @@
 			"first_conv_price": "初始转股价",
 			"maturity_put_price": "到期赎回价格(含税)"
 		}
+	},
+	"股票停牌": {
+		"输入参数": {
+			"ts_code": "ID",
+			"trade_date": "DateTime",
+			"start_date": "开始日期",
+			"end_date": "结束日期",
+			"suspend_type": "停复牌类型：S-停牌,R-复牌"
+		},
+		"输出参数": {
+			"ts_code": "ID",
+			"trade_date": "DateTime",
+			"suspend_timing": "日内停牌时间段",
+			"suspend_type": "停复牌类型：S-停牌，R-复牌"
+		}
 	}
 }
