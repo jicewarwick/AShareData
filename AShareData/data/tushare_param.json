@@ -21,14 +21,17 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"end_date": "分红年度",
+			"end_date": "报告期",
 			"ann_date": "DateTime",
 			"div_proc": "实施进度",
 			"stk_div": "每股送转",
+			"stk_bo_rate": "每股送股比例",
+			"stk_co_rate": "每股转增比例",
 			"cash_div_tax": "税前每股分红",
 			"record_date": "股权登记日",
 			"ex_date": "除权除息日",
 			"pay_date": "派息日",
+			"div_listdate": "红股上市日",
 			"imp_ann_date": "实施公告日"
 		}
 	},

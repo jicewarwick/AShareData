@@ -261,7 +261,7 @@ class WindData(DataSource):
                 data.index.names = ['DateTime', 'ID']
                 data.rename(replace_dict, axis=1, inplace=True)
                 self.db_interface.insert_df(data, table_name)
-            pbar.update()
+                pbar.update()
 
     def update_adj_factor(self):
         def data_func(ticker: str, date: DateUtils.DateType) -> pd.Series:

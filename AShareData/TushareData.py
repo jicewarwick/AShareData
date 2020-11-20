@@ -220,19 +220,50 @@ class TushareData(DataSource):
                 sleep(interval)
         logging.info('股票曾用名下载完成.')
 
-    def get_dividend(self) -> None:
+    def get_all_dividend(self) -> None:
         """ 获取上市公司分红送股信息 """
         interval = 60.0 / 100.0
         data_category = '分红送股'
         column_desc = self._factor_param[data_category]['输出参数']
-        fields = list(column_desc.keys())
 
         logging.debug(f'开始下载{data_category}.')
-        tickers = self.stock_tickers.ticker()
+        tickers = self.stock_tickers.all_ticker()
         with tqdm(tickers) as pbar:
             for stock in tickers:
                 pbar.set_description(f'下载{stock}的分红送股数据')
-                df = self._pro.dividend(ts_code=stock, fields=fields)
+                df = self._pro.dividend(ts_code=stock, fields=(list(column_desc.keys())))
+                df = self._pro.dividend(ts_code='002326.SZ', fields=(list(column_desc.keys())))
+                df = df.loc[df['div_proc'] == '实施', :]
+                # 无公布时间的权宜之计
+                df['ann_date'].where(df['ann_date'].notnull(), df['imp_ann_date'], inplace=True)
+                df.drop(['div_proc', 'imp_ann_date'], axis=1, inplace=True)
+                df.dropna(subset=['ann_date'], inplace=True)
+                df = self._standardize_df(df, column_desc)
+                df = df.drop_duplicates()
+
+                try:
+                    self.db_interface.insert_df(df, data_category)
+                except:
+                    print(f'请手动处理{stock}的分红数据')
+
+                sleep(interval)
+                pbar.update()
+
+        logging.info(f'{data_category}信息下载完成.')
+
+    def update_dividend(self) -> None:
+        """ 更新上市公司分红送股信息 """
+        interval = 60.0 / 100.0
+        data_category = '分红送股'
+        column_desc = self._factor_param[data_category]['输出参数']
+
+        db_date = self.db_interface.get_column_max(data_category, '股权登记日期')
+        dates_range = self.calendar.select_dates(db_date + dt.timedelta(days=1), self.calendar.yesterday())
+        logging.debug(f'开始下载{data_category}.')
+        with tqdm(dates_range) as pbar:
+            for date in dates_range:
+                pbar.set_description(f'下载{date}的分红送股数据')
+                df = self._pro.dividend(record_date=date, fields=(list(column_desc.keys())))
                 df = df.loc[df['div_proc'] == '实施', :]
                 # 无公布时间的权宜之计
                 df['ann_date'].where(df['ann_date'].notnull(), df['imp_ann_date'], inplace=True)

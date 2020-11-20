@@ -81,6 +81,9 @@ class DBInterface(object):
     def get_column_min(self, table_name: str, column: str):
         raise NotImplementedError()
 
+    def get_column_max(self, table_name: str, column: str):
+        raise NotImplementedError()
+
 
 def prepare_engine(config_loc: str) -> sa.engine.Engine:
     """Create sqlalchemy engine from config file"""
@@ -261,6 +264,22 @@ class MySQLInterface(DBInterface):
         session = session_maker()
         if 'DateTime' in table.columns.keys():
             q = session.query(func.min(table.c[column]))
+            return q.one()[0]
+
+    def get_column_max(self, table_name: str, column: str):
+        """
+        返回数据库表中某列的最大值
+
+        :param table_name: 表名
+        :param column: 列名
+        :return: 列的最大值
+        """
+        assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        table = self.meta.tables[table_name.lower()]
+        session_maker = sessionmaker(bind=self.engine)
+        session = session_maker()
+        if 'DateTime' in table.columns.keys():
+            q = session.query(func.max(table.c[column]))
             return q.one()[0]
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
