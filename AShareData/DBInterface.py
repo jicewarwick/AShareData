@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, DateTime, extract, Float, Integer, Table, Text, VARCHAR
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func, text
 
 from . import utils
@@ -242,13 +242,14 @@ class MySQLInterface(DBInterface):
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name.lower()]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
         if 'DateTime' in table.columns.keys():
+            session = Session(self.engine)
             q = session.query(func.max(table.c.DateTime))
             if column_condition:
                 q = q.filter(table.columns[column_condition[0]] == column_condition[1])
-            return q.one()[0]
+            ret = q.one()[0]
+            session.close()
+            return ret
 
     def get_column_min(self, table_name: str, column: str):
         """
@@ -260,11 +261,12 @@ class MySQLInterface(DBInterface):
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name.lower()]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
         if 'DateTime' in table.columns.keys():
+            session = Session(self.engine)
             q = session.query(func.min(table.c[column]))
-            return q.one()[0]
+            ret = q.one()[0]
+            session.close()
+            return ret
 
     def get_column_max(self, table_name: str, column: str):
         """
@@ -276,11 +278,12 @@ class MySQLInterface(DBInterface):
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name.lower()]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
         if 'DateTime' in table.columns.keys():
+            session = Session(self.engine)
             q = session.query(func.max(table.c[column]))
-            return q.one()[0]
+            ret = q.one()[0]
+            session.close()
+            return ret
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
         """
@@ -301,11 +304,11 @@ class MySQLInterface(DBInterface):
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name.lower()]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
         if column_name in table.columns.keys():
             logging.debug(f'{table_name} 表中找到 {column_name} 列')
+            session = Session(self.engine)
             tmp = session.query(table.columns[column_name]).distinct().all()
+            session.close()
             return [it[0] for it in tmp]
 
     # todo: TBD
@@ -315,8 +318,7 @@ class MySQLInterface(DBInterface):
         metadata.reflect()
         assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = metadata.tables[table_name]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
+        session = Session(self.engine)
         data = self.read_table(table_name).unstack()
 
     @staticmethod
@@ -344,8 +346,7 @@ class MySQLInterface(DBInterface):
         table_name = table_name.lower()
         index_col = self.get_table_primary_keys(table_name)
 
-        Session = sessionmaker(bind=self.engine)
-        session = Session()
+        session = Session(self.engine)
         t = self.meta.tables[table_name]
         q = session.query()
         if columns:
@@ -375,6 +376,7 @@ class MySQLInterface(DBInterface):
             q = q.filter(t.columns['ID'].in_(ids))
 
         ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)
+        session.close()
 
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]

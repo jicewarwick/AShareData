@@ -27,6 +27,10 @@ class MyTestCase(unittest.TestCase):
     def test_calendar(self):
         self.db_interface.read_table('交易日历')
 
+    def test_db_timestamp(self):
+        table_name = '合并资产负债表'
+        print(self.db_interface.get_latest_timestamp(table_name))
+
 
 if __name__ == '__main__':
     unittest.main()
