@@ -158,7 +158,7 @@ class AccountingDateCacheCompositor(FactorCompositor):
 
         all_ticker = self.db_interface.get_all_id(table_name)
         with tqdm(all_ticker) as pbar:
-            for ticker in all_ticker[:2000]:
+            for ticker in all_ticker:
                 if ticker not in cache['DateTime'].keys():
                     cache_date = dt.datetime(1900, 1, 1)
                 else:

@@ -1,12 +1,9 @@
 import datetime as dt
-import logging
 import unittest
 
 from AShareData import constants
 from AShareData.DBInterface import MySQLInterface, prepare_engine
 from AShareData.WindData import WindData, WindWrapper
-
-logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', level=logging.DEBUG)
 
 
 class MyTestCase(unittest.TestCase):

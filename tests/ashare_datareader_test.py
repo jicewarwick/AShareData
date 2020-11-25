@@ -1,11 +1,9 @@
-import logging
 import unittest
 import datetime as dt
+import unittest
 
 from AShareData.AShareDataReader import AShareDataReader
 from AShareData.DBInterface import MySQLInterface, prepare_engine
-
-logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', level=logging.DEBUG)
 
 
 class MyTestCase(unittest.TestCase):

@@ -25,7 +25,7 @@ class WebDataCrawler(DataSource):
     def __init__(self, db_interface: DBInterface, db_schema_loc: str = None, init: bool = False) -> None:
         super().__init__(db_interface)
         if init:
-            logging.debug('检查数据库完整性.')
+            logging.getLogger(__name__).debug('检查数据库完整性.')
             self._db_parameters = utils.load_param('db_schema.json', db_schema_loc)
             for table_name, type_info in self._db_parameters.items():
                 self.db_interface.create_table(table_name, type_info)

@@ -21,14 +21,17 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"end_date": "分红年度",
+			"end_date": "报告期",
 			"ann_date": "DateTime",
 			"div_proc": "实施进度",
 			"stk_div": "每股送转",
+			"stk_bo_rate": "每股送股比例",
+			"stk_co_rate": "每股转增比例",
 			"cash_div_tax": "税前每股分红",
 			"record_date": "股权登记日",
 			"ex_date": "除权除息日",
 			"pay_date": "派息日",
+			"div_listdate": "红股上市日",
 			"imp_ann_date": "实施公告日"
 		}
 	},
@@ -252,14 +255,21 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"ann_date": "公告日期",
-			"end_date": "截止日期",
+			"end_date": "DateTime",
 			"unit_nav": "单位净值",
-			"accum_nav": "累计净值",
-			"accum_div": "累计分红",
 			"net_asset": "资产净值",
-			"total_netasset": "合计资产净值",
-			"adj_nav": "复权单位净值"
+			"total_netasset": "合计资产净值"
+		}
+	},
+	"基金规模数据": {
+		"输入参数": {
+			"ts_code": "TS基金代码",
+			"end_date": "净值日期"
+		},
+		"输出参数": {
+			"ts_code": "ID",
+			"trade_date": "DateTime",
+			"fd_share": "基金份额"
 		}
 	},
 	"公募基金分红": {
@@ -271,22 +281,10 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"ann_date": "公告日期",
-			"imp_anndate": "分红实施公告日",
-			"base_date": "分配收益基准日",
-			"div_proc": "方案进度",
-			"record_date": "权益登记日",
-			"ex_date": "除息日",
-			"pay_date": "派息日",
-			"earpay_date": "收益支付日",
-			"net_ex_date": "净值除权日",
-			"div_cash": "每股派息",
-			"base_unit": "基准基金份额(万份)",
-			"ear_distr": "可分配收益",
-			"ear_amount": "收益分配金额",
-			"account_date": "红利再投资到账日",
-			"base_year": "份额基准年度"
-		}
+			"record_date": "DateTime",
+			"div_cash": "每股派息"
+		},
+		"每分钟限速": 60
 	},
 	"公募基金持仓数据": {
 		"输入参数": {
@@ -365,7 +363,7 @@
 			"out_date": "剔除日期"
 		}
 	},
-	"场内基金日线行情": {
+	"场内基金日行情": {
 		"输入参数": {
 			"ts_code": "基金代码（二选一）",
 			"trade_date": "DateTime（二选一）",
@@ -379,12 +377,10 @@
 			"high": "最高价",
 			"low": "最低价",
 			"close": "收盘价",
-			"pre_close": "昨收盘价",
-			"change": "涨跌额",
-			"pct_chg": "涨跌幅(%)",
-			"vol": "成交量(手)",
-			"amount": "成交额(千元)"
-		}
+			"vol": "成交量",
+			"amount": "成交额"
+		},
+		"每分钟限速": 250
 	},
 	"大盘指数每日指标": {
 		"输入参数": {
@@ -756,15 +752,13 @@
 			"ts_code": "ID",
 			"name": "证券名称",
 			"per_unit": "合约乘数",
-			"opt_code": "标的ID",
+			"opt_code": "期权标的",
 			"opt_type": "证券类型",
-			"call_put": "期权类型",
+			"call_put": "认购认沽",
 			"exercise_type": "行权方式",
 			"exercise_price": "行权价格",
-			"maturity_date": "到期日",
-			"list_price": "挂牌基准价",
-			"list_date": "上市时间",
-			"delist_date": "最后交易日",
+			"list_date": "上市日期",
+			"delist_date": "最后交易日期",
 			"last_edate": "最后行权日期",
 			"last_ddate": "最后交割日期",
 			"min_price_chg": "最小价格波幅"
@@ -1163,7 +1157,7 @@
 			"ts_code": "ID",
 			"name": "证券名称",
 			"management": "管理人",
-			"fund_type": "投资类型",
+			"fund_type": "证券类型",
 			"found_date": "成立日期",
 			"due_date": "到期日期",
 			"list_date": "上市时间",
@@ -1335,7 +1329,8 @@
 			"ebitda": "息税折旧摊销前利润",
 			"insurance_exp": "保险业务支出",
 			"undist_profit": "年初未分配利润",
-			"distable_profit": "可分配利润"
+			"distable_profit": "可分配利润",
+			"update_flag": "更新标识"
 		},
 		"报告类型": {
 			"1": "合并报表",
@@ -1629,7 +1624,8 @@
 			"beg_bal_cash": "现金的期初余额",
 			"end_bal_cash_equ": "现金等价物的期末余额",
 			"beg_bal_cash_equ": "现金等价物的期初余额",
-			"im_n_incr_cash_equ": "现金及现金等价物净增加额(间接法)"
+			"im_n_incr_cash_equ": "现金及现金等价物净增加额(间接法)",
+			"update_flag": "更新标识"
 		}
 	},
 	"业绩预告": {
@@ -2174,6 +2170,21 @@
 			"conv_end_date": "转股截止日",
 			"first_conv_price": "初始转股价",
 			"maturity_put_price": "到期赎回价格(含税)"
+		}
+	},
+	"股票停牌": {
+		"输入参数": {
+			"ts_code": "ID",
+			"trade_date": "DateTime",
+			"start_date": "开始日期",
+			"end_date": "结束日期",
+			"suspend_type": "停复牌类型：S-停牌,R-复牌"
+		},
+		"输出参数": {
+			"ts_code": "ID",
+			"trade_date": "DateTime",
+			"suspend_timing": "日内停牌时间段",
+			"suspend_type": "停复牌类型：S-停牌，R-复牌"
 		}
 	}
 }

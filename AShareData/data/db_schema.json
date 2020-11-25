@@ -59,12 +59,16 @@
 	"分红送股": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"分红年度": "datetime",
+		"报告期": "datetime",
+		"每股送股比例": "float",
+		"每股转增比例": "float",
 		"每股送转": "float",
 		"税前每股分红": "float",
 		"股权登记日": "datetime",
 		"除权除息日": "datetime",
-		"派息日": "datetime"
+		"派息日": "datetime",
+		"红股上市日": "datetime",
+		"实施公告日": "datetime"
 	},
 	"股票日行情": {
 		"DateTime": "datetime",
@@ -495,14 +499,19 @@
 	},
 	"期权合约": {
 		"ID": "varchar",
-		"期权名称": "varchar",
+		"证券名称": "str",
+		"证券类型": "varchar",
 		"期权标的": "varchar",
-		"认沽认购": "varchar",
-		"行权价": "float",
+		"认购认沽": "varchar",
+		"行权方式": "varchar",
+		"行权价格": "float",
 		"合约乘数": "float",
-		"到期月份": "varchar",
 		"上市日期": "datetime",
-		"行权日期": "datetime"
+		"到期日期": "datetime",
+		"最后行权日期": "datetime",
+		"最后交易日期": "datetime",
+		"最后交割日期": "datetime",
+		"最小价格波幅": "float"
 	},
 	"期权日行情": {
 		"DateTime": "datetime",
@@ -529,8 +538,8 @@
 		"收盘价": "float",
 		"成交量": "float",
 		"成交额": "double",
-		"单位净值": "float",
-		"基金份额": "double"
+		"基金份额": "double",
+		"单位净值": "float"
 	},
 	"ETF上市日期": {
 		"DateTime": "datetime",
@@ -567,5 +576,35 @@
 		"转股截止日": "datetime",
 		"初始转股价": "float",
 		"到期赎回价格(含税)": "float"
+	},
+	"基金列表": {
+		"ID": "varchar",
+		"证券名称": "str",
+		"管理人": "varchar",
+		"证券类型": "varchar",
+		"成立日期": "datetime",
+		"到期日期": "datetime",
+		"上市时间": "datetime",
+		"发行日期": "datetime",
+		"退市日期": "datetime",
+		"管理费": "float",
+		"托管费": "float",
+		"投资风格": "varchar"
+	},
+	"场外基金净值": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"单位净值": "float"
+	},
+	"场外基金规模": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"资产净值": "double",
+		"合计资产净值": "double"
+	},
+	"公募基金分红": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"每股派息": "float"
 	}
 }

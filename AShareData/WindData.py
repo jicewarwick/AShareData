@@ -3,18 +3,18 @@ import logging
 import re
 import sys
 import tempfile
-from cached_property import cached_property
 from typing import Dict, List, Sequence, Union
 
 import numpy as np
 import pandas as pd
 import WindPy
+from cached_property import cached_property
 from tqdm import tqdm
 
-from . import constants, utils, DateUtils
+from . import constants, DateUtils, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Tickers import ETFTickers, FutureTickers, OptionTickers, StockTickers
+from .Tickers import ETFTickers, FutureTickers, OptionTickers, StockTickers, IndexOptionTickers
 
 
 class WindWrapper(object):
@@ -33,7 +33,7 @@ class WindWrapper(object):
                 self._w = WindPy.w
                 self._w.start()
             except:
-                logging.error('Wind API fail to start')
+                logging.getLogger(__name__).error('Wind API fail to start')
             finally:
                 sys.stdout = out
                 sys.stderr = out2
@@ -151,14 +151,6 @@ class WindWrapper(object):
 
 class WindData(DataSource):
     """Wind 数据源"""
-    _stock_trading_time_cut = [(dt.timedelta(hours=9, minutes=30), dt.timedelta(hours=10)),
-                               (dt.timedelta(hours=10, minutes=1), dt.timedelta(hours=10, minutes=30)),
-                               (dt.timedelta(hours=10, minutes=31), dt.timedelta(hours=11)),
-                               (dt.timedelta(hours=11, minutes=1), dt.timedelta(hours=11, minutes=30)),
-                               (dt.timedelta(hours=13), dt.timedelta(hours=13, minutes=30)),
-                               (dt.timedelta(hours=13, minutes=31), dt.timedelta(hours=14)),
-                               (dt.timedelta(hours=14, minutes=1), dt.timedelta(hours=14, minutes=30)),
-                               (dt.timedelta(hours=14, minutes=31), dt.timedelta(hours=15))]
 
     def __init__(self, db_interface: DBInterface, param_json_loc: str = None):
         super().__init__(db_interface)
@@ -180,31 +172,37 @@ class WindData(DataSource):
         return OptionTickers(self.db_interface)
 
     @cached_property
+    def stock_index_option_list(self) -> IndexOptionTickers:
+        return IndexOptionTickers(self.db_interface)
+
+    @cached_property
     def etf_list(self):
         return ETFTickers(self.db_interface)
 
     def update_routine(self):
         # stock
-        self.update_stock_daily_data()
-        self.update_adj_factor()
+        logging.getLogger(__name__).info('Downloading data from Wind')
+        # self.update_stock_daily_data()
+        # self.update_adj_factor()
         self.update_industry()
-        self.update_pause_stock_info()
-        self.update_stock_units()
+        # self.update_pause_stock_info()
+        # self.update_stock_units()
 
         # future
-        self.update_future_contracts_list()
-        self.update_future_daily_data()
+        # self.update_future_contracts_list()
+        # self.update_future_daily_data()
 
         # option
-        self.update_stock_option_list()
+        # self.update_stock_option_list()
         self.update_stock_option_daily_data()
 
         # index
-        self.update_target_stock_index_daily()
+        # self.update_target_stock_index_daily()
 
         # etf
-        self.update_etf_list()
-        self.update_etf_daily()
+        # self.update_etf_list()
+        # self.update_etf_daily()
+        logging.getLogger(__name__).info('Wind data acquired')
         return
 
     #######################################
@@ -247,54 +245,29 @@ class WindData(DataSource):
         start_date = self._check_db_timestamp('股票日行情', dt.date(1990, 12, 10))
         self.get_stock_daily_data(start_date=start_date)
 
-    def _get_stock_minutes_data(self, start_time: dt.datetime, end_time: dt.datetime) -> None:
-        table_name = '股票分钟行情'
-        replace_dict = self._factor_param[table_name]
-
-        for section in utils.chunk_list(self.stock_list.ticker(), 80):
-            data = self.w.wsi(section, "open,high,low,close,volume,amt", start_time, end_time, "").dropna()
-            data.set_index('windcode', append=True, inplace=True)
-            data.index.names = ['DateTime', 'ID']
-            data.rename(replace_dict, axis=1, inplace=True)
-            self.db_interface.insert_df(data, table_name)
-
-        logging.debug(f'{start_time} - {end_time} 的分钟数据下载完成')
-
-    def get_stock_minutes_data(self, query_date: DateUtils.DateType, start_time: dt.timedelta = None) -> None:
-        """从``query_date``的``start_time``开始获取股票分钟数据"""
-        query_date = DateUtils.date_type2datetime(query_date)
-        assert self.calendar.is_trading_date(query_date.date()), f'{query_date} 非交易日!'
-
-        logging.info(f'开始下载 {DateUtils.date_type2str(query_date, "-")} 的分钟数据')
-        for start_delta, end_delta in self._stock_trading_time_cut:
-            if start_time is not None:
-                if start_time > start_delta:
-                    continue
-            self._get_stock_minutes_data(query_date + start_delta, query_date + end_delta)
-
-        logging.info(f'{DateUtils.date_type2str(query_date, "-")} 分钟数据下载完成')
-
     def update_minutes_data(self) -> None:
         """股票分钟行情更新脚本"""
         table_name = '股票分钟行情'
-        latest = self.db_interface.get_latest_timestamp(table_name)
-        if latest is None:
-            pass
-        elif latest.hour != 15:
-            self.get_stock_minutes_data(latest.date(), latest - dt.datetime.combine(latest.date(), dt.time(0, 0)))
-
+        replace_dict = self._factor_param[table_name]
+        latest = self._check_db_timestamp(table_name, dt.datetime.today() - dt.timedelta(days=365 * 3))
+        latest = latest + dt.timedelta(days=1)
         pre_date = self.calendar.offset(dt.date.today(), -1)
-        while True:
-            latest = self.calendar.offset(latest.date(), 1)
-            if latest >= pre_date:
-                break
-            try:
-                self.get_stock_minutes_data(latest)
-            except ValueError as e:
-                latest = self.db_interface.get_latest_timestamp(table_name)
-                logging.info(f'股票分钟数据已更新至 {latest}')
-                print(e)
-                break
+        date_range = self.calendar.select_dates(latest, pre_date)
+
+        with tqdm(date_range) as pbar:
+            for date in date_range:
+                start_time = date + dt.timedelta(hours=8)
+                end_time = date + dt.timedelta(hours=16)
+                storage = []
+                for section in utils.chunk_list(self.stock_list.ticker(date), 100):
+                    partial_data = self.w.wsi(section, "open,high,low,close,volume,amt", start_time, end_time, "")
+                    storage.append(partial_data.dropna())
+                data = pd.concat(storage)
+                data.set_index('windcode', append=True, inplace=True)
+                data.index.names = ['DateTime', 'ID']
+                data.rename(replace_dict, axis=1, inplace=True)
+                self.db_interface.insert_df(data, table_name)
+                pbar.update()
 
     def update_adj_factor(self):
         def data_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
@@ -471,7 +444,7 @@ class WindData(DataSource):
         else:
             start_date = max(start_date)
 
-        logging.info(f'更新自{start_date.strftime("%Y-%m-%d")}以来的期货品种.')
+        logging.getLogger(__name__).info(f'更新自{start_date.strftime("%Y-%m-%d")}以来的期货品种.')
 
         symbols_table_name = '期货品种'
         symbols_table = self.db_interface.read_table(symbols_table_name)
@@ -488,8 +461,6 @@ class WindData(DataSource):
     def update_future_daily_data(self):
         contract_daily_table_name = '期货日行情'
         start_date = self.db_interface.get_latest_timestamp(contract_daily_table_name)
-        if start_date is None:
-            start_date = self.db_interface.get_column_min('期货合约', 'DateTime')
         end_date = self.calendar.yesterday()
         dates = self.calendar.select_dates(start_date, end_date)
         if len(dates) <= 1:
@@ -522,7 +493,7 @@ class WindData(DataSource):
                        '000300.SH': 'cffex'}
         exchange_dict = {'sse': 'SH', 'szse': 'SZ', 'cffex': 'CFE'}
         fields = "wind_code,sec_name,option_mark_code,call_or_put,exercise_price,contract_unit,limit_month,listed_date,exercise_date"
-        logging.info('更新期权合约.')
+        logging.getLogger(__name__).info('更新期权合约.')
         for underlying, exchange in option_dict.items():
             data = self.w.wset("optioncontractbasicinfo", exchange=exchange, windcode=underlying, status='all',
                                startdate=start_date.strftime('%Y-%m-%d'), enddate=end_date.strftime('%Y-%m-%d'),
@@ -551,7 +522,7 @@ class WindData(DataSource):
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{contract_daily_table_name}')
-                data = self.w.wss(self.option_list.ticker(date),
+                data = self.w.wss(self.stock_index_option_list.ticker(date),
                                   "high,open,low,close,volume,amt,oi,delta,gamma,vega,theta,rho",
                                   date=date, priceAdj='U', cycle='D')
                 data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)
