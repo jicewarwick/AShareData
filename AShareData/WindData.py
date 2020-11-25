@@ -14,7 +14,7 @@ from tqdm import tqdm
 from . import constants, DateUtils, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Tickers import ETFTickers, FutureTickers, OptionTickers, StockTickers
+from .Tickers import ETFTickers, FutureTickers, OptionTickers, StockTickers, IndexOptionTickers
 
 
 class WindWrapper(object):
@@ -33,7 +33,7 @@ class WindWrapper(object):
                 self._w = WindPy.w
                 self._w.start()
             except:
-                logging.error('Wind API fail to start')
+                logging.getLogger(__name__).error('Wind API fail to start')
             finally:
                 sys.stdout = out
                 sys.stderr = out2
@@ -172,31 +172,37 @@ class WindData(DataSource):
         return OptionTickers(self.db_interface)
 
     @cached_property
+    def stock_index_option_list(self) -> IndexOptionTickers:
+        return IndexOptionTickers(self.db_interface)
+
+    @cached_property
     def etf_list(self):
         return ETFTickers(self.db_interface)
 
     def update_routine(self):
         # stock
-        self.update_stock_daily_data()
-        self.update_adj_factor()
+        logging.getLogger(__name__).info('Downloading data from Wind')
+        # self.update_stock_daily_data()
+        # self.update_adj_factor()
         self.update_industry()
-        self.update_pause_stock_info()
-        self.update_stock_units()
+        # self.update_pause_stock_info()
+        # self.update_stock_units()
 
         # future
-        self.update_future_contracts_list()
-        self.update_future_daily_data()
+        # self.update_future_contracts_list()
+        # self.update_future_daily_data()
 
         # option
-        self.update_stock_option_list()
+        # self.update_stock_option_list()
         self.update_stock_option_daily_data()
 
         # index
-        self.update_target_stock_index_daily()
+        # self.update_target_stock_index_daily()
 
         # etf
-        self.update_etf_list()
-        self.update_etf_daily()
+        # self.update_etf_list()
+        # self.update_etf_daily()
+        logging.getLogger(__name__).info('Wind data acquired')
         return
 
     #######################################
@@ -438,7 +444,7 @@ class WindData(DataSource):
         else:
             start_date = max(start_date)
 
-        logging.info(f'更新自{start_date.strftime("%Y-%m-%d")}以来的期货品种.')
+        logging.getLogger(__name__).info(f'更新自{start_date.strftime("%Y-%m-%d")}以来的期货品种.')
 
         symbols_table_name = '期货品种'
         symbols_table = self.db_interface.read_table(symbols_table_name)
@@ -455,8 +461,6 @@ class WindData(DataSource):
     def update_future_daily_data(self):
         contract_daily_table_name = '期货日行情'
         start_date = self.db_interface.get_latest_timestamp(contract_daily_table_name)
-        if start_date is None:
-            start_date = self.db_interface.get_column_min('期货合约', 'DateTime')
         end_date = self.calendar.yesterday()
         dates = self.calendar.select_dates(start_date, end_date)
         if len(dates) <= 1:
@@ -489,7 +493,7 @@ class WindData(DataSource):
                        '000300.SH': 'cffex'}
         exchange_dict = {'sse': 'SH', 'szse': 'SZ', 'cffex': 'CFE'}
         fields = "wind_code,sec_name,option_mark_code,call_or_put,exercise_price,contract_unit,limit_month,listed_date,exercise_date"
-        logging.info('更新期权合约.')
+        logging.getLogger(__name__).info('更新期权合约.')
         for underlying, exchange in option_dict.items():
             data = self.w.wset("optioncontractbasicinfo", exchange=exchange, windcode=underlying, status='all',
                                startdate=start_date.strftime('%Y-%m-%d'), enddate=end_date.strftime('%Y-%m-%d'),
@@ -518,7 +522,7 @@ class WindData(DataSource):
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{contract_daily_table_name}')
-                data = self.w.wss(self.option_list.ticker(date),
+                data = self.w.wss(self.stock_index_option_list.ticker(date),
                                   "high,open,low,close,volume,amt,oi,delta,gamma,vega,theta,rho",
                                   date=date, priceAdj='U', cycle='D')
                 data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)

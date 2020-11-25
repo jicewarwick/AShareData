@@ -8,10 +8,17 @@ from .FactorCompositor import AccountingDateCacheCompositor, ConstLimitStockFact
 from .TushareData import TushareData
 from .WebData import WebDataCrawler
 
+ch = logging.StreamHandler()
+ch.setFormatter(logging.Formatter('%(asctime)s %(levelname)8s %(name)s | %(message)s'))
+
+logger = logging.getLogger(__name__)
+logger.addHandler(ch)
+logger.setLevel(logging.INFO)
+
 wind_spec = importlib.util.find_spec("WindPy")
 if wind_spec:
     from .WindData import WindData
 
-    logging.info('WindPy Found')
+    logging.getLogger(__name__).info('WindPy Found')
 else:
-    logging.debug('WindPy not found!!')
+    logging.getLogger(__name__).debug('WindPy not found!!')
