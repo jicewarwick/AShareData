@@ -255,14 +255,21 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"ann_date": "公告日期",
-			"end_date": "截止日期",
+			"end_date": "DateTime",
 			"unit_nav": "单位净值",
-			"accum_nav": "累计净值",
-			"accum_div": "累计分红",
 			"net_asset": "资产净值",
-			"total_netasset": "合计资产净值",
-			"adj_nav": "复权单位净值"
+			"total_netasset": "合计资产净值"
+		}
+	},
+	"基金规模数据": {
+		"输入参数": {
+			"ts_code": "TS基金代码",
+			"end_date": "净值日期"
+		},
+		"输出参数": {
+			"ts_code": "ID",
+			"trade_date": "DateTime",
+			"fd_share": "基金份额"
 		}
 	},
 	"公募基金分红": {
@@ -274,22 +281,10 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"ann_date": "公告日期",
-			"imp_anndate": "分红实施公告日",
-			"base_date": "分配收益基准日",
-			"div_proc": "方案进度",
-			"record_date": "权益登记日",
-			"ex_date": "除息日",
-			"pay_date": "派息日",
-			"earpay_date": "收益支付日",
-			"net_ex_date": "净值除权日",
-			"div_cash": "每股派息",
-			"base_unit": "基准基金份额(万份)",
-			"ear_distr": "可分配收益",
-			"ear_amount": "收益分配金额",
-			"account_date": "红利再投资到账日",
-			"base_year": "份额基准年度"
-		}
+			"record_date": "DateTime",
+			"div_cash": "每股派息"
+		},
+		"每分钟限速": 60
 	},
 	"公募基金持仓数据": {
 		"输入参数": {
@@ -368,7 +363,7 @@
 			"out_date": "剔除日期"
 		}
 	},
-	"场内基金日线行情": {
+	"场内基金日行情": {
 		"输入参数": {
 			"ts_code": "基金代码（二选一）",
 			"trade_date": "DateTime（二选一）",
@@ -382,12 +377,10 @@
 			"high": "最高价",
 			"low": "最低价",
 			"close": "收盘价",
-			"pre_close": "昨收盘价",
-			"change": "涨跌额",
-			"pct_chg": "涨跌幅(%)",
-			"vol": "成交量(手)",
-			"amount": "成交额(千元)"
-		}
+			"vol": "成交量",
+			"amount": "成交额"
+		},
+		"每分钟限速": 250
 	},
 	"大盘指数每日指标": {
 		"输入参数": {

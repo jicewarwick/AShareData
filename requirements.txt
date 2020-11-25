@@ -9,3 +9,4 @@ numpy
 statsmodels
 setuptools
 sortedcontainers
+ratelimiter

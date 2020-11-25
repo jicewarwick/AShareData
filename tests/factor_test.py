@@ -2,6 +2,7 @@ import unittest
 
 from AShareData.DBInterface import MySQLInterface, prepare_engine
 from AShareData.Factor import *
+from AShareData.Tickers import *
 
 
 class MyTestCase(unittest.TestCase):
@@ -11,7 +12,8 @@ class MyTestCase(unittest.TestCase):
         self.db_interface = MySQLInterface(engine)
         self.start_date = dt.datetime(2005, 1, 1)
         self.end_date = dt.datetime(2010, 1, 1)
-        self.ids = ['000001.SZ']
+        # self.ids = ['000001.SZ']
+        self.ids = StockTickers(self.db_interface).ticker(dt.date(2005, 1, 1))
 
     def test_compact_record_factor(self):
         compact_factor = CompactFactor(self.db_interface, '证券名称')
@@ -42,7 +44,8 @@ class MyTestCase(unittest.TestCase):
 
     def test_yearly_report_factor(self):
         f = YearlyReportAccountingFactor(self.db_interface, '未分配利润')
-        a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
+        ids = list(set(self.ids) - set(['600087.SH', '600788.SH', '600722.SH']))
+        a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=ids)
         print(a)
 
     def test_qoq_report_factor(self):

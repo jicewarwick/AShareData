@@ -538,8 +538,8 @@
 		"收盘价": "float",
 		"成交量": "float",
 		"成交额": "double",
-		"单位净值": "float",
-		"基金份额": "double"
+		"基金份额": "double",
+		"单位净值": "float"
 	},
 	"ETF上市日期": {
 		"DateTime": "datetime",
@@ -590,5 +590,21 @@
 		"管理费": "float",
 		"托管费": "float",
 		"投资风格": "varchar"
+	},
+	"场外基金净值": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"单位净值": "float"
+	},
+	"场外基金规模": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"资产净值": "double",
+		"合计资产净值": "double"
+	},
+	"公募基金分红": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"每股派息": "float"
 	}
 }
