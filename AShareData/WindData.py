@@ -1,8 +1,6 @@
 import datetime as dt
 import logging
 import re
-import sys
-import tempfile
 from typing import Dict, List, Sequence, Union
 
 import numpy as np
@@ -14,7 +12,7 @@ from tqdm import tqdm
 from . import constants, DateUtils, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Tickers import ETFTickers, FutureTickers, OptionTickers, StockTickers, IndexOptionTickers
+from .Tickers import ETFTickers, FutureTickers, IndexOptionTickers, OptionTickers, StockTickers
 
 
 class WindWrapper(object):
@@ -23,20 +21,16 @@ class WindWrapper(object):
     def __init__(self):
         self._w = None
 
+    def __enter__(self):
+        self.connect()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+
     def connect(self):
-        with tempfile.TemporaryFile(mode='w') as log_file:
-            out = sys.stdout
-            out2 = sys.stderr
-            sys.stdout = log_file
-            sys.stderr = log_file
-            try:
-                self._w = WindPy.w
-                self._w.start()
-            except:
-                logging.getLogger(__name__).error('Wind API fail to start')
-            finally:
-                sys.stdout = out
-                sys.stderr = out2
+        with utils.NullPrinter():
+            self._w = WindPy.w
+            self._w.start()
 
     def disconnect(self):
         if self._w:
@@ -157,7 +151,12 @@ class WindData(DataSource):
 
         self._factor_param = utils.load_param('wind_param.json', param_json_loc)
         self.w = WindWrapper()
+
+    def __enter__(self):
         self.w.connect()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.w.disconnect()
 
     @cached_property
     def stock_list(self) -> StockTickers:

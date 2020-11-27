@@ -1,11 +1,32 @@
 import datetime as dt
 import json
+import sys
+import tempfile
 from collections import namedtuple
 from dataclasses import dataclass
 from importlib.resources import open_text
 from typing import Any, Dict
 
 from . import constants
+
+
+class NullPrinter(object):
+    def __init__(self):
+        self._stdout = None
+        self._std_error = None
+        self._temp_file = None
+
+    def __enter__(self):
+        self._stdout = sys.stdout
+        self._std_error = sys.stderr
+        self._temp_file = tempfile.TemporaryFile(mode='w')
+        sys.stdout = self._temp_file
+        sys.stderr = self._temp_file
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._temp_file.close()
+        sys.stdout = self._stdout
+        sys.stderr = self._std_error
 
 
 def load_param(default_loc: str, param_json_loc: str = None) -> Dict[str, Any]:
