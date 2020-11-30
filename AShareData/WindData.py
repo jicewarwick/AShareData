@@ -12,7 +12,7 @@ from tqdm import tqdm
 from . import constants, DateUtils, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Tickers import ETFTickers, FutureTickers, IndexOptionTickers, OptionTickers, StockTickers
+from .Tickers import ConvertibleBondTickers, ETFTickers, FutureTickers, IndexOptionTickers, OptionTickers, StockTickers
 
 
 class WindWrapper(object):
@@ -23,6 +23,7 @@ class WindWrapper(object):
 
     def __enter__(self):
         self.connect()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.disconnect()
@@ -154,6 +155,7 @@ class WindData(DataSource):
 
     def __enter__(self):
         self.w.connect()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.w.disconnect()
@@ -177,6 +179,10 @@ class WindData(DataSource):
     @cached_property
     def etf_list(self):
         return ETFTickers(self.db_interface)
+
+    @cached_property
+    def convertible_bond_list(self):
+        return ConvertibleBondTickers(self.db_interface)
 
     def update_routine(self):
         # stock
@@ -211,7 +217,7 @@ class WindData(DataSource):
                              end_date: DateUtils.DateType = dt.datetime.now()) -> None:
         """更新每日行情, 写入数据库, 不返回
 
-        行情信息包括: 开高低收, 量额, 复权因子, 股本
+        行情信息包括: 开高低收量额
 
         :param trade_date: 交易日期
         :param start_date: 开始日期
@@ -238,7 +244,7 @@ class WindData(DataSource):
 
                 self.db_interface.update_df(price_df, '股票日行情')
 
-                pbar.update(1)
+                pbar.update()
 
     def update_stock_daily_data(self):
         start_date = self._check_db_timestamp('股票日行情', dt.date(1990, 12, 10))
@@ -255,6 +261,7 @@ class WindData(DataSource):
 
         with tqdm(date_range) as pbar:
             for date in date_range:
+                pbar.set_description(f'更新{date}的{table_name}')
                 start_time = date + dt.timedelta(hours=8)
                 end_time = date + dt.timedelta(hours=16)
                 storage = []
@@ -380,6 +387,30 @@ class WindData(DataSource):
                 ind2 = (data['停牌原因'].str.startswith('盘中'))
                 data = data.loc[(~ind1) & (~ind2), :]
                 self.db_interface.insert_df(data, table_name)
+                pbar.update()
+
+    #######################################
+    # convertible bond funcs
+    #######################################
+    def update_convertible_bond_daily_data(self):
+        table_name = '可转债日行情'
+        renaming_dict = self._factor_param['股票日线行情']
+        start_date = self._check_db_timestamp(table_name, dt.datetime(1993, 2, 9))
+        end_date = self.calendar.yesterday()
+        dates = self.calendar.select_dates(start_date, end_date)
+        if len(dates) <= 1:
+            return
+        dates = dates[1:]
+
+        with tqdm(dates) as pbar:
+            for date in dates:
+                pbar.set_description(f'下载{date}的{table_name}')
+                tickers = self.convertible_bond_list.ticker(date)
+                if tickers:
+                    data = self.w.wss(tickers, "open, high, low, close, volume, amt",
+                                      date=date, options='priceAdj=U;cycle=D')
+                    data.rename(renaming_dict, axis=1, inplace=True)
+                    self.db_interface.insert_df(data, table_name)
                 pbar.update()
 
     #######################################

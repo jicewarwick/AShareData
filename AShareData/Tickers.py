@@ -48,6 +48,13 @@ class StockTickers(DiscreteTickers):
         super().__init__(db_interface, 'A股股票')
 
 
+class ConvertibleBondTickers(DiscreteTickers):
+    """可转债代码"""
+
+    def __init__(self, db_interface: DBInterface) -> None:
+        super().__init__(db_interface, '可转债')
+
+
 class FutureTickers(DiscreteTickers):
     """期货合约代码"""
 
