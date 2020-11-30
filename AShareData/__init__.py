@@ -18,7 +18,13 @@ logger.setLevel(logging.INFO)
 wind_spec = importlib.util.find_spec("WindPy")
 if wind_spec:
     from .WindData import WindData
-
-    logging.getLogger(__name__).info('WindPy Found')
+    logging.getLogger(__name__).info('WindPy found')
 else:
     logging.getLogger(__name__).debug('WindPy not found!!')
+
+jq_spec = importlib.util.find_spec("jqdatasdk")
+if jq_spec:
+    from .JQData import JQData
+    logging.getLogger(__name__).info('JQData found')
+else:
+    logging.getLogger(__name__).debug('JQData not found!!')

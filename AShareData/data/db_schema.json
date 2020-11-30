@@ -606,5 +606,42 @@
 		"DateTime": "datetime",
 		"ID": "varchar",
 		"每股派息": "float"
+	},
+	"股票集合竞价数据": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"成交价": "float",
+		"成交量": "double",
+		"成交额": "double",
+		"卖1价": "float",
+		"卖2价": "float",
+		"卖3价": "float",
+		"卖4价": "float",
+		"卖5价": "float",
+		"买1价": "float",
+		"买2价": "float",
+		"买3价": "float",
+		"买4价": "float",
+		"买5价": "float",
+		"卖1量": "double",
+		"卖2量": "double",
+		"卖3量": "double",
+		"卖4量": "double",
+		"卖5量": "double",
+		"买1量": "double",
+		"买2量": "double",
+		"买3量": "double",
+		"买4量": "double",
+		"买5量": "double"
+	},
+	"可转债日行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double"
 	}
 }
