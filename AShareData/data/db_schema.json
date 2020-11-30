@@ -1,6 +1,11 @@
 {
 	"交易日历": {
-		"交易日历": "datetime"
+		"index": "int",
+		"交易日期": "datetime"
+	},
+	"港股交易日历": {
+		"index": "int",
+		"交易日期": "datetime"
 	},
 	"证券代码": {
 		"DateTime": "datetime",

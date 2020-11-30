@@ -16,6 +16,10 @@ from .DataSource import DataSource
 from .DBInterface import DBInterface
 from .Tickers import StockTickers
 
+START_DATE = {
+    "shibor": dt.datetime(1,1,1),
+    'hk_cal': dt.datetime(1980, 1, 1)
+}
 
 class TushareData(DataSource):
     def __init__(self, tushare_token: str, db_interface: DBInterface, param_json_loc: str = None) -> None:
@@ -85,6 +89,26 @@ class TushareData(DataSource):
         self.db_interface.purge_table(table_name)
         self.db_interface.insert_df(cal_date, table_name)
 
+    def update_hk_calendar(self) -> None:
+        """ 更新港交所交易日历 """
+        table_name = '港股交易日历'
+        if self.db_interface.get_latest_timestamp(table_name):
+            df = self._pro.hk_tradecal(is_open=1)
+        else:
+            storage = []
+            end_dates = ['19850101', '19900101', '19950101', '20000101', '20050101', '20100101', '20150101', '20200101']
+            for end_date in end_dates:
+                storage.append(self._pro.hk_tradecal(is_open=1, end_date=end_date))
+            storage.append(self._pro.hk_tradecal(is_open=1))
+            df = pd.concat(storage, ignore_index=True).drop_duplicates()
+
+        cal_date = df.cal_date
+        cal_date = cal_date.sort_values()
+        cal_date.name = '交易日期'
+        cal_date = cal_date.map(DateUtils.date_type2datetime)
+
+        self.db_interface.update_df(cal_date, table_name)
+
     def update_stock_list_date(self) -> None:
         """ 获取所有股票列表, 包括上市, 退市和暂停上市的股票
 
@@ -99,6 +123,28 @@ class TushareData(DataSource):
         fields = ['ts_code', 'list_date', 'delist_date']
         for status in list_status:
             storage.append(self._pro.stock_basic(exchange='', list_status=status, fields=fields))
+        output = pd.concat(storage)
+        output['证券类型'] = 'A股股票'
+        list_info = self._format_list_date(output.loc[:, ['ts_code', 'list_date', 'delist_date', '证券类型']])
+        self.db_interface.update_df(list_info, '证券代码')
+        logging.getLogger(__name__).info(f'{data_category}下载完成.')
+
+    # TODO
+    def get_hk_stock_list_date(self):
+        """ 获取所有港股股票列表, 包括上市, 退市和暂停上市的股票
+
+        ref: https://tushare.pro/document/2?doc_id=25
+
+        """
+        data_category = '股票列表'
+
+        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        storage = []
+        list_status = ['L', 'D']
+        fields = ['ts_code', 'list_date', 'delist_date']
+        for status in list_status:
+            storage.append(self._pro.hk_basic(list_status=status))
+            # storage.append(self._pro.hk_basic(exchange='', list_status=status, fields=fields))
         output = pd.concat(storage)
         output['证券类型'] = 'A股股票'
         list_info = self._format_list_date(output.loc[:, ['ts_code', 'list_date', 'delist_date', '证券类型']])
@@ -578,6 +624,12 @@ class TushareData(DataSource):
                 pbar.update()
                 sleep(interval)
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
+
+    #######################################
+    # HK stock funcs
+    #######################################
+    def get_hk_stock_daily(self):
+        pass
 
     #######################################
     # index funcs

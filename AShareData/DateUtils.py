@@ -71,12 +71,9 @@ def dtlize_input_dates(func):
     return inner
 
 
-class TradingCalendar(object):
-    """Trading Calendar Class"""
-
-    def __init__(self, db_interface: DBInterface):
-        calendar_df = db_interface.read_table('交易日历')
-        self.calendar = calendar_df['交易日期'].dt.to_pydatetime().tolist()
+class TradingCalendarBase(object):
+    def __init__(self):
+        self.calendar = None
 
     @dtlize_input_dates
     def is_trading_date(self, date: DateType):
@@ -177,6 +174,24 @@ class TradingCalendar(object):
             tmp = all_dates[i:i + chunk_size]
             res.append((tmp[0], tmp[-1]))
         return res
+
+
+class TradingCalendar(TradingCalendarBase):
+    """A Share Trading Calendar"""
+
+    def __init__(self, db_interface: DBInterface):
+        super().__init__()
+        calendar_df = db_interface.read_table('交易日历')
+        self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
+
+
+class HKTradingCalendar(TradingCalendarBase):
+    """A Share Trading Calendar"""
+
+    def __init__(self, db_interface: DBInterface):
+        super().__init__()
+        calendar_df = db_interface.read_table('港股交易日历')
+        self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
 
 
 class ReportingDate(object):
