@@ -20,6 +20,7 @@ class MyTestCase(unittest.TestCase):
     def test_stock_ticker(self):
         stock_ticker = StockTickers(self.db_interface)
         self.ticker_test(stock_ticker)
+        stock_ticker.get_list_date('000001.SZ')
 
     def test_future_ticker(self):
         future_ticker = FutureTickers(self.db_interface)

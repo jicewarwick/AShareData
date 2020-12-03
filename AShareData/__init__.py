@@ -9,7 +9,7 @@ from .TushareData import TushareData
 from .WebData import WebDataCrawler
 
 ch = logging.StreamHandler()
-ch.setFormatter(logging.Formatter('%(asctime)s %(levelname)8s %(name)s | %(message)s'))
+ch.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s'))
 
 logger = logging.getLogger(__name__)
 logger.addHandler(ch)
