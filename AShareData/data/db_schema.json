@@ -648,5 +648,29 @@
 		"收盘价": "float",
 		"成交量": "float",
 		"成交额": "double"
+	},
+	"港股日行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double"
+	},
+	"美股日行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double",
+		"换手率": "float",
+		"总市值": "double",
+		"PE": "float",
+		"PB": "float"
 	}
 }

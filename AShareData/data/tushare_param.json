@@ -259,7 +259,8 @@
 			"unit_nav": "单位净值",
 			"net_asset": "资产净值",
 			"total_netasset": "合计资产净值"
-		}
+		},
+		"每分钟限速": 40
 	},
 	"基金规模数据": {
 		"输入参数": {
@@ -2186,5 +2187,47 @@
 			"suspend_timing": "日内停牌时间段",
 			"suspend_type": "停复牌类型：S-停牌，R-复牌"
 		}
+	},
+	"港股日行情": {
+		"输入参数": {
+			"ts_code": "基金代码（二选一）",
+			"trade_date": "DateTime（二选一）",
+			"start_date": "开始日期",
+			"end_date": "结束日期"
+		},
+		"输出参数": {
+			"ts_code": "ID",
+			"trade_date": "DateTime",
+			"open": "开盘价",
+			"high": "最高价",
+			"low": "最低价",
+			"close": "收盘价",
+			"vol": "成交量",
+			"amount": "成交额"
+		},
+		"每分钟限速": 100
+	},
+	"美股日行情": {
+		"输入参数": {
+			"ts_code": "基金代码（二选一）",
+			"trade_date": "DateTime（二选一）",
+			"start_date": "开始日期",
+			"end_date": "结束日期"
+		},
+		"输出参数": {
+			"ts_code": "ID",
+			"trade_date": "DateTime",
+			"open": "开盘价",
+			"high": "最高价",
+			"low": "最低价",
+			"close": "收盘价",
+			"vol": "成交量",
+			"amount": "成交额",
+			"turnover_ratio": "换手率",
+			"total_mv": "总市值",
+			"pe": "PE",
+			"pb": "PB"
+		},
+		"每分钟限速": 100
 	}
 }
