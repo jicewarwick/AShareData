@@ -198,6 +198,7 @@ class TushareData(DataSource):
         for exchange in constants.FUTURE_EXCHANGES:
             storage.append(self._pro.fut_basic(exchange=exchange, fields=list(desc.keys()) + ['per_unit']))
         output = pd.concat(storage, ignore_index=True)
+        output.ts_code = self.format_ticker(output['ts_code'].tolist())
         output.multiplier = output.multiplier.where(output.multiplier.notna(), output.per_unit)
         output = output.dropna(subset=['multiplier']).drop('per_unit', axis=1)
         output.quote_unit_desc = output.quote_unit_desc.apply(find_start_num)
@@ -231,6 +232,7 @@ class TushareData(DataSource):
             storage.append(self._pro.opt_basic(exchange=exchange, fields=list(desc.keys())))
         output = pd.concat(storage)
         output.opt_code = output.opt_code.str.replace('OP', '')
+        output.ts_code = self.format_ticker(output['ts_code'].tolist())
 
         # list date
         list_info = output.loc[:, ['ts_code', 'list_date', 'delist_date', 'opt_type']]
@@ -841,3 +843,14 @@ class TushareData(DataSource):
         output = TushareData._standardize_df(output, {'ts_code': 'ID', 'list_date': 'DateTime'})
         output = output.loc[output.index.get_level_values('DateTime') <= dt.datetime.now(), :]
         return output
+
+    @staticmethod
+    def format_ticker(tickers: Union[Sequence[str], str]) -> Union[Sequence[str], str]:
+        if isinstance(tickers, str):
+            return TushareData._format_ticker(tickers)
+        else:
+            return [TushareData._format_ticker(it) for it in tickers]
+
+    @staticmethod
+    def _format_ticker(ticker: str) -> str:
+        return ticker.replace('.CFX', '.CFE').replace('.ZCE', '.CZC')

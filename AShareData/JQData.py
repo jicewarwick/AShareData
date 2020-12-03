@@ -48,10 +48,10 @@ class JQData(DataSource):
         exchange = df.exchange.map({'深交所主板': '.SZ', '上交所': '.SH'})
         df.code = df.code + exchange
         renaming_dict = self._factor_param['可转债信息']
-        df.company_code = df.company_code.apply(self.jqcode_to_windcode)
+        df.company_code = df.company_code.apply(self.jqcode2windcode)
         df.list_date = df.list_date.apply(DateUtils.date_type2datetime)
         df.delist_Date = df.delist_Date.apply(DateUtils.date_type2datetime)
-        df.company_code = df.company_code.apply(self.jqcode_to_windcode)
+        df.company_code = df.company_code.apply(self.jqcode2windcode)
         ret = df.loc[:, renaming_dict.keys()].rename(renaming_dict, axis=1).set_index('ID')
         self.db_interface.update_df(ret, '可转债信息')
         print(df)
@@ -60,7 +60,7 @@ class JQData(DataSource):
         renaming_dict = self._factor_param['行情数据']
         diff_columns = ['成交量', '成交额']
         tickers = self.stock_tickers.ticker(date)
-        tickers = [self.windcode_to_jqcode(it) for it in tickers]
+        tickers = [self.windcode2jqcode(it) for it in tickers]
 
         auction_time = date + dt.timedelta(hours=9, minutes=25)
         auction_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=[auction_time])
@@ -83,7 +83,7 @@ class JQData(DataSource):
     def _get_stock_minute_data_after_first_minute(self, date: dt.datetime):
         renaming_dict = self._factor_param['行情数据']
         tickers = self.stock_tickers.ticker(date)
-        tickers = [self.windcode_to_jqcode(it) for it in tickers]
+        tickers = [self.windcode2jqcode(it) for it in tickers]
 
         t0932 = date + dt.timedelta(hours=9, minutes=32)
         t1458 = date + dt.timedelta(hours=14, minutes=58)
@@ -134,12 +134,15 @@ class JQData(DataSource):
         renaming_dict = self._factor_param[table_name]
         date_str = DateUtils.date_type2str(date, '-')
         tickers = self.stock_tickers.ticker(date)
-        tickers = [self.windcode_to_jqcode(it) for it in tickers]
+        tickers = [self.windcode2jqcode(it) for it in tickers]
         data = jq.get_call_auction(tickers, start_date=date_str, end_date=date_str)
         auction_time = date + dt.timedelta(hours=9, minutes=25)
         data.time = auction_time
         db_data = self._standardize_df(data, renaming_dict)
         self.db_interface.insert_df(db_data, table_name)
+
+    def update_option_daily(self):
+        pass
 
     @staticmethod
     def _auction_data_to_price_data(auction_data: pd.DataFrame) -> pd.DataFrame:
@@ -157,7 +160,7 @@ class JQData(DataSource):
 
         df.rename(parameter_info, axis=1, inplace=True)
         if 'ID' in df.columns:
-            df.ID = df.ID.apply(JQData.jqcode_to_windcode)
+            df.ID = df.ID.apply(JQData.jqcode2windcode)
         index = sorted(list({'DateTime', 'ID', '报告期', 'IndexCode'} & set(df.columns)))
         df = df.set_index(index, drop=True)
         if df.shape[1] == 1:
@@ -165,25 +168,25 @@ class JQData(DataSource):
         return df
 
     @staticmethod
-    def jqcode_to_windcode(jq_code: str) -> Optional[str]:
+    def jqcode2windcode(jq_code: str) -> Optional[str]:
         if jq_code:
             jq_code = jq_code.replace('.XSHG', '.SH')
             jq_code = jq_code.replace('.XSHE', '.SZ')
             jq_code = jq_code.replace('.CCFX', '.CFE')
             jq_code = jq_code.replace('.XDCE', '.DCE')
-            jq_code = jq_code.replace('.XSGE', '.SFE')
-            jq_code = jq_code.replace('.XZCE', '.ZCE')
+            jq_code = jq_code.replace('.XSGE', '.SHF')
+            jq_code = jq_code.replace('.XZCE', '.CZC')
             jq_code = jq_code.replace('.XINE', '.INE')
             return jq_code
 
     @staticmethod
-    def windcode_to_jqcode(jq_code: str) -> Optional[str]:
+    def windcode2jqcode(jq_code: str) -> Optional[str]:
         if jq_code:
             jq_code = jq_code.replace('.SH', '.XSHG')
             jq_code = jq_code.replace('.SZ', '.XSHE')
             jq_code = jq_code.replace('.CFE', '.CCFX')
             jq_code = jq_code.replace('.DCE', '.XDCE')
-            jq_code = jq_code.replace('.SFE', '.XSGE')
-            jq_code = jq_code.replace('.ZCE', '.XZCE')
+            jq_code = jq_code.replace('.SHF', '.XSGE')
+            jq_code = jq_code.replace('.CZC', '.XZCE')
             jq_code = jq_code.replace('.INE', '.XINE')
             return jq_code
