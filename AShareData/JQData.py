@@ -169,7 +169,12 @@ class JQData(DataSource):
         self.db_interface.insert_df(db_data, '股票日行情')
 
     def update_stock_daily(self):
-        pass
+        table_name = '股票日行情'
+        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        dates = self.calendar.select_dates(db_timestamp, dt.date.today())
+        dates = dates[1:]
+        for date in dates:
+            self.get_stock_daily(date)
 
     @DateUtils.dtlize_input_dates
     def get_future_daily(self, date: DateUtils.DateType):
@@ -187,10 +192,15 @@ class JQData(DataSource):
         self.db_interface.insert_df(db_data, '期货日行情')
 
     def update_future_daily(self):
-        pass
+        table_name = '期货日行情'
+        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        dates = self.calendar.select_dates(db_timestamp, dt.date.today())
+        dates = dates[1:]
+        for date in dates:
+            self.get_future_daily(date)
 
     @DateUtils.dtlize_input_dates
-    def get_stock_index_option_daily(self, date: DateUtils.DateType):
+    def get_stock_option_daily(self, date: DateUtils.DateType):
         renaming_dict = self._factor_param['行情数据']
         tickers = self.stock_index_option_tickers.ticker(date) + self.stock_etf_option_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
@@ -205,8 +215,13 @@ class JQData(DataSource):
         db_data = self._standardize_df(combined_data, renaming_dict).sort_index()
         self.db_interface.insert_df(db_data, '期权日行情')
 
-    def update_option_daily(self):
-        pass
+    def update_stock_option_daily(self):
+        table_name = '期权日行情'
+        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        dates = self.calendar.select_dates(db_timestamp, dt.date.today())
+        dates = dates[1:]
+        for date in dates:
+            self.get_stock_option_daily(date)
 
     @staticmethod
     def _auction_data_to_price_data(auction_data: pd.DataFrame) -> pd.DataFrame:
