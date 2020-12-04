@@ -546,11 +546,6 @@
 		"基金份额": "double",
 		"单位净值": "float"
 	},
-	"ETF上市日期": {
-		"DateTime": "datetime",
-		"ID": "varchar",
-		"证券名称": "varchar"
-	},
 	"股票停牌": {
 		"DateTime": "datetime",
 		"ID": "varchar",

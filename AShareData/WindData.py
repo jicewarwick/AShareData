@@ -12,7 +12,8 @@ from tqdm import tqdm
 from . import constants, DateUtils, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Tickers import ConvertibleBondTickers, ETFTickers, FutureTickers, IndexOptionTickers, OptionTickers, StockTickers
+from .Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
+    OptionTickers, StockTickers
 
 
 class WindWrapper(object):
@@ -160,6 +161,9 @@ class WindData(DataSource):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.w.disconnect()
 
+    def connect(self):
+        self.w.connect()
+
     @cached_property
     def stock_list(self) -> StockTickers:
         return StockTickers(self.db_interface)
@@ -283,11 +287,11 @@ class WindData(DataSource):
 
         # update adj_factor for stocks
         self.sparse_data_template('复权因子', data_func)
-
-        # update adj_factor for etfs
-        funds_info = self.db_interface.read_table('ETF上市日期').reset_index()
-        etf_wind_code = funds_info['ID'].tolist()
-        self.sparse_data_template('复权因子', data_func, ticker=etf_wind_code, default_start_date=self.etf_list.list_date())
+        #
+        # # update adj_factor for etfs
+        # funds_info = self.db_interface.read_table('ETF上市日期').reset_index()
+        # etf_wind_code = funds_info['ID'].tolist()
+        # self.sparse_data_template('复权因子', data_func, ticker=etf_wind_code, default_start_date=self.etf_list.list_date())
 
     def update_stock_units(self):
         # 流通股本
@@ -414,44 +418,6 @@ class WindData(DataSource):
                 pbar.update()
 
     #######################################
-    # etf funcs
-    #######################################
-    def update_etf_list(self) -> pd.DataFrame:
-        etf_table_name = 'ETF上市日期'
-        etfs = self.w.wset("sectorconstituent", date=dt.date.today(), sectorid='1000009165000000',
-                           field='wind_code,sec_name')
-        wind_codes = etfs.index.tolist()
-        listed_date = self.w.wss(wind_codes, "fund_etflisteddate")
-        etf_info = pd.concat([etfs, listed_date], axis=1)
-        etf_info = etf_info.set_index('FUND_ETFLISTEDDATE', append=True)
-        etf_info.index.names = ['ID', 'DateTime']
-        etf_info.columns = ['证券名称']
-        self.db_interface.update_df(etf_info, etf_table_name)
-        return etf_info
-
-    def update_etf_daily(self):
-        table_name = '场内基金日行情'
-        start_date = self.db_interface.get_latest_timestamp(table_name)
-        if start_date is None:
-            start_date = self.db_interface.get_column_min('ETF上市日期', 'DateTime')
-
-        end_date = self.calendar.yesterday()
-        dates = self.calendar.select_dates(start_date, end_date)
-        if len(dates) <= 1:
-            return
-        dates = dates[1:]
-
-        with tqdm(dates) as pbar:
-            for date in dates:
-                pbar.set_description(f'下载{date}的ETF日行情')
-                data = self.w.wss(self.etf_list.ticker(date), "open,low,high,close,volume,amt,nav,unit_total",
-                                  date=date, priceAdj='U', cycle='D')
-                data.rename(self._factor_param[table_name], axis=1, inplace=True)
-                data.dropna(inplace=True)
-                self.db_interface.insert_df(data, table_name)
-                pbar.update()
-
-    #######################################
     # future funcs
     #######################################
     def get_future_symbols(self) -> List[str]:
@@ -549,10 +515,14 @@ class WindData(DataSource):
             return
         dates = dates[1:]
 
+        etf_option_tickers = ETFOptionTickers(self.db_interface)
+        index_option_tickers = IndexOptionTickers(self.db_interface)
+
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{contract_daily_table_name}')
-                data = self.w.wss(self.stock_index_option_list.ticker(date),
+                tickers = etf_option_tickers.ticker(date) + index_option_tickers.ticker(date)
+                data = self.w.wss(tickers,
                                   "high,open,low,close,volume,amt,oi,delta,gamma,vega,theta,rho",
                                   date=date, priceAdj='U', cycle='D')
                 data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)
