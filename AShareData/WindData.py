@@ -362,13 +362,7 @@ class WindData(DataSource):
                                  default_start_date=default_start_date)
 
     def update_industry(self) -> None:
-        needed_update_provider = []
         for provider in constants.INDUSTRY_DATA_PROVIDER:
-            timestamp = self.db_interface.get_latest_timestamp(f'{provider}行业')
-            if (not timestamp) or (timestamp < dt.datetime.now() - dt.timedelta(days=30)):
-                needed_update_provider.append(provider)
-
-        for provider in needed_update_provider:
             self._update_industry(provider)
 
     def update_pause_stock_info(self):
