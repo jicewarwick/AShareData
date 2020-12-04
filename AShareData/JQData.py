@@ -8,7 +8,7 @@ from tqdm import tqdm
 from . import DateUtils, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Tickers import FutureTickers, StockTickers, IndexOptionTickers, ETFOptionTickers
+from .Tickers import ETFOptionTickers, FutureTickers, IndexOptionTickers, StockTickers
 
 with utils.NullPrinter():
     import jqdatasdk as jq
@@ -207,7 +207,7 @@ class JQData(DataSource):
 
         data = jq.get_price(tickers, start_date=date, end_date=date, frequency='daily', fq=None, fill_paused=True,
                             fields=['open', 'high', 'low', 'close', 'volume', 'money', 'open_interest'])
-        q = jq.query(jq.opt.OPT_RISK_INDICATOR).filter(jq.opt.OPT_RISK_INDICATOR.date == date)\
+        q = jq.query(jq.opt.OPT_RISK_INDICATOR).filter(jq.opt.OPT_RISK_INDICATOR.date == date) \
             .filter(jq.opt.OPT_RISK_INDICATOR.exchange_code.in_(['XSHG', 'XSHE', 'CCFX']))
         risk_data = jq.opt.run_query(q)
         risk = risk_data.drop(['id', 'exchange_code', 'date'], axis=1)
