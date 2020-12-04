@@ -38,9 +38,6 @@ class TushareData(DataSource):
         self._pro = ts.pro_api(tushare_token)
         self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
 
-        # if self._check_db_timestamp('证券代码', dt.datetime(1990, 1, 1)) < dt.datetime.today():
-        #     self.update_base_info()
-
     def update_base_info(self):
         self.update_calendar()
         self.update_stock_list_date()
@@ -232,6 +229,7 @@ class TushareData(DataSource):
             storage.append(self._pro.opt_basic(exchange=exchange, fields=list(desc.keys())))
         output = pd.concat(storage)
         output.opt_code = output.opt_code.str.replace('OP', '')
+        output.opt_code = self.format_ticker(output['opt_code'].tolist())
         output.ts_code = self.format_ticker(output['ts_code'].tolist())
 
         # list date
@@ -345,6 +343,16 @@ class TushareData(DataSource):
         df = self._pro.new_share(start_date=start_date)
         df[['amount', 'market_amount', 'limit_amount']] = df[['amount', 'market_amount', 'limit_amount']] * 10000
         df['funds'] = df['funds'] * 100000000
+
+        # list_date
+        list_date_data = df.loc[df.issue_date != '', ['issue_date', 'ts_code']]
+        list_date_data['证券类型'] = 'A股股票'
+        list_date_data['上市状态'] = True
+        list_date_data = self._standardize_df(list_date_data, {'issue_date': 'DateTime', 'ts_code': 'ID'})
+        list_date_data = list_date_data.loc[list_date_data.index.get_level_values('DateTime') < dt.datetime.now(), :]
+        self.db_interface.update_df(list_date_data, '证券代码')
+
+        # info
         df = self._standardize_df(df, column_desc)
         self.db_interface.update_df(df, data_category)
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
@@ -737,7 +745,7 @@ class TushareData(DataSource):
 
         start_date = self._check_db_timestamp(daily_table_name, START_DATE['fund_daily'])
         start_date = self.calendar.offset(start_date, -4)
-        end_date = dt.datetime.today()
+        end_date = dt.date.today()
         dates = self.calendar.select_dates(start_date, end_date)
         dates = dates[1:]
         rate = self._factor_param[nav_table_name]['每分钟限速']
@@ -784,7 +792,7 @@ class TushareData(DataSource):
 
         start_date = self._check_db_timestamp(table_name, dt.date(1998, 4, 6))
         start_date = self.calendar.offset(start_date, -5)
-        end_date = dt.datetime.today()
+        end_date = dt.date.today()
         dates = self.calendar.select_dates(start_date, end_date)
         with tqdm(dates) as pbar:
             rate_limiter = RateLimiter(rate - 1, period=60)
@@ -853,4 +861,7 @@ class TushareData(DataSource):
 
     @staticmethod
     def _format_ticker(ticker: str) -> str:
-        return ticker.replace('.CFX', '.CFE').replace('.ZCE', '.CZC')
+        ticker = ticker.replace('.CFX', '.CFE').replace('.ZCE', '.CZC')
+        if ticker.endswith('.CZC') and len(ticker) <= 10:
+            ticker = utils.format_czc_ticker(ticker)
+        return ticker
