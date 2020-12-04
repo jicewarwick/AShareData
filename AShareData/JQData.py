@@ -8,7 +8,7 @@ from tqdm import tqdm
 from . import DateUtils, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Tickers import StockTickers
+from .Tickers import FutureTickers, StockTickers, IndexOptionTickers, ETFOptionTickers
 
 with utils.NullPrinter():
     import jqdatasdk as jq
@@ -22,7 +22,7 @@ class JQData(DataSource):
         self.is_logged_in = False
         self._factor_param = utils.load_param('jqdata_param.json')
 
-    def connect(self):
+    def login(self):
         if not self.is_logged_in:
             with utils.NullPrinter():
                 jq.auth(self.mobile, self.password)
@@ -31,16 +31,32 @@ class JQData(DataSource):
             else:
                 raise ValueError('JQDataLoginError: Wrong mobile number or password')
 
+    def logout(self):
+        if self.is_logged_in:
+            with utils.NullPrinter():
+                jq.logout()
+
     def __enter__(self):
-        self.connect()
+        self.login()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.is_logged_in:
-            jq.logout()
+        self.logout()
 
     @cached_property
     def stock_tickers(self):
         return StockTickers(self.db_interface)
+
+    @cached_property
+    def future_tickers(self):
+        return FutureTickers(self.db_interface)
+
+    @cached_property
+    def stock_index_option_tickers(self):
+        return IndexOptionTickers(self.db_interface)
+
+    @cached_property
+    def stock_etf_option_tickers(self):
+        return ETFOptionTickers(self.db_interface)
 
     def update_convertible_bond_list(self):
         q = jq.query(jq.bond.BOND_BASIC_INFO).filter(jq.bond.BOND_BASIC_INFO.bond_type == '可转债')
@@ -129,6 +145,7 @@ class JQData(DataSource):
                 self.get_stock_minute(date)
                 pbar.update()
 
+    @DateUtils.dtlize_input_dates
     def stock_open_auction_data(self, date: DateUtils.DateType):
         table_name = '股票集合竞价数据'
         renaming_dict = self._factor_param[table_name]
@@ -140,6 +157,53 @@ class JQData(DataSource):
         data.time = auction_time
         db_data = self._standardize_df(data, renaming_dict)
         self.db_interface.insert_df(db_data, table_name)
+
+    @DateUtils.dtlize_input_dates
+    def get_stock_daily(self, date: DateUtils.DateType):
+        renaming_dict = self._factor_param['行情数据']
+        tickers = self.stock_tickers.ticker(date)
+        tickers = [self.windcode2jqcode(it) for it in tickers]
+
+        data = jq.get_price(tickers, start_date=date, end_date=date, frequency='daily', fq=None, fill_paused=True)
+        db_data = self._standardize_df(data, renaming_dict)
+        self.db_interface.insert_df(db_data, '股票日行情')
+
+    def update_stock_daily(self):
+        pass
+
+    @DateUtils.dtlize_input_dates
+    def get_future_daily(self, date: DateUtils.DateType):
+        renaming_dict = self._factor_param['行情数据']
+        tickers = self.future_tickers.ticker(date)
+        tickers = [self.windcode2jqcode(it) for it in tickers]
+
+        data = jq.get_price(tickers, start_date=date, end_date=date, frequency='daily', fq=None, fill_paused=True,
+                            fields=['open', 'high', 'low', 'close', 'volume', 'money', 'open_interest'])
+        settle_data = jq.get_extras('futures_sett_price', tickers, start_date=date, end_date=date)
+        settle = settle_data.stack().reset_index()
+        settle.columns = ['time', 'code', 'settle']
+        combined_data = pd.merge(data, settle)
+        db_data = self._standardize_df(combined_data, renaming_dict).sort_index()
+        self.db_interface.insert_df(db_data, '期货日行情')
+
+    def update_future_daily(self):
+        pass
+
+    @DateUtils.dtlize_input_dates
+    def get_stock_index_option_daily(self, date: DateUtils.DateType):
+        renaming_dict = self._factor_param['行情数据']
+        tickers = self.stock_index_option_tickers.ticker(date) + self.stock_etf_option_tickers.ticker(date)
+        tickers = [self.windcode2jqcode(it) for it in tickers]
+
+        data = jq.get_price(tickers, start_date=date, end_date=date, frequency='daily', fq=None, fill_paused=True,
+                            fields=['open', 'high', 'low', 'close', 'volume', 'money', 'open_interest'])
+        q = jq.query(jq.opt.OPT_RISK_INDICATOR).filter(jq.opt.OPT_RISK_INDICATOR.date == date)\
+            .filter(jq.opt.OPT_RISK_INDICATOR.exchange_code.in_(['XSHG', 'XSHE', 'CCFX']))
+        risk_data = jq.opt.run_query(q)
+        risk = risk_data.drop(['id', 'exchange_code', 'date'], axis=1)
+        combined_data = pd.merge(data, risk)
+        db_data = self._standardize_df(combined_data, renaming_dict).sort_index()
+        self.db_interface.insert_df(db_data, '期权日行情')
 
     def update_option_daily(self):
         pass
@@ -168,25 +232,23 @@ class JQData(DataSource):
         return df
 
     @staticmethod
-    def jqcode2windcode(jq_code: str) -> Optional[str]:
-        if jq_code:
-            jq_code = jq_code.replace('.XSHG', '.SH')
-            jq_code = jq_code.replace('.XSHE', '.SZ')
-            jq_code = jq_code.replace('.CCFX', '.CFE')
-            jq_code = jq_code.replace('.XDCE', '.DCE')
-            jq_code = jq_code.replace('.XSGE', '.SHF')
-            jq_code = jq_code.replace('.XZCE', '.CZC')
-            jq_code = jq_code.replace('.XINE', '.INE')
-            return jq_code
+    def jqcode2windcode(ticker: str) -> Optional[str]:
+        if ticker:
+            ticker = ticker.replace('.XSHG', '.SH').replace('.XSHE', '.SZ')
+            ticker = ticker.replace('.XDCE', '.DCE').replace('.XSGE', '.SHF').replace('.XZCE', '.CZC')
+            ticker = ticker.replace('.XINE', '.INE')
+            ticker = ticker.replace('.CCFX', '.CFE')
+            if ticker.endswith('.CZC'):
+                ticker = utils.format_czc_ticker(ticker)
+            return ticker
 
     @staticmethod
-    def windcode2jqcode(jq_code: str) -> Optional[str]:
-        if jq_code:
-            jq_code = jq_code.replace('.SH', '.XSHG')
-            jq_code = jq_code.replace('.SZ', '.XSHE')
-            jq_code = jq_code.replace('.CFE', '.CCFX')
-            jq_code = jq_code.replace('.DCE', '.XDCE')
-            jq_code = jq_code.replace('.SHF', '.XSGE')
-            jq_code = jq_code.replace('.CZC', '.XZCE')
-            jq_code = jq_code.replace('.INE', '.XINE')
-            return jq_code
+    def windcode2jqcode(ticker: str) -> Optional[str]:
+        if ticker:
+            ticker = ticker.replace('.DCE', '.XDCE').replace('.SHF', '.XSGE').replace('.CZC', '.XZCE')
+            ticker = ticker.replace('.CFE', '.CCFX')
+            ticker = ticker.replace('.INE', '.XINE')
+            ticker = ticker.replace('.SH', '.XSHG').replace('.SZ', '.XSHE')
+            if ticker.endswith('.XZCE') and len(ticker) <= 11:
+                ticker = utils.full_czc_ticker(ticker)
+            return ticker

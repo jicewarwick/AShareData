@@ -41,6 +41,13 @@
 		"low": "最低价",
 		"close": "收盘价",
 		"volume": "成交量",
-		"money": "成交额"
+		"money": "成交额",
+		"open_interest": "持仓量",
+		"settle": "结算价",
+		"delta": "Delta",
+		"theta": "Theta",
+		"gamma": "Gamma",
+		"rho": "Rho",
+		"vega": "Vega"
 	}
 }

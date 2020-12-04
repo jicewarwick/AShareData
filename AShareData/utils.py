@@ -44,6 +44,18 @@ def chunk_list(l: list, n: int):
         yield l[i:i + n]
 
 
+def format_czc_ticker(ticker: str) -> str:
+    c = ticker[1] if ticker[1].isnumeric() else ticker[2]
+    ticker = ticker.replace(c, '', 1)
+    return ticker
+
+
+def full_czc_ticker(ticker: str) -> str:
+    c = 1 if ticker[1].isnumeric() else 2
+    ticker = ticker[:c] + '2' + ticker[c:]
+    return ticker
+
+
 @dataclass
 class StockSelectionPolicy:
     """
