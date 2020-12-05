@@ -15,3 +15,11 @@ if wind_spec:
     logging.info('WindPy Found')
 else:
     logging.debug('WindPy not found!!')
+
+jqdatasdk_spec = importlib.util.find_spec("jqdatasdk")
+if jqdatasdk_spec:
+    from .JQData import JQData
+
+    logging.info('JQData Found')
+else:
+    logging.debug('JQData not found!!')
