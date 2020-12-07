@@ -1,0 +1,53 @@
+{
+	"可转债信息": {
+		"code": "ID",
+		"short_name": "名称",
+		"company_code": "发行人ID",
+		"list_date": "上市日期",
+		"delist_Date": "退市日期"
+	},
+	"股票集合竞价数据": {
+		"time": "DateTime",
+		"code": "ID",
+		"current": "成交价",
+		"volume": "成交量",
+		"money": "成交额",
+		"a1_p": "卖1价",
+		"a2_p": "卖2价",
+		"a3_p": "卖3价",
+		"a4_p": "卖4价",
+		"a5_p": "卖5价",
+		"a1_v": "卖1量",
+		"a2_v": "卖2量",
+		"a3_v": "卖3量",
+		"a4_v": "卖4量",
+		"a5_v": "卖5量",
+		"b1_p": "买1价",
+		"b2_p": "买2价",
+		"b3_p": "买3价",
+		"b4_p": "买4价",
+		"b5_p": "买5价",
+		"b1_v": "买1量",
+		"b2_v": "买2量",
+		"b3_v": "买3量",
+		"b4_v": "买4量",
+		"b5_v": "买5量"
+	},
+	"行情数据": {
+		"time": "DateTime",
+		"code": "ID",
+		"open": "开盘价",
+		"high": "最高价",
+		"low": "最低价",
+		"close": "收盘价",
+		"volume": "成交量",
+		"money": "成交额",
+		"open_interest": "持仓量",
+		"settle": "结算价",
+		"delta": "Delta",
+		"theta": "Theta",
+		"gamma": "Gamma",
+		"rho": "Rho",
+		"vega": "Vega"
+	}
+}

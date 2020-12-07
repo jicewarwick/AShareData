@@ -12,7 +12,8 @@ from tqdm import tqdm
 from . import constants, DateUtils, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Tickers import ETFTickers, FutureTickers, IndexOptionTickers, OptionTickers, StockTickers
+from .Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
+    OptionTickers, StockTickers
 
 
 class WindWrapper(object):
@@ -23,6 +24,7 @@ class WindWrapper(object):
 
     def __enter__(self):
         self.connect()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.disconnect()
@@ -154,9 +156,13 @@ class WindData(DataSource):
 
     def __enter__(self):
         self.w.connect()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.w.disconnect()
+
+    def connect(self):
+        self.w.connect()
 
     @cached_property
     def stock_list(self) -> StockTickers:
@@ -177,6 +183,10 @@ class WindData(DataSource):
     @cached_property
     def etf_list(self):
         return ETFTickers(self.db_interface)
+
+    @cached_property
+    def convertible_bond_list(self):
+        return ConvertibleBondTickers(self.db_interface)
 
     def update_routine(self):
         # stock
@@ -211,7 +221,7 @@ class WindData(DataSource):
                              end_date: DateUtils.DateType = dt.datetime.now()) -> None:
         """更新每日行情, 写入数据库, 不返回
 
-        行情信息包括: 开高低收, 量额, 复权因子, 股本
+        行情信息包括: 开高低收量额
 
         :param trade_date: 交易日期
         :param start_date: 开始日期
@@ -238,7 +248,7 @@ class WindData(DataSource):
 
                 self.db_interface.update_df(price_df, '股票日行情')
 
-                pbar.update(1)
+                pbar.update()
 
     def update_stock_daily_data(self):
         start_date = self._check_db_timestamp('股票日行情', dt.date(1990, 12, 10))
@@ -255,6 +265,7 @@ class WindData(DataSource):
 
         with tqdm(date_range) as pbar:
             for date in date_range:
+                pbar.set_description(f'更新{date}的{table_name}')
                 start_time = date + dt.timedelta(hours=8)
                 end_time = date + dt.timedelta(hours=16)
                 storage = []
@@ -276,11 +287,11 @@ class WindData(DataSource):
 
         # update adj_factor for stocks
         self.sparse_data_template('复权因子', data_func)
-
-        # update adj_factor for etfs
-        funds_info = self.db_interface.read_table('ETF上市日期').reset_index()
-        etf_wind_code = funds_info['ID'].tolist()
-        self.sparse_data_template('复权因子', data_func, ticker=etf_wind_code, default_start_date=self.etf_list.list_date())
+        #
+        # # update adj_factor for etfs
+        # funds_info = self.db_interface.read_table('ETF上市日期').reset_index()
+        # etf_wind_code = funds_info['ID'].tolist()
+        # self.sparse_data_template('复权因子', data_func, ticker=etf_wind_code, default_start_date=self.etf_list.list_date())
 
     def update_stock_units(self):
         # 流通股本
@@ -351,13 +362,7 @@ class WindData(DataSource):
                                  default_start_date=default_start_date)
 
     def update_industry(self) -> None:
-        needed_update_provider = []
         for provider in constants.INDUSTRY_DATA_PROVIDER:
-            timestamp = self.db_interface.get_latest_timestamp(f'{provider}行业')
-            if (not timestamp) or (timestamp < dt.datetime.now() - dt.timedelta(days=30)):
-                needed_update_provider.append(provider)
-
-        for provider in needed_update_provider:
             self._update_industry(provider)
 
     def update_pause_stock_info(self):
@@ -383,27 +388,12 @@ class WindData(DataSource):
                 pbar.update()
 
     #######################################
-    # etf funcs
+    # convertible bond funcs
     #######################################
-    def update_etf_list(self) -> pd.DataFrame:
-        etf_table_name = 'ETF上市日期'
-        etfs = self.w.wset("sectorconstituent", date=dt.date.today(), sectorid='1000009165000000',
-                           field='wind_code,sec_name')
-        wind_codes = etfs.index.tolist()
-        listed_date = self.w.wss(wind_codes, "fund_etflisteddate")
-        etf_info = pd.concat([etfs, listed_date], axis=1)
-        etf_info = etf_info.set_index('FUND_ETFLISTEDDATE', append=True)
-        etf_info.index.names = ['ID', 'DateTime']
-        etf_info.columns = ['证券名称']
-        self.db_interface.update_df(etf_info, etf_table_name)
-        return etf_info
-
-    def update_etf_daily(self):
-        table_name = '场内基金日行情'
-        start_date = self.db_interface.get_latest_timestamp(table_name)
-        if start_date is None:
-            start_date = self.db_interface.get_column_min('ETF上市日期', 'DateTime')
-
+    def update_convertible_bond_daily_data(self):
+        table_name = '可转债日行情'
+        renaming_dict = self._factor_param['股票日线行情']
+        start_date = self._check_db_timestamp(table_name, dt.datetime(1993, 2, 9))
         end_date = self.calendar.yesterday()
         dates = self.calendar.select_dates(start_date, end_date)
         if len(dates) <= 1:
@@ -412,12 +402,13 @@ class WindData(DataSource):
 
         with tqdm(dates) as pbar:
             for date in dates:
-                pbar.set_description(f'下载{date}的ETF日行情')
-                data = self.w.wss(self.etf_list.ticker(date), "open,low,high,close,volume,amt,nav,unit_total",
-                                  date=date, priceAdj='U', cycle='D')
-                data.rename(self._factor_param[table_name], axis=1, inplace=True)
-                data.dropna(inplace=True)
-                self.db_interface.insert_df(data, table_name)
+                pbar.set_description(f'下载{date}的{table_name}')
+                tickers = self.convertible_bond_list.ticker(date)
+                if tickers:
+                    data = self.w.wss(tickers, "open, high, low, close, volume, amt",
+                                      date=date, options='priceAdj=U;cycle=D')
+                    data.rename(renaming_dict, axis=1, inplace=True)
+                    self.db_interface.insert_df(data, table_name)
                 pbar.update()
 
     #######################################
@@ -518,10 +509,14 @@ class WindData(DataSource):
             return
         dates = dates[1:]
 
+        etf_option_tickers = ETFOptionTickers(self.db_interface)
+        index_option_tickers = IndexOptionTickers(self.db_interface)
+
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{contract_daily_table_name}')
-                data = self.w.wss(self.stock_index_option_list.ticker(date),
+                tickers = etf_option_tickers.ticker(date) + index_option_tickers.ticker(date)
+                data = self.w.wss(tickers,
                                   "high,open,low,close,volume,amt,oi,delta,gamma,vega,theta,rho",
                                   date=date, priceAdj='U', cycle='D')
                 data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)

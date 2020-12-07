@@ -1,10 +1,7 @@
 import json
-import logging
 
 from AShareData import TushareData
 from AShareData import MySQLInterface, prepare_engine, WindData
-
-logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG)
 
 if __name__ == '__main__':
     config_loc = './tests/config.json'
@@ -15,8 +12,11 @@ if __name__ == '__main__':
     engine = prepare_engine(config_loc)
     db_interface = MySQLInterface(engine, init=True)
 
-    downloader = TushareData(tushare_token, db_interface=db_interface)
-    downloader.update_routine()
+    tushare_crawler = TushareData(tushare_token, db_interface=db_interface)
+    tushare_crawler.update_base_info()
+    # tushare_crawler.update_dividend()
+    tushare_crawler.get_shibor()
+    tushare_crawler.update_fund_dividend()
+    # downloader.update_fund_daily()
+    # downloader.update_routine()
 
-    wind_data = WindData(db_interface)
-    wind_data.update_routine()
