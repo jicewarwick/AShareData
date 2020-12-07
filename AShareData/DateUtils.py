@@ -97,13 +97,19 @@ class TradingCalendarBase(object):
             return self.calendar[i:j]
 
     @dtlize_input_dates
-    def select_dates(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+    def select_dates(self, start_date: DateType = None, end_date: DateType = None, inclusive=(True, True)) \
+            -> List[dt.datetime]:
         """Get list of all trading days during[``start_date``, ``end_date``] inclusive"""
         if not start_date:
             start_date = self.calendar[0]
         if not end_date:
             end_date = dt.datetime.now()
-        return self._select_dates(start_date, end_date, lambda pre, curr, next_: True)
+        dates = self._select_dates(start_date, end_date, lambda pre, curr, next_: True)
+        if dates and not inclusive[0]:
+            dates = dates[1:]
+        if dates and not inclusive[1]:
+            dates = dates[:-1]
+        return dates
 
     @dtlize_input_dates
     def first_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:

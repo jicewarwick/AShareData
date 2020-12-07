@@ -27,10 +27,10 @@ class Tushare2MySQLTest(unittest.TestCase):
         self.downloader.get_ipo_info()
 
     def test_all_past_names(self):
-        self.downloader.get_all_past_names()
+        self.downloader.init_stock_names()
 
     def test_past_names(self):
-        self.downloader.get_past_names()
+        self.downloader.update_stock_names()
 
     def test_company_info(self):
         self.downloader.get_company_info()
@@ -46,7 +46,7 @@ class Tushare2MySQLTest(unittest.TestCase):
         pass
 
     def test_hs_const(self):
-        self.downloader.get_hs_const()
+        self.downloader.get_hs_constitute()
 
     def test_shibor(self):
         self.downloader.get_shibor(end_date='20111010')

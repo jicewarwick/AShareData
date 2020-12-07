@@ -3,6 +3,7 @@ import itertools
 import logging
 import re
 from typing import Callable, Mapping, Sequence, Union
+from itertools import product
 
 import pandas as pd
 import tushare as ts
@@ -21,7 +22,9 @@ START_DATE = {
     'ggt': dt.datetime(2016, 6, 29),  # 港股通
     'hk_cal': dt.datetime(1980, 1, 1),
     'hk_daily': dt.datetime(1990, 1, 2),
-    'fund_daily': dt.datetime(1998, 4, 6)
+    'fund_daily': dt.datetime(1998, 4, 6),
+    'index_daily': dt.datetime(2008, 1, 1),
+    'index_weight': dt.datetime(2005, 1, 1)
 }
 
 
@@ -58,7 +61,7 @@ class TushareData(DataSource):
         self.get_ipo_info(start_date=self._check_db_timestamp('IPO新股列表', START_DATE['common']))
 
         # self.get_daily_hq(start_date=self._check_db_timestamp('股票日行情', dt.date(2008, 1, 1)), end_date=dt.date.today())
-        self.get_past_names(start_date=self._check_db_timestamp('证券名称', START_DATE['common']))
+        self.update_stock_names(start_date=self._check_db_timestamp('证券名称', START_DATE['common']))
         self.update_pause_stock_info()
         self.update_dividend()
 
@@ -67,8 +70,8 @@ class TushareData(DataSource):
         # if latest < dt.datetime.now() - dt.timedelta(days=20):
         #     self.get_index_weight(start_date=latest)
 
-        self.get_hs_const()
-        self.get_hs_holding(start_date=self._check_db_timestamp('沪深港股通持股明细', START_DATE['ggt']))
+        self.get_hs_constitute()
+        self.update_hs_holding()
 
         # stocks = self.db_interface.get_all_id('合并资产负债表')
         # stocks = list(set(self.all_stocks) - set(stocks)) if stocks else self.all_stocks
@@ -359,7 +362,7 @@ class TushareData(DataSource):
         return df
 
     @DateUtils.strlize_input_dates
-    def get_past_names(self, ticker: str = None, start_date: DateUtils.DateType = None) -> pd.DataFrame:
+    def update_stock_names(self, ticker: str = None) -> pd.DataFrame:
         """获取曾用名
 
         ref: https://tushare.pro/document/2?doc_id=100
@@ -372,22 +375,22 @@ class TushareData(DataSource):
         fields = list(column_desc.keys())
 
         logging.getLogger(__name__).debug(f'开始下载{ticker if ticker else ""}{data_category}.')
-        df = self._pro.namechange(ts_code=ticker, start_date=start_date, fields=fields)
+        df = self._pro.namechange(ts_code=ticker, fields=fields)
         df = self._standardize_df(df, column_desc)
         self.db_interface.update_df(df, data_category)
         logging.getLogger(__name__).debug(f'{ticker if ticker else ""}{data_category}下载完成.')
         return df
 
-    def get_all_past_names(self):
+    def init_stock_names(self):
         """获取所有股票的曾用名"""
-        raw_df = self.get_past_names()
+        raw_df = self.update_stock_names()
         raw_df_start_dates = raw_df.index.get_level_values('DateTime').min()
         uncovered_stocks = self.stock_tickers.ticker(raw_df_start_dates)
 
         with tqdm(uncovered_stocks) as pbar:
             for stock in uncovered_stocks:
                 pbar.set_description(f'下载{stock}的股票名称')
-                self.get_past_names(stock)
+                self.update_stock_names(stock)
                 pbar.update()
         logging.getLogger(__name__).info('股票曾用名下载完成.')
 
@@ -506,7 +509,7 @@ class TushareData(DataSource):
         column_desc = self._factor_param[data_category]['输出参数']
 
         db_date = self.db_interface.get_column_max(data_category, '股权登记日期')
-        dates_range = self.calendar.select_dates(db_date + dt.timedelta(days=1), self.calendar.yesterday())
+        dates_range = self.calendar.select_dates(db_date, dt.date.today(), inclusive=(False, True))
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
         with tqdm(dates_range) as pbar:
             for date in dates_range:
@@ -590,14 +593,13 @@ class TushareData(DataSource):
         df = self._standardize_df(df, column_desc)
         return df
 
-    def get_hs_const(self) -> None:
+    def get_hs_constitute(self) -> None:
         """ 沪深股通成分股进出记录. 月末更新. """
         data_category = '沪深股通成份股'
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
         storage = []
-        for hs_type in ['SH', 'SZ']:
-            for is_new in ['0', '1']:
-                storage.append(self._pro.hs_const(hs_type=hs_type, is_new=is_new))
+        for hs_type, is_new in product(['SH', 'SZ'], ['0', '1']):
+            storage.append(self._pro.hs_const(hs_type=hs_type, is_new=is_new))
         df = pd.concat(storage)
         in_part = df.loc[:, ['in_date', 'ts_code']]
         in_part[data_category] = True
@@ -609,32 +611,35 @@ class TushareData(DataSource):
         self.db_interface.update_df(stacked_df, data_category)
         logging.getLogger(__name__).info(f'{data_category}数据下载完成')
 
-    def get_hs_holding(self, trade_date: DateUtils.DateType = None,
-                       start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None) -> None:
-        """ 沪深港股通持股明细 """
-        dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
-
+    @DateUtils.strlize_input_dates
+    def get_hs_holding(self, date: DateUtils.DateType):
         data_category = '沪深港股通持股明细'
         desc = self._factor_param[data_category]['输出参数']
         fields = list(desc.keys())
 
+        df = self._pro.hk_hold(trade_date=date, fields=fields)
+        df = self._standardize_df(df, desc)
+        self.db_interface.update_df(df, data_category)
+
+    def update_hs_holding(self) -> None:
+        """ 沪深港股通持股明细 """
+        data_category = '沪深港股通持股明细'
+        start_date = self._check_db_timestamp(data_category, START_DATE['ggt'])
+        dates = self.calendar.select_dates(start_date, dt.date.today())
+
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
         with tqdm(dates) as pbar:
             for date in dates:
-                current_date_str = DateUtils.date_type2str(date)
-                pbar.set_description(f'下载{current_date_str}的沪深港股通持股明细')
-                df = self._pro.hk_hold(trade_date=current_date_str, fields=fields)
-                df = self._standardize_df(df, desc)
-                self.db_interface.update_df(df, data_category)
+                pbar.set_description(f'下载{date}的沪深港股通持股明细')
+                self.get_hs_holding(date)
                 pbar.update()
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     #######################################
     # HK stock funcs
     #######################################
-    def get_hk_stock_daily(self):
+    def update_hk_stock_daily(self):
         table_name = '港股日行情'
-        desc = self._factor_param[table_name]['输出参数']
 
         hk_cal = DateUtils.HKTradingCalendar(self.db_interface)
         start_date = self._check_db_timestamp(table_name, START_DATE['hk_daily'])
@@ -647,12 +652,18 @@ class TushareData(DataSource):
         with tqdm(dates) as pbar:
             for date in dates:
                 with rate_limiter:
-                    current_date_str = DateUtils.date_type2str(date)
-                    pbar.set_description(f'下载{current_date_str}的{table_name}')
-                    df = self._pro.hk_daily(trade_date=current_date_str, fields=list(desc.keys()))
-                    price_df = self._standardize_df(df, desc)
-                    self.db_interface.update_df(price_df, table_name)
+                    pbar.set_description(f'下载{date}的{table_name}')
+                    self.get_hk_stock_daily(date)
                     pbar.update()
+
+    @DateUtils.strlize_input_dates
+    def get_hk_stock_daily(self, date: DateUtils.DateType) -> pd.DataFrame:
+        table_name = '港股日行情'
+        desc = self._factor_param[table_name]['输出参数']
+        df = self._pro.hk_daily(trade_date=date, fields=list(desc.keys()))
+        price_df = self._standardize_df(df, desc)
+        self.db_interface.update_df(price_df, table_name)
+        return price_df
 
     #######################################
     # index funcs
