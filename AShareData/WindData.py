@@ -256,7 +256,7 @@ class WindData(DataSource):
         """股票分钟行情更新脚本"""
         table_name = '股票分钟行情'
         latest = self._check_db_timestamp(table_name, dt.datetime.today() - dt.timedelta(days=365 * 3))
-        date_range = self.calendar.select_dates(latest, dt.date.today(), inclusive=(False, True))
+        date_range = self.calendar.select_dates(latest.date(), dt.date.today(), inclusive=(False, True))
 
         with tqdm(date_range) as pbar:
             for date in date_range:

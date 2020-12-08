@@ -526,7 +526,8 @@ class TushareData(DataSource):
         with tqdm(dates_range) as pbar:
             for date in dates_range:
                 pbar.set_description(f'下载{date}的分红送股数据')
-                df = self._pro.dividend(record_date=date, fields=(list(column_desc.keys())))
+                date_str = DateUtils.date_type2str(date)
+                df = self._pro.dividend(record_date=date_str, fields=(list(column_desc.keys())))
                 df = df.loc[df['div_proc'] == '实施', :]
                 # 无公布时间的权宜之计
                 df['ann_date'].where(df['ann_date'].notnull(), df['imp_ann_date'], inplace=True)
