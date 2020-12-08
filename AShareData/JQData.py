@@ -153,7 +153,7 @@ class JQData(DataSource):
         tickers = self.stock_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
         data = jq.get_call_auction(tickers, start_date=date_str, end_date=date_str)
-        auction_time = date + dt.timedelta(hours=9, minutes=25)
+        auction_time = dt.datetime.combine(date.date(), dt.time(hour=9, minute=25))
         data.time = auction_time
         db_data = self._standardize_df(data, renaming_dict)
         self.db_interface.insert_df(db_data, table_name)
