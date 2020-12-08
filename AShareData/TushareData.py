@@ -2,8 +2,8 @@ import datetime as dt
 import itertools
 import logging
 import re
-from typing import Callable, Mapping, Sequence, Union
 from itertools import product
+from typing import Callable, Mapping, Sequence, Union
 
 import pandas as pd
 import tushare as ts

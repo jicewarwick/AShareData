@@ -1,7 +1,6 @@
 import json
 
-from AShareData import TushareData
-from AShareData import MySQLInterface, prepare_engine, WindData
+from AShareData import MySQLInterface, prepare_engine, TushareData, WindData
 
 if __name__ == '__main__':
     config_loc = './tests/config.json'
@@ -19,15 +18,17 @@ if __name__ == '__main__':
     tushare_crawler.get_ipo_info()
     tushare_crawler.get_company_info()
     tushare_crawler.update_hs_holding()
+    tushare_crawler.get_hs_constitute()
 
     tushare_crawler.update_stock_names()
     tushare_crawler.update_dividend()
 
+    tushare_crawler.update_hk_stock_daily()
+
+    tushare_crawler.update_fund_daily()
     tushare_crawler.update_fund_dividend()
-    # tushare_crawler.get_hs_constitute()
 
     with WindData(db_interface) as wind_data:
-        wind_data.update_minutes_data()
         wind_data.update_stock_daily_data()
         wind_data.update_stock_adj_factor()
         wind_data.update_stock_units()
@@ -37,3 +38,4 @@ if __name__ == '__main__':
         wind_data.update_future_daily_data()
         wind_data.update_stock_option_daily_data()
 
+        wind_data.update_minutes_data()
