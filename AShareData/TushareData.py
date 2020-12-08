@@ -43,6 +43,7 @@ class TushareData(DataSource):
 
     def update_base_info(self):
         self.update_calendar()
+        self.update_hk_calendar()
         self.update_stock_list_date()
         self.update_convertible_bond_list_date()
         self.update_fund_list_date()
@@ -93,7 +94,7 @@ class TushareData(DataSource):
         self.db_interface.purge_table(table_name)
         self.db_interface.insert_df(cal_date, table_name)
 
-    def update_hk_calendar(self) -> None:
+    def init_hk_calendar(self) -> None:
         """ 更新港交所交易日历 """
         table_name = '港股交易日历'
         if self.db_interface.get_latest_timestamp(table_name):
@@ -106,6 +107,17 @@ class TushareData(DataSource):
             storage.append(self._pro.hk_tradecal(is_open=1))
             df = pd.concat(storage, ignore_index=True).drop_duplicates()
 
+        cal_date = df.cal_date
+        cal_date = cal_date.sort_values()
+        cal_date.name = '交易日期'
+        cal_date = cal_date.map(DateUtils.date_type2datetime)
+
+        self.db_interface.update_df(cal_date, table_name)
+
+    def update_hk_calendar(self) -> None:
+        """ 更新港交所交易日历 """
+        table_name = '港股交易日历'
+        df = self._pro.hk_tradecal(is_open=1)
         cal_date = df.cal_date
         cal_date = cal_date.sort_values()
         cal_date.name = '交易日期'
@@ -508,7 +520,7 @@ class TushareData(DataSource):
         data_category = '分红送股'
         column_desc = self._factor_param[data_category]['输出参数']
 
-        db_date = self.db_interface.get_column_max(data_category, '股权登记日期')
+        db_date = self.db_interface.get_column_max(data_category, '股权登记日')
         dates_range = self.calendar.select_dates(db_date, dt.date.today(), inclusive=(False, True))
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
         with tqdm(dates_range) as pbar:
