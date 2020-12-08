@@ -135,6 +135,11 @@ class WindWrapper(object):
             df.set_index(index_val, drop=True, inplace=True)
         return df
 
+    def wsq(self, codes: Union[str, List[str]], fields: Union[str, List[str]]) -> pd.DataFrame:
+        data = self._w.wsq(codes, fields, usedf=True)
+        self._api_error(data)
+        return data[1]
+
     # outright functions
     def get_index_constitute(self, date: DateUtils.DateType = dt.date.today(),
                              index: str = '000300.SH') -> pd.DataFrame:
@@ -207,6 +212,19 @@ class WindData(DataSource):
                               options='priceAdj=U;cycle=D;unit=1')
         price_df.rename(renaming_dict, axis=1, inplace=True)
         self.db_interface.update_df(price_df, table_name)
+
+    def get_stock_rt_price(self):
+        tickers = self.stock_list.ticker(dt.date.today())
+        storage = []
+        for ticker in utils.chunk_list(tickers, 3000):
+            storage.append(self.w.wsq(ticker, 'rt_latest'))
+        data = pd.concat(storage)
+        data.index.names = ['ID']
+        data.columns = ['最新价']
+        data['DateTime'] = dt.datetime.now()
+        data.set_index('DateTime', append=True, inplace=True)
+        self.db_interface.purge_table('股票最新价')
+        self.db_interface.insert_df(data, '股票最新价')
 
     def update_stock_daily_data(self):
         table_name = '股票日行情'

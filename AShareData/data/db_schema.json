@@ -667,5 +667,10 @@
 		"总市值": "double",
 		"PE": "float",
 		"PB": "float"
+	},
+	"股票最新价": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"最新价": "float"
 	}
 }
