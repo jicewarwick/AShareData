@@ -511,7 +511,7 @@
 			"exchange": "交易所"
 		}
 	},
-	"结算参数": {
+	"期货结算参数": {
 		"输入参数": {
 			"trade_date": "DateTime（trade_date/ts_code至少需要输入一个参数）",
 			"ts_code": "ID",
@@ -526,12 +526,9 @@
 			"trading_fee_rate": "交易手续费率",
 			"trading_fee": "交易手续费",
 			"delivery_fee": "交割手续费",
-			"b_hedging_margin_rate": "买套保交易保证金率",
-			"s_hedging_margin_rate": "卖套保交易保证金率",
-			"long_margin_rate": "买投机交易保证金率",
-			"short_margin_rate": "卖投机交易保证金率",
-			"offset_today_fee": "平今仓手续率",
-			"exchange": "交易所"
+			"b_hedging_margin_rate": "套保保证金率",
+			"long_margin_rate": "投机保证金率",
+			"offset_today_fee": "平今仓手续率"
 		}
 	},
 	"新闻资讯": {
@@ -1523,7 +1520,8 @@
 			"2": "银行",
 			"3": "保险",
 			"4": "证券"
-		}
+		},
+		"每分钟限速": 200
 	},
 	"现金流量表": {
 		"输入参数": {

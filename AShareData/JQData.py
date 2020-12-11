@@ -38,6 +38,7 @@ class JQData(DataSource):
 
     def __enter__(self):
         self.login()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.logout()
@@ -198,6 +199,19 @@ class JQData(DataSource):
         dates = dates[1:]
         for date in dates:
             self.get_future_daily(date)
+
+    # TODO
+    def _get_future_settle_info(self, date):
+        # table_name = '期货结算参数'
+        tickers = self.future_tickers.ticker(date)
+        tickers = [self.windcode2jqcode(it) for it in tickers]
+
+        data = jq.get_extras('futures_sett_price', tickers, start_date=date, end_date=date)
+        data.columns = [self.jqcode2windcode(it) for it in data.columns]
+        df = data.stack()
+        df.name = '结算价'
+        df.index.names = ['DateTime', 'ID']
+        return df
 
     @DateUtils.dtlize_input_dates
     def get_stock_option_daily(self, date: DateUtils.DateType):

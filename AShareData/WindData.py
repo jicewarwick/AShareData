@@ -371,7 +371,7 @@ class WindData(DataSource):
     #######################################
     def update_convertible_bond_daily_data(self):
         table_name = '可转债日行情'
-        renaming_dict = self._factor_param['股票日线行情']
+        renaming_dict = self._factor_param['股票日行情']
         start_date = self._check_db_timestamp(table_name, dt.datetime(1993, 2, 9))
         dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
