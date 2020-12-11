@@ -182,7 +182,6 @@
 	"资产负债表": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"公告日期": "datetime",
 		"报告期": "datetime",
 		"报表类型": "str",
 		"公司类型": "str",
@@ -321,7 +320,6 @@
 	"利润表": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"公告日期": "datetime",
 		"报告期": "datetime",
 		"报表类型": "str",
 		"公司类型": "str",
@@ -389,7 +387,6 @@
 	"现金流量表": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"公告日期": "datetime",
 		"报告期": "datetime",
 		"报表类型": "str",
 		"公司类型": "str",

@@ -130,10 +130,7 @@ class MySQLInterface(DBInterface):
         for special_item in ['资产负债表', '现金流量表', '利润表']:
             tmp_item = self._db_parameters.pop(special_item)
             for prefix in ['合并', '母公司']:
-                for yearly in ['', '单季度']:
-                    self._db_parameters[prefix + yearly + special_item] = tmp_item
-        for entry in ['合并单季度资产负债表', '母公司单季度资产负债表']:
-            del self._db_parameters[entry]
+                self._db_parameters[prefix + special_item] = tmp_item
         for table_name, table_schema in self._db_parameters.items():
             self.create_table(table_name, table_schema)
 

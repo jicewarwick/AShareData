@@ -5,6 +5,7 @@ import re
 from itertools import product
 from typing import Callable, Mapping, Sequence, Union
 
+import numpy as np
 import pandas as pd
 import tushare as ts
 from cached_property import cached_property
@@ -50,6 +51,42 @@ class TushareData(DataSource):
         self.update_future_list_date()
         self.update_option_list_date()
 
+    #######################################
+    # init func
+    #######################################
+    def init_hk_calendar(self) -> None:
+        """ 更新港交所交易日历 """
+        table_name = '港股交易日历'
+        if self.db_interface.get_latest_timestamp(table_name):
+            df = self._pro.hk_tradecal(is_open=1)
+        else:
+            storage = []
+            end_dates = ['19850101', '19900101', '19950101', '20000101', '20050101', '20100101', '20150101', '20200101']
+            for end_date in end_dates:
+                storage.append(self._pro.hk_tradecal(is_open=1, end_date=end_date))
+            storage.append(self._pro.hk_tradecal(is_open=1))
+            df = pd.concat(storage, ignore_index=True).drop_duplicates()
+
+        cal_date = df.cal_date
+        cal_date = cal_date.sort_values()
+        cal_date.name = '交易日期'
+        cal_date = cal_date.map(DateUtils.date_type2datetime)
+
+        self.db_interface.update_df(cal_date, table_name)
+
+    def init_stock_names(self):
+        """获取所有股票的曾用名"""
+        raw_df = self.update_stock_names()
+        raw_df_start_dates = raw_df.index.get_level_values('DateTime').min()
+        uncovered_stocks = self.stock_tickers.ticker(raw_df_start_dates)
+
+        with tqdm(uncovered_stocks) as pbar:
+            for stock in uncovered_stocks:
+                pbar.set_description(f'下载{stock}的股票名称')
+                self.update_stock_names(stock)
+                pbar.update()
+        logging.getLogger(__name__).info('股票曾用名下载完成.')
+
     @cached_property
     def stock_tickers(self) -> StockTickers:
         return StockTickers(self.db_interface)
@@ -93,26 +130,6 @@ class TushareData(DataSource):
 
         self.db_interface.purge_table(table_name)
         self.db_interface.insert_df(cal_date, table_name)
-
-    def init_hk_calendar(self) -> None:
-        """ 更新港交所交易日历 """
-        table_name = '港股交易日历'
-        if self.db_interface.get_latest_timestamp(table_name):
-            df = self._pro.hk_tradecal(is_open=1)
-        else:
-            storage = []
-            end_dates = ['19850101', '19900101', '19950101', '20000101', '20050101', '20100101', '20150101', '20200101']
-            for end_date in end_dates:
-                storage.append(self._pro.hk_tradecal(is_open=1, end_date=end_date))
-            storage.append(self._pro.hk_tradecal(is_open=1))
-            df = pd.concat(storage, ignore_index=True).drop_duplicates()
-
-        cal_date = df.cal_date
-        cal_date = cal_date.sort_values()
-        cal_date.name = '交易日期'
-        cal_date = cal_date.map(DateUtils.date_type2datetime)
-
-        self.db_interface.update_df(cal_date, table_name)
 
     def update_hk_calendar(self) -> None:
         """ 更新港交所交易日历 """
@@ -162,7 +179,7 @@ class TushareData(DataSource):
             storage.append(self._pro.hk_basic(list_status=status))
             # storage.append(self._pro.hk_basic(exchange='', list_status=status, fields=fields))
         output = pd.concat(storage)
-        output['证券类型'] = 'A股股票'
+        output['证券类型'] = '港股股票'
         list_info = self._format_list_date(output.loc[:, ['ts_code', 'list_date', 'delist_date', '证券类型']])
         self.db_interface.update_df(list_info, '证券代码')
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
@@ -214,6 +231,11 @@ class TushareData(DataSource):
         output.multiplier = output.multiplier.where(output.multiplier.notna(), output.per_unit)
         output = output.dropna(subset=['multiplier']).drop('per_unit', axis=1)
         output.quote_unit_desc = output.quote_unit_desc.apply(find_start_num)
+
+        # exclude XINE's TAS contracts
+        output = output.loc[~output.symbol.str.endswith('TAS'), :]
+        # drop AP2107.CZC
+        output = output.loc[output.symbol != 'AP107', :]
 
         # list date
         list_info = output.loc[:, ['ts_code', 'list_date', 'delist_date']]
@@ -393,19 +415,6 @@ class TushareData(DataSource):
         logging.getLogger(__name__).debug(f'{ticker if ticker else ""}{data_category}下载完成.')
         return df
 
-    def init_stock_names(self):
-        """获取所有股票的曾用名"""
-        raw_df = self.update_stock_names()
-        raw_df_start_dates = raw_df.index.get_level_values('DateTime').min()
-        uncovered_stocks = self.stock_tickers.ticker(raw_df_start_dates)
-
-        with tqdm(uncovered_stocks) as pbar:
-            for stock in uncovered_stocks:
-                pbar.set_description(f'下载{stock}的股票名称')
-                self.update_stock_names(stock)
-                pbar.update()
-        logging.getLogger(__name__).info('股票曾用名下载完成.')
-
     def get_daily_hq(self, trade_date: DateUtils.DateType = None,
                      start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None) -> None:
         """更新每日行情, 写入数据库, 不返回
@@ -539,22 +548,8 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info(f'{data_category}信息下载完成.')
 
     @DateUtils.strlize_input_dates
-    def get_financial(self, stock_list: Sequence[str] = None, start_date: DateUtils.DateType = '19900101') -> None:
-        """
-        获取公司的 资产负债表, 现金流量表 和 利润表, 并写入数据库
-
-        注:
-        - 由于接口限流严重, 这个函数通过循环股票完成, 需要很长很长时间才能完成(1天半?)
-        """
-        # db_end_date = self._check_db_timestamp('合并资产负债表', dt.datetime(1990, 1, 1))
-        # db_end_date = DateUtils.date_type2str(db_end_date)
-        # disclose_date = self._pro.disclosure_date(ts_code='600518.SH', end_date='20191231',
-        #                                           fields=['ts_code', 'ann_date', 'end_date', 'pre_date', 'actual_date',
-        #                                                   'modify_date'])
-        # df = self._pro.balancesheet(ts_code='600518.SH')
-        # income_df = self._pro.income(ts_code='600518.SH')
-        # cashflow_df = self._pro.cashflow(ts_code='600518.SH', period='20191231', fields=list(cash_flow_desc.keys()))
-
+    def get_financial(self, ticker: str) -> None:
+        """ 获取公司的 资产负债表, 现金流量表 和 利润表, 并写入数据库 """
         balance_sheet = '资产负债表'
         income = '利润表'
         cash_flow = '现金流量表'
@@ -569,27 +564,42 @@ class TushareData(DataSource):
                           column_name_dict: Mapping[str, str], table_name: str) -> None:
             storage = []
             for i in report_type_list:
-                storage.append(api_func(ts_code=ticker, start_date=start_date, report_type=i))
+                storage.append(api_func(ts_code=ticker, report_type=i))
             df = pd.concat(storage)
-            df.replace({'report_type': report_type_desc, 'comp_type': company_type_desc}, inplace=True)
+
+            df = df.fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
+            df = df.sort_values('update_flag').groupby(['ann_date', 'end_date', 'report_type']).tail(1)
+            df = df.drop('update_flag', axis=1)
+            df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).drop_duplicates(keep='first').reset_index()
+            df = df.drop('ann_date', axis=1).replace({'report_type': report_type_desc, 'comp_type': company_type_desc})
             df = self._standardize_df(df, column_name_dict)
+
             self.db_interface.update_df(df, table_name)
 
-        # 分 合并/母公司
-        if stock_list is None:
-            stock_list = self.stock_tickers.ticker()
+        loop_vars = [(self._pro.balancesheet, balance_sheet_desc, balance_sheet),
+                     (self._pro.income, income_desc, income),
+                     (self._pro.cashflow, cash_flow_desc, cash_flow)]
+        for f, desc, table in loop_vars:
+            download_data(f, ['1', '4', '5', '11'], desc, f'合并{table}')
+            download_data(f, ['6', '9', '10', '12'], desc, f'母公司{table}')
+
+    def init_accounting_data(self):
+        tickers = self.stock_tickers.all_ticker()
+        rate_limiter = RateLimiter(self._factor_param['资产负债表']['每分钟限速'] / 4, 60)
         logging.getLogger(__name__).debug(f'开始下载财报.')
-        with tqdm(stock_list) as pbar:
-            loop_vars = [(self._pro.income, income_desc, income), (self._pro.cashflow, cash_flow_desc, cash_flow)]
-            for ticker in stock_list:
-                pbar.set_description(f'下载{ticker}的财报')
-                download_data(self._pro.balancesheet, ['1', '4', '5', '11'], balance_sheet_desc, f'合并{balance_sheet}')
-                download_data(self._pro.balancesheet, ['6', '9', '10', '12'], balance_sheet_desc, f'母公司{balance_sheet}')
-                for f, desc, table in loop_vars:
-                    download_data(f, ['6', '9', '10'], desc, f'母公司{table}')
-                    download_data(f, ['1', '4', '5'], desc, f'合并{table}')
-                pbar.update()
+        with tqdm(tickers) as pbar:
+            for ticker in tickers:
+                with rate_limiter:
+                    pbar.set_description(f'下载{ticker}的财务数据')
+                    self.get_financial(ticker)
+                    pbar.update()
+
         logging.getLogger(__name__).info(f'财报下载完成')
+
+    def update_financial_data(self):
+        table_name = '财报披露计划'
+        desc = self._factor_param[table_name]['输出参数']
+        df = self._pro.disclosure_date(end_date='20200930', fields=list(desc.keys()))
 
     # todo: TBD
     def get_financial_index(self, ticker: str, period: str) -> pd.DataFrame:
@@ -755,6 +765,21 @@ class TushareData(DataSource):
                 self.db_interface.update_df(df, '指数成分股权重')
                 pbar.update()
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
+
+    #######################################
+    # future funcs
+    #######################################
+    # TODO
+    @DateUtils.strlize_input_dates
+    def _get_future_settle_info(self, date):
+        table_name = '期货结算参数'
+        desc = self._factor_param[table_name]['输出参数']
+        storage = []
+        for exchange in constants.FUTURE_EXCHANGES:
+            storage.append(self._pro.fut_settle(trade_date=date, exchange=exchange, fields=list(desc.keys())))
+        data = pd.concat(storage, ignore_index=True)
+        df = self._standardize_df(data, desc)
+        return df
 
     #######################################
     # funds funcs
