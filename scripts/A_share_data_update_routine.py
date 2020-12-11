@@ -1,9 +1,10 @@
 import json
+import sys
 
-from AShareData import MySQLInterface, prepare_engine, TushareData, WindData
+from AShareData import ConstLimitStockFactorCompositor, MySQLInterface, prepare_engine, TushareData, WindData
 
 if __name__ == '__main__':
-    config_loc = './tests/config.json'
+    config_loc = sys.argv[1]
     with open(config_loc, 'r') as f:
         config = json.load(f)
 
@@ -35,7 +36,10 @@ if __name__ == '__main__':
         wind_data.update_industry()
         wind_data.update_pause_stock_info()
 
+        wind_data.update_convertible_bond_daily_data()
         wind_data.update_future_daily_data()
         wind_data.update_stock_option_daily_data()
 
         wind_data.update_minutes_data()
+
+    ConstLimitStockFactorCompositor(db_interface).update()
