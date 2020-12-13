@@ -50,6 +50,20 @@ class MyTestCase(unittest.TestCase):
         print('\n')
         print(data)
 
+    def test_wsq(self):
+        data = self.w.wsq('002080.SZ,000002.SZ', 'rt_latest,rt_vol')
+        print('\n')
+        print(data)
+        data = self.w.wsq('000002.SZ', 'rt_latest,rt_vol')
+        print('\n')
+        print(data)
+        data = self.w.wsq('002080.SZ,000002.SZ', 'rt_latest')
+        print('\n')
+        print(data)
+        data = self.w.wsq('000002.SZ', 'rt_latest')
+        print('\n')
+        print(data)
+
 
 if __name__ == '__main__':
     unittest.main()

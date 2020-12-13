@@ -1,8 +1,4 @@
 import datetime as dt
-import logging
-import re
-import sys
-import tempfile
 from typing import Dict, List, Sequence, Union
 
 import numpy as np
@@ -14,7 +10,8 @@ from tqdm import tqdm
 from . import constants, DateUtils, utils
 from .DataSource import DataSource
 from .DBInterface import DBInterface
-from .Tickers import ETFTickers, FutureTickers, OptionTickers, StockTickers
+from .Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
+    StockTickers
 
 
 class WindWrapper(object):
@@ -23,20 +20,17 @@ class WindWrapper(object):
     def __init__(self):
         self._w = None
 
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+
     def connect(self):
-        with tempfile.TemporaryFile(mode='w') as log_file:
-            out = sys.stdout
-            out2 = sys.stderr
-            sys.stdout = log_file
-            sys.stderr = log_file
-            try:
-                self._w = WindPy.w
-                self._w.start()
-            except:
-                logging.error('Wind API fail to start')
-            finally:
-                sys.stdout = out
-                sys.stderr = out2
+        with utils.NullPrinter():
+            self._w = WindPy.w
+            self._w.start()
 
     def disconnect(self):
         if self._w:
@@ -141,6 +135,11 @@ class WindWrapper(object):
             df.set_index(index_val, drop=True, inplace=True)
         return df
 
+    def wsq(self, codes: Union[str, List[str]], fields: Union[str, List[str]]) -> pd.DataFrame:
+        data = self._w.wsq(codes, fields, usedf=True)
+        self._api_error(data)
+        return data[1]
+
     # outright functions
     def get_index_constitute(self, date: DateUtils.DateType = dt.date.today(),
                              index: str = '000300.SH') -> pd.DataFrame:
@@ -157,6 +156,15 @@ class WindData(DataSource):
 
         self._factor_param = utils.load_param('wind_param.json', param_json_loc)
         self.w = WindWrapper()
+
+    def __enter__(self):
+        self.w.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.w.disconnect()
+
+    def connect(self):
         self.w.connect()
 
     @cached_property
@@ -168,114 +176,101 @@ class WindData(DataSource):
         return FutureTickers(self.db_interface)
 
     @cached_property
-    def option_list(self) -> OptionTickers:
-        return OptionTickers(self.db_interface)
+    def option_list(self) -> IndexOptionTickers:
+        return IndexOptionTickers(self.db_interface)
+
+    @cached_property
+    def stock_index_option_list(self) -> IndexOptionTickers:
+        return IndexOptionTickers(self.db_interface)
+
+    @cached_property
+    def etf_option_list(self) -> ETFOptionTickers:
+        return ETFOptionTickers(self.db_interface)
 
     @cached_property
     def etf_list(self):
         return ETFTickers(self.db_interface)
 
-    def update_routine(self):
-        # stock
-        self.update_stock_daily_data()
-        self.update_adj_factor()
-        self.update_industry()
-        self.update_pause_stock_info()
-        self.update_stock_units()
-
-        # future
-        self.update_future_contracts_list()
-        self.update_future_daily_data()
-
-        # option
-        self.update_stock_option_list()
-        self.update_stock_option_daily_data()
-
-        # index
-        self.update_target_stock_index_daily()
-
-        # etf
-        self.update_etf_list()
-        self.update_etf_daily()
-        return
+    @cached_property
+    def convertible_bond_list(self):
+        return ConvertibleBondTickers(self.db_interface)
 
     #######################################
     # stock funcs
     #######################################
-    def get_stock_daily_data(self, trade_date: DateUtils.DateType = None, start_date: DateUtils.DateType = None,
-                             end_date: DateUtils.DateType = dt.datetime.now()) -> None:
+    def get_stock_daily_data(self, date: DateUtils.DateType) -> None:
         """更新每日行情, 写入数据库, 不返回
 
-        行情信息包括: 开高低收, 量额, 复权因子, 股本
+        行情信息包括: 开高低收量额
 
-        :param trade_date: 交易日期
-        :param start_date: 开始日期
-        :param end_date: 结束日期
-
-        交易日期查询一天, 开始结束日期查询区间. 二选一
-
+        :param date: 交易日期
         :return: None
         """
-        if (not trade_date) & (not start_date):
-            raise ValueError('trade_date 和 start_date 必填一个!')
-        dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
-        renaming_dict = self._factor_param['股票日线行情']
+        table_name = '股票日行情'
+        renaming_dict = self._factor_param[table_name]
+        price_df = self.w.wss(self.stock_list.ticker(date), list(renaming_dict.keys()), date=date,
+                              options='priceAdj=U;cycle=D;unit=1')
+        price_df.rename(renaming_dict, axis=1, inplace=True)
+        self.db_interface.update_df(price_df, table_name)
 
-        with tqdm(dates) as pbar:
-            for date in dates:
-                current_date_str = DateUtils.date_type2str(date)
-
-                # price data
-                pbar.set_description(f'下载{current_date_str}的日行情')
-                price_df = self.w.wss(self.stock_list.ticker(date), list(renaming_dict.keys()), date=date,
-                                      options='priceAdj=U;cycle=D;unit=1')
-                price_df.rename(renaming_dict, axis=1, inplace=True)
-
-                self.db_interface.update_df(price_df, '股票日行情')
-
-                pbar.update(1)
+    def get_stock_rt_price(self):
+        tickers = self.stock_list.ticker(dt.date.today())
+        storage = []
+        for ticker in utils.chunk_list(tickers, 3000):
+            storage.append(self.w.wsq(ticker, 'rt_latest'))
+        data = pd.concat(storage)
+        data.index.names = ['ID']
+        data.columns = ['最新价']
+        data['DateTime'] = dt.datetime.now()
+        data.set_index('DateTime', append=True, inplace=True)
+        self.db_interface.purge_table('股票最新价')
+        self.db_interface.insert_df(data, '股票最新价')
 
     def update_stock_daily_data(self):
-        start_date = self._check_db_timestamp('股票日行情', dt.date(1990, 12, 10))
-        self.get_stock_daily_data(start_date=start_date)
+        table_name = '股票日行情'
+        start_date = self._check_db_timestamp(table_name, dt.date(1990, 12, 10))
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
+        with tqdm(dates) as pbar:
+            for date in dates:
+                pbar.set_description(f'下载{date}的{table_name}')
+                self.get_stock_daily_data(date)
+                pbar.update()
+
+    def get_stock_minute_data(self, date: dt.datetime):
+        table_name = '股票分钟行情'
+        replace_dict = self._factor_param[table_name]
+
+        start_time = dt.datetime.combine(date.date(), dt.time(hour=8))
+        end_time = dt.datetime.combine(date.date(), dt.time(hour=16))
+        storage = []
+        for section in utils.chunk_list(self.stock_list.ticker(date), 100):
+            partial_data = self.w.wsi(section, "open,high,low,close,volume,amt", start_time, end_time, "")
+            storage.append(partial_data.dropna())
+        data = pd.concat(storage)
+        data.set_index('windcode', append=True, inplace=True)
+        data.index.names = ['DateTime', 'ID']
+        data.rename(replace_dict, axis=1, inplace=True)
+        self.db_interface.insert_df(data, table_name)
 
     def update_minutes_data(self) -> None:
         """股票分钟行情更新脚本"""
         table_name = '股票分钟行情'
-        replace_dict = self._factor_param[table_name]
         latest = self._check_db_timestamp(table_name, dt.datetime.today() - dt.timedelta(days=365 * 3))
-        latest = latest + dt.timedelta(days=1)
-        pre_date = self.calendar.offset(dt.date.today(), -1)
-        date_range = self.calendar.select_dates(latest, pre_date)
+        date_range = self.calendar.select_dates(latest.date(), dt.date.today(), inclusive=(False, True))
 
         with tqdm(date_range) as pbar:
             for date in date_range:
-                start_time = date + dt.timedelta(hours=8)
-                end_time = date + dt.timedelta(hours=16)
-                storage = []
-                for section in utils.chunk_list(self.stock_list.ticker(date), 100):
-                    partial_data = self.w.wsi(section, "open,high,low,close,volume,amt", start_time, end_time, "")
-                    storage.append(partial_data.dropna())
-                data = pd.concat(storage)
-                data.set_index('windcode', append=True, inplace=True)
-                data.index.names = ['DateTime', 'ID']
-                data.rename(replace_dict, axis=1, inplace=True)
-                self.db_interface.insert_df(data, table_name)
+                pbar.set_description(f'更新{date}的{table_name}')
+                self.get_stock_minute_data(date)
                 pbar.update()
 
-    def update_adj_factor(self):
+    def update_stock_adj_factor(self):
         def data_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
             data = self.w.wsd(ticker, 'adjfactor', date, date)
             data.name = '复权因子'
             return data
 
-        # update adj_factor for stocks
         self.sparse_data_template('复权因子', data_func)
-
-        # update adj_factor for etfs
-        funds_info = self.db_interface.read_table('ETF上市日期').reset_index()
-        etf_wind_code = funds_info['ID'].tolist()
-        self.sparse_data_template('复权因子', data_func, ticker=etf_wind_code, default_start_date=self.etf_list.list_date())
 
     def update_stock_units(self):
         # 流通股本
@@ -346,13 +341,7 @@ class WindData(DataSource):
                                  default_start_date=default_start_date)
 
     def update_industry(self) -> None:
-        needed_update_provider = []
         for provider in constants.INDUSTRY_DATA_PROVIDER:
-            timestamp = self.db_interface.get_latest_timestamp(f'{provider}行业')
-            if (not timestamp) or (timestamp < dt.datetime.now() - dt.timedelta(days=30)):
-                needed_update_provider.append(provider)
-
-        for provider in needed_update_provider:
             self._update_industry(provider)
 
     def update_pause_stock_info(self):
@@ -378,90 +367,33 @@ class WindData(DataSource):
                 pbar.update()
 
     #######################################
-    # etf funcs
+    # convertible bond funcs
     #######################################
-    def update_etf_list(self) -> pd.DataFrame:
-        etf_table_name = 'ETF上市日期'
-        etfs = self.w.wset("sectorconstituent", date=dt.date.today(), sectorid='1000009165000000',
-                           field='wind_code,sec_name')
-        wind_codes = etfs.index.tolist()
-        listed_date = self.w.wss(wind_codes, "fund_etflisteddate")
-        etf_info = pd.concat([etfs, listed_date], axis=1)
-        etf_info = etf_info.set_index('FUND_ETFLISTEDDATE', append=True)
-        etf_info.index.names = ['ID', 'DateTime']
-        etf_info.columns = ['证券名称']
-        self.db_interface.update_df(etf_info, etf_table_name)
-        return etf_info
-
-    def update_etf_daily(self):
-        table_name = '场内基金日行情'
-        start_date = self.db_interface.get_latest_timestamp(table_name)
-        if start_date is None:
-            start_date = self.db_interface.get_column_min('ETF上市日期', 'DateTime')
-
-        end_date = self.calendar.yesterday()
-        dates = self.calendar.select_dates(start_date, end_date)
-        if len(dates) <= 1:
-            return
-        dates = dates[1:]
+    def update_convertible_bond_daily_data(self):
+        table_name = '可转债日行情'
+        renaming_dict = self._factor_param['股票日行情']
+        start_date = self._check_db_timestamp(table_name, dt.datetime(1993, 2, 9))
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
         with tqdm(dates) as pbar:
             for date in dates:
-                pbar.set_description(f'下载{date}的ETF日行情')
-                data = self.w.wss(self.etf_list.ticker(date), "open,low,high,close,volume,amt,nav,unit_total",
-                                  date=date, priceAdj='U', cycle='D')
-                data.rename(self._factor_param[table_name], axis=1, inplace=True)
-                data.dropna(inplace=True)
-                self.db_interface.insert_df(data, table_name)
+                pbar.set_description(f'下载{date}的{table_name}')
+                tickers = self.convertible_bond_list.ticker(date)
+                if tickers:
+                    data = self.w.wss(tickers, "open, high, low, close, volume, amt",
+                                      date=date, options='priceAdj=U;cycle=D')
+                    data.rename(renaming_dict, axis=1, inplace=True)
+                    self.db_interface.insert_df(data, table_name)
                 pbar.update()
 
     #######################################
     # future funcs
     #######################################
-    def get_future_symbols(self) -> List[str]:
-        all_contracts = self.w.wset('sectorconstituent', date=dt.date.today(), sectorid='1000028001000000')
-        ids = all_contracts.index.get_level_values(1).tolist()
-        symbols = [re.sub(r'\d*', '', it) for it in ids]
-        symbols = list(set(symbols))
-
-        # delete simulated symbols
-        symbols = [it for it in symbols if '-S' not in it]
-        symbols = sorted(symbols)
-        pd.DataFrame(symbols).to_sql('期货品种', self.db_interface.engine, if_exists='replace')
-        return symbols
-
-    def update_future_contracts_list(self):
-        contract_table_name = '期货合约'
-        start_date = self.db_interface.get_column(contract_table_name, '合约上市日期')
-        if start_date is None:
-            start_date = dt.date(1990, 1, 1)
-        else:
-            start_date = max(start_date)
-
-        logging.info(f'更新自{start_date.strftime("%Y-%m-%d")}以来的期货品种.')
-
-        symbols_table_name = '期货品种'
-        symbols_table = self.db_interface.read_table(symbols_table_name)
-        symbols = symbols_table.iloc[:, 1].tolist()
-        storage = []
-        for symbol in symbols:
-            storage.append(self.w.wset('futurecc', startdate=start_date, enddate=dt.date.today(), wind_code=symbol))
-        data = pd.concat(storage)
-        info = data.rename(self._factor_param[contract_table_name], axis=1)
-        info.index.name = 'ID'
-        info = info.drop_duplicates()
-        self.db_interface.update_df(info, contract_table_name)
-
     def update_future_daily_data(self):
         contract_daily_table_name = '期货日行情'
+
         start_date = self.db_interface.get_latest_timestamp(contract_daily_table_name)
-        if start_date is None:
-            start_date = self.db_interface.get_column_min('期货合约', 'DateTime')
-        end_date = self.calendar.yesterday()
-        dates = self.calendar.select_dates(start_date, end_date)
-        if len(dates) <= 1:
-            return
-        dates = dates[1:]
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
         with tqdm(dates) as pbar:
             for date in dates:
@@ -475,54 +407,26 @@ class WindData(DataSource):
     #######################################
     # option funcs
     #######################################
-    def update_stock_option_list(self) -> None:
-        contract_table_name = '期权合约'
+    def get_stock_option_daily_data(self, date: dt.datetime) -> None:
+        contract_daily_table_name = '期权日行情'
 
-        start_date = self.db_interface.get_column(contract_table_name, '上市日期')
-        if start_date is None:
-            start_date = dt.date(1990, 1, 1)
-        else:
-            start_date = max(start_date)
-        end_date = self.calendar.yesterday()
-        storage = []
-        option_dict = {'510050.SH': 'sse', '510300.SH': 'sse', '510500.SH': 'sse', '159919.SZ': 'szse',
-                       '000300.SH': 'cffex'}
-        exchange_dict = {'sse': 'SH', 'szse': 'SZ', 'cffex': 'CFE'}
-        fields = "wind_code,sec_name,option_mark_code,call_or_put,exercise_price,contract_unit,limit_month,listed_date,exercise_date"
-        logging.info('更新期权合约.')
-        for underlying, exchange in option_dict.items():
-            data = self.w.wset("optioncontractbasicinfo", exchange=exchange, windcode=underlying, status='all',
-                               startdate=start_date.strftime('%Y-%m-%d'), enddate=end_date.strftime('%Y-%m-%d'),
-                               options=f'field={fields}')
-            index = ['.'.join([it, exchange_dict[exchange]]) for it in data.index]
-            data.index = index
-            storage.append(data)
-
-        all_data = pd.concat(storage)
-        all_data.rename(self._factor_param[contract_table_name], axis=1, inplace=True)
-        all_data.index.names = ['ID']
-
-        self.db_interface.update_df(all_data, contract_table_name)
+        tickers = self.etf_option_list.ticker(date) + self.option_list.ticker(date)
+        data = self.w.wss(tickers,
+                          "high,open,low,close,volume,amt,oi,delta,gamma,vega,theta,rho",
+                          date=date, priceAdj='U', cycle='D')
+        data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)
+        self.db_interface.insert_df(data, contract_daily_table_name)
 
     def update_stock_option_daily_data(self) -> None:
         contract_daily_table_name = '期权日行情'
-        start_date = self.db_interface.get_latest_timestamp(contract_daily_table_name)
-        if start_date is None:
-            start_date = self.db_interface.get_column_min('期权合约', '上市日期')
-        end_date = self.calendar.yesterday()
-        dates = self.calendar.select_dates(start_date, end_date)
-        if len(dates) <= 1:
-            return
-        dates = dates[1:]
+
+        start_date = self._check_db_timestamp(contract_daily_table_name, dt.datetime(2015, 2, 8))
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{contract_daily_table_name}')
-                data = self.w.wss(self.option_list.ticker(date),
-                                  "high,open,low,close,volume,amt,oi,delta,gamma,vega,theta,rho",
-                                  date=date, priceAdj='U', cycle='D')
-                data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)
-                self.db_interface.insert_df(data, contract_daily_table_name)
+                self.get_stock_option_daily_data(date)
                 pbar.update()
 
     #######################################
@@ -530,12 +434,9 @@ class WindData(DataSource):
     #######################################
     def update_target_stock_index_daily(self) -> None:
         table_name = '指数日行情'
+
         start_date = self.db_interface.get_latest_timestamp(table_name)
-        end_date = self.calendar.yesterday()
-        dates = self.calendar.select_dates(start_date, end_date)
-        if len(dates) <= 1:
-            return
-        dates = dates[1:]
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
         indexes = list(constants.STOCK_INDEXES.values())
         with tqdm(dates) as pbar:
@@ -618,6 +519,7 @@ class WindData(DataSource):
         if ticker is None:
             ticker = self.stock_list.all_ticker()
         current_data = self.db_interface.read_table(table_name).groupby('ID').tail(1)
+        current_data = current_data.loc[current_data.index.get_level_values('ID').isin(ticker), :]
         end_date = self.calendar.yesterday()
         new_data = data_func(ticker=ticker, date=end_date)
         new_data.name = table_name

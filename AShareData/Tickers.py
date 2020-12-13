@@ -32,6 +32,11 @@ class TickersBase(object):
         first_list_info = self.cache.groupby('ID').head(1)
         return dict(zip(first_list_info.ID, first_list_info.DateTime))
 
+    def get_list_date(self, ticker: str):
+        """ return the list date of a ticker"""
+        info = self.cache.loc[self.cache.ID == ticker, :]
+        return info.DateTime.iloc[0]
+
 
 class DiscreteTickers(TickersBase):
     """细类证券代码基类"""
@@ -46,6 +51,13 @@ class StockTickers(DiscreteTickers):
 
     def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface, 'A股股票')
+
+
+class ConvertibleBondTickers(DiscreteTickers):
+    """可转债代码"""
+
+    def __init__(self, db_interface: DBInterface) -> None:
+        super().__init__(db_interface, '可转债')
 
 
 class FutureTickers(DiscreteTickers):
@@ -110,6 +122,13 @@ class OptionTickers(ConglomerateTickers):
 
     def __init__(self, db_interface: DBInterface) -> None:
         super().__init__(db_interface, '证券类型 like "%期权"')
+
+
+class FundTickers(ConglomerateTickers):
+    """基金"""
+
+    def __init__(self, db_interface: DBInterface) -> None:
+        super().__init__(db_interface, '证券类型 like "%基金"')
 
 
 class ETFTickers(ConglomerateTickers):

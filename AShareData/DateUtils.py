@@ -71,12 +71,9 @@ def dtlize_input_dates(func):
     return inner
 
 
-class TradingCalendar(object):
-    """Trading Calendar Class"""
-
-    def __init__(self, db_interface: DBInterface):
-        calendar_df = db_interface.read_table('交易日历')
-        self.calendar = calendar_df['交易日期'].dt.to_pydatetime().tolist()
+class TradingCalendarBase(object):
+    def __init__(self):
+        self.calendar = None
 
     @dtlize_input_dates
     def is_trading_date(self, date: DateType):
@@ -100,13 +97,19 @@ class TradingCalendar(object):
             return self.calendar[i:j]
 
     @dtlize_input_dates
-    def select_dates(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+    def select_dates(self, start_date: DateType = None, end_date: DateType = None, inclusive=(True, True)) \
+            -> List[dt.datetime]:
         """Get list of all trading days during[``start_date``, ``end_date``] inclusive"""
         if not start_date:
             start_date = self.calendar[0]
         if not end_date:
             end_date = dt.datetime.now()
-        return self._select_dates(start_date, end_date, lambda pre, curr, next_: True)
+        dates = self._select_dates(start_date, end_date, lambda pre, curr, next_: True)
+        if dates and not inclusive[0]:
+            dates = dates[1:]
+        if dates and not inclusive[1]:
+            dates = dates[:-1]
+        return dates
 
     @dtlize_input_dates
     def first_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
@@ -177,6 +180,24 @@ class TradingCalendar(object):
             tmp = all_dates[i:i + chunk_size]
             res.append((tmp[0], tmp[-1]))
         return res
+
+
+class TradingCalendar(TradingCalendarBase):
+    """A Share Trading Calendar"""
+
+    def __init__(self, db_interface: DBInterface):
+        super().__init__()
+        calendar_df = db_interface.read_table('交易日历')
+        self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
+
+
+class HKTradingCalendar(TradingCalendarBase):
+    """A Share Trading Calendar"""
+
+    def __init__(self, db_interface: DBInterface):
+        super().__init__()
+        calendar_df = db_interface.read_table('港股交易日历')
+        self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
 
 
 class ReportingDate(object):

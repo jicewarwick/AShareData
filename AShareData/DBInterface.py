@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, DateTime, extract, Float, Integer, Table, Text, VARCHAR
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.engine.url import URL
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func, text
 
 from . import utils
@@ -130,10 +130,7 @@ class MySQLInterface(DBInterface):
         for special_item in ['资产负债表', '现金流量表', '利润表']:
             tmp_item = self._db_parameters.pop(special_item)
             for prefix in ['合并', '母公司']:
-                for yearly in ['', '单季度']:
-                    self._db_parameters[prefix + yearly + special_item] = tmp_item
-        for entry in ['合并单季度资产负债表', '母公司单季度资产负债表']:
-            del self._db_parameters[entry]
+                self._db_parameters[prefix + special_item] = tmp_item
         for table_name, table_schema in self._db_parameters.items():
             self.create_table(table_name, table_schema)
 
@@ -156,7 +153,7 @@ class MySQLInterface(DBInterface):
         primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'IndexCode'] if it in col_names]
         existing_tables = [it.lower() for it in self.meta.tables]
         if table_name.lower() in existing_tables:
-            logging.debug(f'表 {table_name} 已存在.')
+            logging.getLogger(__name__).debug(f'表 {table_name} 已存在.')
             return
 
         new_table = Table(table_name, self.meta,
@@ -164,11 +161,11 @@ class MySQLInterface(DBInterface):
                           sa.PrimaryKeyConstraint(*primary_keys))
         new_table.create()
         self.meta.reflect()
-        logging.info(f'表 {table_name} 创建成功.')
+        logging.getLogger(__name__).info(f'表 {table_name} 创建成功.')
 
     def drop_all_tables(self) -> None:
         """删除database内所有的表, 谨慎使用!!!"""
-        logging.debug('DROPPING ALL TABLES')
+        logging.getLogger(__name__).debug('DROPPING ALL TABLES')
         for table in self.meta.tables.values():
             table.drop()
         self.meta.reflect()
@@ -178,7 +175,7 @@ class MySQLInterface(DBInterface):
         table = self.meta.tables[table_name]
         conn = self.engine.connect()
         conn.execute(table.delete())
-        logging.info(f'table {table_name} purged')
+        logging.getLogger(__name__).info(f'table {table_name} purged')
 
     def insert_df(self, df: Union[pd.Series, pd.DataFrame], table_name: str) -> None:
         if df.empty:
@@ -186,9 +183,8 @@ class MySQLInterface(DBInterface):
 
         start_timestamp = time.time()
         df.to_sql(table_name, self.engine, if_exists='append')
-        if logging.getLogger().level <= logging.DEBUG:
-            end_timestamp = time.time()
-            logging.debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
+        end_timestamp = time.time()
+        logging.getLogger(__name__).debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
 
     def update_df(self, df: Union[pd.Series, pd.DataFrame], table_name: str) -> None:
         """ 将DataFrame写入数据库"""
@@ -215,9 +211,8 @@ class MySQLInterface(DBInterface):
             insert_statement = insert(table).values(**row.to_dict())
             statement = insert_statement.on_duplicate_key_update(**row.to_dict())
             self.engine.execute(statement)
-        if logging.getLogger().level <= logging.DEBUG:
-            end_timestamp = time.time()
-            logging.debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
+        end_timestamp = time.time()
+        logging.getLogger(__name__).debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
 
     def update_compact_df(self, df: pd.Series, table_name: str, old_df: pd.Series = None) -> None:
         if df.empty:
@@ -242,13 +237,14 @@ class MySQLInterface(DBInterface):
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name.lower()]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
         if 'DateTime' in table.columns.keys():
+            session = Session(self.engine)
             q = session.query(func.max(table.c.DateTime))
             if column_condition:
                 q = q.filter(table.columns[column_condition[0]] == column_condition[1])
-            return q.one()[0]
+            ret = q.one()[0]
+            session.close()
+            return ret
 
     def get_column_min(self, table_name: str, column: str):
         """
@@ -260,11 +256,12 @@ class MySQLInterface(DBInterface):
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name.lower()]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
         if 'DateTime' in table.columns.keys():
+            session = Session(self.engine)
             q = session.query(func.min(table.c[column]))
-            return q.one()[0]
+            ret = q.one()[0]
+            session.close()
+            return ret
 
     def get_column_max(self, table_name: str, column: str):
         """
@@ -276,11 +273,12 @@ class MySQLInterface(DBInterface):
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name.lower()]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
         if 'DateTime' in table.columns.keys():
+            session = Session(self.engine)
             q = session.query(func.max(table.c[column]))
-            return q.one()[0]
+            ret = q.one()[0]
+            session.close()
+            return ret
 
     def get_all_id(self, table_name: str) -> Optional[List[str]]:
         """
@@ -301,11 +299,11 @@ class MySQLInterface(DBInterface):
         """
         assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = self.meta.tables[table_name.lower()]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
         if column_name in table.columns.keys():
-            logging.debug(f'{table_name} 表中找到 {column_name} 列')
+            logging.getLogger(__name__).debug(f'{table_name} 表中找到 {column_name} 列')
+            session = Session(self.engine)
             tmp = session.query(table.columns[column_name]).distinct().all()
+            session.close()
             return [it[0] for it in tmp]
 
     # todo: TBD
@@ -315,8 +313,7 @@ class MySQLInterface(DBInterface):
         metadata.reflect()
         assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
         table = metadata.tables[table_name]
-        session_maker = sessionmaker(bind=self.engine)
-        session = session_maker()
+        session = Session(self.engine)
         data = self.read_table(table_name).unstack()
 
     @staticmethod
@@ -344,8 +341,7 @@ class MySQLInterface(DBInterface):
         table_name = table_name.lower()
         index_col = self.get_table_primary_keys(table_name)
 
-        Session = sessionmaker(bind=self.engine)
-        session = Session()
+        session = Session(self.engine)
         t = self.meta.tables[table_name]
         q = session.query()
         if columns:
@@ -375,6 +371,7 @@ class MySQLInterface(DBInterface):
             q = q.filter(t.columns['ID'].in_(ids))
 
         ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)
+        session.close()
 
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]

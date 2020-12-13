@@ -1,12 +1,9 @@
 import datetime as dt
-import logging
 import unittest
 
-from AShareData.DBInterface import MySQLInterface, prepare_engine
 from AShareData.DateUtils import TradingCalendar
+from AShareData.DBInterface import MySQLInterface, prepare_engine
 from AShareData.WebData import WebDataCrawler
-
-logging.basicConfig(format='%(asctime)s  %(name)s  %(levelname)s: %(message)s', level=logging.DEBUG)
 
 
 class WebDataSourceTest(unittest.TestCase):

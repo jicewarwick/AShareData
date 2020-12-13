@@ -23,7 +23,7 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     keywords='tushare mysql',
-    packages=find_packages(exclude=['docs', 'tests', 'AShareData/complimentary_code']),
+    packages=find_packages(exclude=['docs', 'tests']),
     python_requires='>=3.5, <4',
     install_requires=['numpy',
                       'pandas',

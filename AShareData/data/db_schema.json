@@ -1,6 +1,11 @@
 {
 	"交易日历": {
-		"交易日历": "datetime"
+		"index": "int",
+		"交易日期": "datetime"
+	},
+	"港股交易日历": {
+		"index": "int",
+		"交易日期": "datetime"
 	},
 	"证券代码": {
 		"DateTime": "datetime",
@@ -177,7 +182,6 @@
 	"资产负债表": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"公告日期": "datetime",
 		"报告期": "datetime",
 		"报表类型": "str",
 		"公司类型": "str",
@@ -316,7 +320,6 @@
 	"利润表": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"公告日期": "datetime",
 		"报告期": "datetime",
 		"报表类型": "str",
 		"公司类型": "str",
@@ -384,7 +387,6 @@
 	"现金流量表": {
 		"DateTime": "datetime",
 		"ID": "varchar",
-		"公告日期": "datetime",
 		"报告期": "datetime",
 		"报表类型": "str",
 		"公司类型": "str",
@@ -538,13 +540,8 @@
 		"收盘价": "float",
 		"成交量": "float",
 		"成交额": "double",
-		"单位净值": "float",
-		"基金份额": "double"
-	},
-	"ETF上市日期": {
-		"DateTime": "datetime",
-		"ID": "varchar",
-		"证券名称": "varchar"
+		"基金份额": "double",
+		"单位净值": "float"
 	},
 	"股票停牌": {
 		"DateTime": "datetime",
@@ -590,5 +587,87 @@
 		"管理费": "float",
 		"托管费": "float",
 		"投资风格": "varchar"
+	},
+	"场外基金净值": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"单位净值": "float"
+	},
+	"场外基金规模": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"资产净值": "double",
+		"合计资产净值": "double"
+	},
+	"公募基金分红": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"每股派息": "float"
+	},
+	"股票集合竞价数据": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"成交价": "float",
+		"成交量": "double",
+		"成交额": "double",
+		"卖1价": "float",
+		"卖2价": "float",
+		"卖3价": "float",
+		"卖4价": "float",
+		"卖5价": "float",
+		"买1价": "float",
+		"买2价": "float",
+		"买3价": "float",
+		"买4价": "float",
+		"买5价": "float",
+		"卖1量": "double",
+		"卖2量": "double",
+		"卖3量": "double",
+		"卖4量": "double",
+		"卖5量": "double",
+		"买1量": "double",
+		"买2量": "double",
+		"买3量": "double",
+		"买4量": "double",
+		"买5量": "double"
+	},
+	"可转债日行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double"
+	},
+	"港股日行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double"
+	},
+	"美股日行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double",
+		"换手率": "float",
+		"总市值": "double",
+		"PE": "float",
+		"PB": "float"
+	},
+	"股票最新价": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"最新价": "float"
 	}
 }
