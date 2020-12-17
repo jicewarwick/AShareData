@@ -24,6 +24,8 @@ if __name__ == '__main__':
     tushare_crawler.update_stock_names()
     tushare_crawler.update_dividend()
 
+    tushare_crawler.update_index_daily()
+
     tushare_crawler.update_hk_stock_daily()
 
     tushare_crawler.update_fund_daily()

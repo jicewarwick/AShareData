@@ -442,7 +442,8 @@ class WindData(DataSource):
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{table_name}')
-                data = self.w.wss(indexes, "open,low,high,close,volume,amt", date=date, priceAdj='U', cycle='D')
+                indicators = "open,low,high,close,volume,amt,mkt_cap_ard,total_shares,float_a_shares,free_float_shares,pe_ttm"
+                data = self.w.wss(indexes, indicators, date=date, priceAdj='U', cycle='D')
                 data.rename(self._factor_param[table_name], axis=1, inplace=True)
                 self.db_interface.insert_df(data, table_name)
                 pbar.update()
