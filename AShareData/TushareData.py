@@ -582,14 +582,21 @@ class TushareData(DataSource):
             for i in report_type_list:
                 storage.append(api_func(ts_code=ticker, report_type=i, fields=list(column_name_dict.keys())))
             df = pd.concat(storage, ignore_index=True)
-            # df.to_excel('raw.xlsx')
+            if df.empty:  # 000508 无数据
+                return
+            df = df.dropna(subset=['ann_date', 'f_ann_date', 'end_date'])  # 000166 申万宏源 早期数据无时间戳
+            # tmp = df.sort_values('end_date', ascending=False).rename(column_name_dict, axis=1)
+            # tmp = tmp.fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
+            # tmp.to_excel('raw.xlsx', index=False, freeze_panes=(1, 5))
 
             df = df.sort_values('update_flag').groupby(['ann_date', 'end_date', 'report_type']).tail(1)
             df = df.drop('update_flag', axis=1).fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
             df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).drop_duplicates(keep='first').reset_index()
-            df = df.drop(['ann_date', 'report_type'], axis=1).replace({'comp_type': company_type_desc})
-            df = self._standardize_df(df, column_name_dict).sort_index()
-            df.to_excel('processed.xlsx', merge_cells=False)
+            df = df.sort_values('report_type').drop(['ann_date', 'report_type'], axis=1)
+            df = df.replace({'comp_type': company_type_desc})
+            df = self._standardize_df(df, column_name_dict)
+            df = df.loc[~df.index.duplicated(), :]
+            # df.to_excel('processed.xlsx', merge_cells=False, float_format='%.2f')
 
             self.db_interface.delete_id_records(table_name, ticker)
             try:
@@ -609,7 +616,7 @@ class TushareData(DataSource):
         rate_limiter = RateLimiter(self._factor_param['资产负债表']['每分钟限速'] / 8, 60)
         logging.getLogger(__name__).debug('开始下载财报.')
         with tqdm(tickers) as pbar:
-            for ticker in tickers[:10]:
+            for ticker in tickers:
                 with rate_limiter:
                     pbar.set_description(f'下载{ticker}的财务数据')
                     self.get_financial(ticker)

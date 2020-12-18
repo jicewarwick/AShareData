@@ -1,4 +1,3 @@
-import unittest
 import datetime as dt
 import unittest
 
@@ -65,6 +64,9 @@ class MyTestCase(unittest.TestCase):
     def test_financial_snapshot(self):
         print(self.db.get_financial_snapshot('资产负债表', '资产总计', yearly=True))
         print(self.db.get_financial_snapshot('资产负债表', '资产总计', quarterly=True))
+
+    def test_index_constitute(self):
+        print(self.db.index_constitute('000300.SH', '20201130'))
 
 
 if __name__ == '__main__':

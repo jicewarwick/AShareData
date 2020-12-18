@@ -328,7 +328,8 @@ class MySQLInterface(DBInterface):
                    start_date: dt.datetime = None, end_date: dt.datetime = None,
                    dates: Union[Sequence[dt.datetime], dt.datetime] = None,
                    report_period: dt.datetime = None, report_month: int = None,
-                   ids: Sequence[str] = None, text_statement: str = None) -> Union[pd.Series, pd.DataFrame]:
+                   ids: Sequence[str] = None, index_code: str = None,
+                   text_statement: str = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
         :param table_name: 表名
@@ -372,6 +373,8 @@ class MySQLInterface(DBInterface):
             q = q.filter(text(text_statement))
         if ids is not None:
             q = q.filter(t.columns['ID'].in_(ids))
+        if index_code is not None:
+            q = q.filter(t.columns['IndexCode'] == index_code)
 
         ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)
         session.close()

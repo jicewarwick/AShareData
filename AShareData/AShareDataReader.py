@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from cached_property import cached_property
 
 from . import DateUtils
@@ -106,6 +107,10 @@ class AShareDataReader(object):
 
     def excess_return(self):
         pass
+
+    @DateUtils.dtlize_input_dates
+    def index_constitute(self, index: str, date: DateUtils) -> pd.Series:
+        return self.db_interface.read_table('指数成分股权重', index_code=index, dates=[date])
 
     @staticmethod
     def exponential_weight(n: int, half_life: int):
