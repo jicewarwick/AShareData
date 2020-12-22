@@ -1,10 +1,11 @@
+from functools import lru_cache
+
 import numpy as np
-import pandas as pd
 from cached_property import cached_property
 
 from . import DateUtils
 from .DBInterface import DBInterface
-from .Factor import CompactFactor, ContinuousFactor, OnTheRecordFactor
+from .Factor import CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, OnTheRecordFactor
 from .Tickers import StockTickers
 
 
@@ -108,9 +109,13 @@ class AShareDataReader(object):
     def excess_return(self):
         pass
 
-    @DateUtils.dtlize_input_dates
-    def index_constitute(self, index: str, date: DateUtils) -> pd.Series:
-        return self.db_interface.read_table('指数成分股权重', index_code=index, dates=[date])
+    @cached_property
+    def index_constitute(self) -> IndexConstitute:
+        return IndexConstitute(self.db_interface)
+
+    @lru_cache(5)
+    def industry(self, provider: str, level: int) -> IndustryFactor:
+        return IndustryFactor(self.db_interface, provider, level)
 
     @staticmethod
     def exponential_weight(n: int, half_life: int):

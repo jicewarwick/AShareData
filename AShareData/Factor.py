@@ -2,12 +2,12 @@ import datetime as dt
 import os
 import pickle
 import zipfile
-from cached_property import cached_property
 from pathlib import Path
 from typing import List, Sequence, Union
 
 import numpy as np
 import pandas as pd
+from cached_property import cached_property
 
 from . import constants, DateUtils, utils
 from .DBInterface import DBInterface
@@ -42,6 +42,20 @@ class Factor(object):
             else:
                 for name in factor_names:
                     assert name in columns, f'表 {table_name} 中不存在 {name} 列'
+
+
+class IndexConstitute(Factor):
+    def __init__(self, db_interface: DBInterface):
+        super().__init__(db_interface, '指数成分股权重', '')
+
+    @DateUtils.dtlize_input_dates
+    def get_data(self, index_ticker: str, date: DateUtils.DateType):
+        date_str = DateUtils.date_type2str(date, '-')
+        stm = f'DateTime = (SELECT MAX(DateTime) FROM `{self.table_name}` WHERE DateTime <= "{date_str}" AND IndexCode = "{index_ticker}")'
+        ret = self.db_interface.read_table(self.table_name, index_code=index_ticker, text_statement=stm)
+        ret.index = pd.MultiIndex.from_product([[date], ret.index.get_level_values('ID')])
+        ret.index.names = ['DateTime', 'ID']
+        return ret
 
 
 class NonFinancialFactor(Factor):
@@ -317,6 +331,7 @@ class QuarterlyFactor(AccountingFactor):
 
 class LatestAccountingFactor(AccountingFactor):
     """最新财报数据"""
+
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -327,6 +342,7 @@ class LatestAccountingFactor(AccountingFactor):
 
 class LatestQuarterAccountingFactor(QuarterlyFactor):
     """最新财报季度数据"""
+
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -358,6 +374,7 @@ class YearlyReportAccountingFactor(AccountingFactor):
 
 class QOQAccountingFactor(QuarterlyFactor):
     """环比数据"""
+
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -375,6 +392,7 @@ class QOQAccountingFactor(QuarterlyFactor):
 
 class YOYPeriodAccountingFactor(AccountingFactor):
     """同比数据"""
+
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -386,6 +404,7 @@ class YOYPeriodAccountingFactor(AccountingFactor):
 
 class YOYQuarterAccountingFactor(QuarterlyFactor):
     """季度同比数据"""
+
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 
@@ -403,6 +422,7 @@ class YOYQuarterAccountingFactor(QuarterlyFactor):
 
 class TTMAccountingFactor(AccountingFactor):
     """TTM数据"""
+
     def __init__(self, db_interface: DBInterface, factor_name: str):
         super().__init__(db_interface, factor_name)
 

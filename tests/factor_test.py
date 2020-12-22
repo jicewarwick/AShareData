@@ -68,6 +68,10 @@ class MyTestCase(unittest.TestCase):
         a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
         print(a)
 
+    def test_index_constitute(self):
+        index_constitute = IndexConstitute(self.db_interface, '指数成分股权重')
+        print(index_constitute.get_data('000300.SH', '20200803'))
+
 
 if __name__ == '__main__':
     unittest.main()
