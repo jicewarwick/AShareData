@@ -613,6 +613,10 @@ class TushareData(DataSource):
 
     def init_accounting_data(self):
         tickers = self.stock_tickers.all_ticker()
+        db_ticker = self.db_interface.get_column_max('合并资产负债表', 'ID')
+        if db_ticker:
+            tickers = tickers[tickers.index(db_ticker):]
+
         rate_limiter = RateLimiter(self._factor_param['资产负债表']['每分钟限速'] / 8, 60)
         logging.getLogger(__name__).debug('开始下载财报.')
         with tqdm(tickers) as pbar:
