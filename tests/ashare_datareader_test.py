@@ -66,7 +66,8 @@ class MyTestCase(unittest.TestCase):
         print(self.db.get_financial_snapshot('资产负债表', '资产总计', quarterly=True))
 
     def test_index_constitute(self):
-        print(self.db.index_constitute('000300.SH', '20201130'))
+        ic = self.db.index_constitute()
+        print(ic.get_data('000300.SH', '20201130'))
 
 
 if __name__ == '__main__':
