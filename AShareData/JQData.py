@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 from typing import Mapping, Optional, Union
 
 import pandas as pd
@@ -7,7 +8,7 @@ from tqdm import tqdm
 
 from . import DateUtils, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface
+from .DBInterface import DBInterface, generate_db_interface_from_config
 from .Tickers import ETFOptionTickers, FutureTickers, IndexOptionTickers, StockTickers
 
 with utils.NullPrinter():
@@ -281,3 +282,10 @@ class JQData(DataSource):
             if ticker.endswith('.XZCE') and len(ticker) <= 11:
                 ticker = utils.full_czc_ticker(ticker)
             return ticker
+
+    @classmethod
+    def from_config(cls, json_loc: str):
+        with open(json_loc, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        db_interface = generate_db_interface_from_config(config)
+        return cls(db_interface, config['jq_mobile'], config['jq_password'])

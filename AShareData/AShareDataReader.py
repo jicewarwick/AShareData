@@ -4,7 +4,7 @@ import numpy as np
 from cached_property import cached_property
 
 from . import DateUtils
-from .DBInterface import DBInterface
+from .DBInterface import DBInterface, generate_db_interface_from_config
 from .Factor import CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, OnTheRecordFactor
 from .Tickers import StockTickers
 
@@ -121,3 +121,8 @@ class AShareDataReader(object):
     def exponential_weight(n: int, half_life: int):
         series = range(-(n - 1), 1)
         return np.exp(np.log(2) * series / half_life)
+
+    @classmethod
+    def from_config(cls, json_loc: str):
+        db_interface = generate_db_interface_from_config(json_loc)
+        return cls(db_interface)

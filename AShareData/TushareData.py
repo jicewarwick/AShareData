@@ -1,9 +1,10 @@
 import datetime as dt
 import itertools
+import json
 import logging
 import re
 from itertools import product
-from typing import Callable, Mapping, Sequence, Union
+from typing import Callable, Dict, Mapping, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from tqdm import tqdm
 
 from . import constants, DateUtils, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface
+from .DBInterface import DBInterface, generate_db_interface_from_config
 from .Tickers import StockTickers
 
 START_DATE = {
@@ -952,3 +953,11 @@ class TushareData(DataSource):
         if ticker.endswith('.CZC') and len(ticker) <= 10:
             ticker = utils.format_czc_ticker(ticker)
         return ticker
+
+    @classmethod
+    def from_config(cls, config: Union[str, Dict]):
+        if isinstance(config, str):
+            with open(config, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        db_interface = generate_db_interface_from_config(config)
+        return cls(db_interface=db_interface, tushare_token=config['tushare_token'])

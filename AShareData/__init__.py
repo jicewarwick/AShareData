@@ -3,7 +3,7 @@ import logging
 
 from .AShareDataReader import AShareDataReader
 from .DateUtils import TradingCalendar
-from .DBInterface import MySQLInterface, prepare_engine
+from .DBInterface import MySQLInterface, generate_db_interface_from_config
 from .FactorCompositor import AccountingDateCacheCompositor, ConstLimitStockFactorCompositor, IndexCompositor
 from .TushareData import TushareData
 from .WebData import WebDataCrawler

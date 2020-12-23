@@ -2,7 +2,7 @@ import datetime as dt
 import json
 import logging
 import time
-from typing import List, Mapping, Optional, Sequence, Union
+from typing import Dict, List, Mapping, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -88,10 +88,12 @@ class DBInterface(object):
         raise NotImplementedError()
 
 
-def prepare_engine(config_loc: str) -> sa.engine.Engine:
+def prepare_engine(config: Union[str, Dict]) -> sa.engine.Engine:
     """Create sqlalchemy engine from config file"""
-    with open(config_loc, 'r') as f:
-        config = json.load(f)
+    if isinstance(config, str):
+        with open(config, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+
     url = URL(drivername=config['driver'], host=config['host'], port=config['port'], database=config['database'],
               username=config['username'], password=config['password'],
               query={'charset': 'utf8mb4'})
@@ -413,3 +415,13 @@ def compute_diff(input_data: pd.Series, db_data: pd.Series) -> Optional[pd.Serie
     combined_data = pd.concat([db_data.droplevel('DateTime'), input_data.droplevel('DateTime')], axis=1, sort=True)
     stocks = combined_data.iloc[:, 0] != combined_data.iloc[:, 1]
     return input_data.loc[slice(None), stocks, :]
+
+
+def generate_db_interface_from_config(config: Union[str, Dict]) -> DBInterface:
+    if isinstance(config, str):
+        with open(config, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+
+    if 'mysql' in config['driver']:
+        engine = prepare_engine(config)
+        return MySQLInterface(engine)

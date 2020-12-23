@@ -1,18 +1,11 @@
-import json
 import sys
 
-from AShareData import ConstLimitStockFactorCompositor, MySQLInterface, prepare_engine, TushareData, WindData
+from AShareData import ConstLimitStockFactorCompositor, generate_db_interface_from_config, TushareData, WindData
 
 if __name__ == '__main__':
     config_loc = sys.argv[1]
-    with open(config_loc, 'r') as f:
-        config = json.load(f)
 
-    tushare_token = config['tushare_token']
-    engine = prepare_engine(config_loc)
-    db_interface = MySQLInterface(engine, init=True)
-
-    tushare_crawler = TushareData(tushare_token, db_interface=db_interface)
+    tushare_crawler = TushareData.from_config(config_loc)
     tushare_crawler.update_base_info()
     tushare_crawler.get_shibor()
 
@@ -31,7 +24,7 @@ if __name__ == '__main__':
     tushare_crawler.update_fund_daily()
     tushare_crawler.update_fund_dividend()
 
-    with WindData(db_interface) as wind_data:
+    with WindData.from_config(config_loc) as wind_data:
         wind_data.update_stock_daily_data()
         wind_data.update_stock_adj_factor()
         wind_data.update_stock_units()
@@ -44,4 +37,5 @@ if __name__ == '__main__':
 
         wind_data.update_minutes_data()
 
+    db_interface = generate_db_interface_from_config(config_loc)
     ConstLimitStockFactorCompositor(db_interface).update()

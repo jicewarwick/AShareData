@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from . import constants, DateUtils, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface
+from .DBInterface import DBInterface, generate_db_interface_from_config
 from .Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
     StockTickers
 
@@ -527,3 +527,8 @@ class WindData(DataSource):
 
         self.sparse_data_queryer(data_func, current_data, new_data, f'更新{table_name}',
                                  default_start_date=default_start_date)
+
+    @classmethod
+    def from_config(cls, config: str):
+        db_interface = generate_db_interface_from_config(config)
+        return cls(db_interface)
