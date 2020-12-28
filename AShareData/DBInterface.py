@@ -155,7 +155,11 @@ class MySQLInterface(DBInterface):
         """
         col_names = list(table_schema.keys())
         col_types = [self._type_mapper[it] for it in table_schema.values()]
-        primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'IndexCode'] if it in col_names]
+        if 'id' in col_names:
+            primary_keys = ['id']
+        else:
+            primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'IndexCode'] if it in col_names]
+
         existing_tables = [it.lower() for it in self.meta.tables]
         if table_name.lower() in existing_tables:
             logging.getLogger(__name__).debug(f'表 {table_name} 已存在.')

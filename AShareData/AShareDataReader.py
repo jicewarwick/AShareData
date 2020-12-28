@@ -56,6 +56,11 @@ class AShareDataReader(object):
         return ContinuousFactor(self.db_interface, '股票日行情', '收盘价')
 
     @cached_property
+    def volume(self) -> ContinuousFactor:
+        """成交量"""
+        return ContinuousFactor(self.db_interface, '股票日行情', '成交量')
+
+    @cached_property
     def total_share(self) -> CompactFactor:
         """总股本"""
         return CompactFactor(self.db_interface, '总股本')

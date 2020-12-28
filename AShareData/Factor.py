@@ -208,7 +208,7 @@ class ContinuousFactor(NonFinancialFactor):
     @DateUtils.dtlize_input_dates
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                 ids: Sequence[str] = None, unstack: bool = True) -> Union[pd.Series, pd.DataFrame]:
+                 ids: Sequence[str] = None, unstack: bool = False) -> Union[pd.Series, pd.DataFrame]:
         """
         :param start_date: start date
         :param end_date: end date
