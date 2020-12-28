@@ -2,15 +2,13 @@ import datetime as dt
 import unittest
 
 from AShareData import constants
-from AShareData.DBInterface import MySQLInterface, prepare_engine
-from AShareData.WindData import WindData, WindWrapper
+from AShareData.data_source.WindData import WindData, WindWrapper
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         config_loc = 'config.json'
-        engine = prepare_engine(config_loc)
-        self.wind_data = WindData(MySQLInterface(engine))
+        self.wind_data = WindData.from_config(config_loc)
 
     def test_get_industry_func(self):
         wind_code = '000019.SZ'
@@ -64,6 +62,56 @@ class WindWrapperTestCase(unittest.TestCase):
 
         print(self.w.wsd(stocks, f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
                          start_date, end_date, industryType=constants.INDUSTRY_LEVEL[provider]))
+
+    def test_wss(self):
+        # data = self.w.wss(['000001.SZ', '000002.SZ', '000005.SZ'], ['SHARE_RTD_STATE', 'SHARE_RTD_STATEJUR'],
+        #                   trade_date='20190715', unit='1')
+        # print('\n')
+        # print(data)
+
+        data = self.w.wss(['000001.SZ', '000002.SZ', '000005.SZ'], "open,low,high,close,volume,amt",
+                          date='20190715',
+                          priceAdj='U', cycle='D')
+        print('\n')
+        print(data)
+
+        # data = self.w.wss("000001.SH,000002.SZ", "grossmargin,operateincome", "unit=1;rptDate=20191231")
+        # print('\n')
+        # print(data)
+
+    def test_wset(self):
+        data = self.w.wset("futurecc", startdate='2019-07-29', enddate='2020-07-29', wind_code='A.DCE')
+        print('\n')
+        print(data)
+
+        start_date = dt.date(2020, 6, 30).strftime('%Y-%m-%d')
+        end_date = dt.date(2020, 7, 30).strftime('%Y-%m-%d')
+        exchange = 'sse'
+        wind_code = '510050.SH'
+        status = 'all'
+        field = 'wind_code,trade_code,sec_name'
+        data = self.w.wset("optioncontractbasicinfo", options=f'field={field}', startdate=start_date, enddate=end_date,
+                           status=status, windcode=wind_code, exchange=exchange)
+        print('\n')
+        print(data)
+
+    def test_wsq(self):
+        data = self.w.wsq('002080.SZ,000002.SZ', 'rt_latest,rt_vol')
+        print('\n')
+        print(data)
+        data = self.w.wsq('000002.SZ', 'rt_latest,rt_vol')
+        print('\n')
+        print(data)
+        data = self.w.wsq('002080.SZ,000002.SZ', 'rt_latest')
+        print('\n')
+        print(data)
+        data = self.w.wsq('000002.SZ', 'rt_latest')
+        print('\n')
+        print(data)
+
+    def test_index_constitute(self):
+        hs300_constitute = self.w.get_index_constitute(index='000300.SH')
+        print(hs300_constitute)
 
 
 if __name__ == '__main__':

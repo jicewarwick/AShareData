@@ -1,15 +1,13 @@
 import datetime as dt
 import unittest
 
-from AShareData import MySQLInterface, prepare_engine
-from AShareData.industry import IndustryComparison
+from AShareData import generate_db_interface_from_config, IndustryComparison
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         config_loc = 'config.json'
-        engine = prepare_engine(config_loc)
-        db_interface = MySQLInterface(engine)
+        db_interface = generate_db_interface_from_config(config_loc)
         self.industry_obj = IndustryComparison(db_interface, index='000905.SH', industry_provider='中信',
                                                industry_level=2)
 

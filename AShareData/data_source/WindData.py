@@ -7,10 +7,10 @@ import WindPy
 from cached_property import cached_property
 from tqdm import tqdm
 
-from . import constants, DateUtils, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface, generate_db_interface_from_config
-from .Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
+from .. import constants, DateUtils, utils
+from ..DBInterface import DBInterface, generate_db_interface_from_config
+from ..Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
     StockTickers
 
 

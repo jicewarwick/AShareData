@@ -2,7 +2,7 @@ import datetime as dt
 
 import pandas as pd
 
-from . import AShareDataReader, DBInterface, utils
+from .. import AShareDataReader, DateUtils, DBInterface, utils
 
 
 class IndustryComparison(object):
@@ -53,3 +53,12 @@ class IndustryComparison(object):
         holding['DateTime'] = date
         holding.set_index(['DateTime', 'ID'], inplace=True)
         return holding
+
+
+class BetaComputer(object):
+    def __init__(self, db_interface: DBInterface, benchmark: str):
+        self.data_reader = AShareDataReader(db_interface)
+        self.benchmark = benchmark
+
+    def historical_method(self, ticker: str, date: DateUtils.DateType, duration: int):
+        pass

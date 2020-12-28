@@ -1,18 +1,12 @@
-import json
 import unittest
 
-from AShareData.DBInterface import MySQLInterface, prepare_engine
-from AShareData.TushareData import TushareData
+from AShareData import TushareData
 
 
 class Tushare2MySQLTest(unittest.TestCase):
     def setUp(self) -> None:
         config_loc = 'config.json'
-        with open(config_loc, 'r') as f:
-            config = json.load(f)
-
-        tushare_token = config['tushare_token']
-        self.downloader = TushareData(tushare_token, MySQLInterface(prepare_engine(config_loc), init=False))
+        self.downloader = TushareData.from_config(config_loc)
 
     def test_calendar(self):
         print(self.downloader.calendar.calendar)

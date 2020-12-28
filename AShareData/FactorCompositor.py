@@ -1,19 +1,19 @@
 import datetime as dt
+import logging
 import os
 import pickle
 import zipfile
 from pathlib import Path
 from typing import Sequence
-import logging
 
 import pandas as pd
 from sortedcontainers import SortedDict
 from tqdm import tqdm
 
 from . import AShareDataReader, constants, DateUtils, DBInterface, utils
-from .DataSource import DataSource
+from .data_source.DataSource import DataSource
 from .Factor import CompactFactor
-from .Tickers import StockTickerSelector, FundTickers
+from .Tickers import FundTickers, StockTickerSelector
 
 
 class FactorCompositor(DataSource):

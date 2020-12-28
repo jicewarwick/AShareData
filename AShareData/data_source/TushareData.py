@@ -13,10 +13,10 @@ from cached_property import cached_property
 from ratelimiter import RateLimiter
 from tqdm import tqdm
 
-from . import constants, DateUtils, utils
+from .. import constants, DateUtils, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface, generate_db_interface_from_config
-from .Tickers import StockTickers
+from ..DBInterface import DBInterface, generate_db_interface_from_config
+from ..Tickers import StockTickers
 
 START_DATE = {
     'common': dt.datetime(1990, 1, 1),

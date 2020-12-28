@@ -6,10 +6,10 @@ import pandas as pd
 from cached_property import cached_property
 from tqdm import tqdm
 
-from . import DateUtils, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface, generate_db_interface_from_config
-from .Tickers import ETFOptionTickers, FutureTickers, IndexOptionTickers, StockTickers
+from .. import DateUtils, utils
+from ..DBInterface import DBInterface, generate_db_interface_from_config
+from ..Tickers import ETFOptionTickers, FutureTickers, IndexOptionTickers, StockTickers
 
 with utils.NullPrinter():
     import jqdatasdk as jq

@@ -1,9 +1,9 @@
 import datetime as dt
 import unittest
 
+from AShareData.data_source.WebData import WebDataCrawler
 from AShareData.DateUtils import TradingCalendar
 from AShareData.DBInterface import MySQLInterface, prepare_engine
-from AShareData.WebData import WebDataCrawler
 
 
 class WebDataSourceTest(unittest.TestCase):

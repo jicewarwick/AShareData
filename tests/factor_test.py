@@ -1,6 +1,6 @@
 import unittest
 
-from AShareData.DBInterface import MySQLInterface, prepare_engine
+from AShareData import generate_db_interface_from_config
 from AShareData.Factor import *
 from AShareData.Tickers import *
 
@@ -8,8 +8,7 @@ from AShareData.Tickers import *
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         config_loc = 'config.json'
-        engine = prepare_engine(config_loc)
-        self.db_interface = MySQLInterface(engine)
+        self.db_interface = generate_db_interface_from_config(config_loc)
         self.start_date = dt.datetime(2005, 1, 1)
         self.end_date = dt.datetime(2010, 1, 1)
         # self.ids = ['000001.SZ']
