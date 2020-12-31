@@ -1,7 +1,8 @@
 import unittest
 
 from AShareData.DateUtils import date_type2datetime
-from AShareData.DBInterface import MySQLInterface, prepare_engine
+from AShareData.DBInterface import MySQLInterface
+from AShareData.config import prepare_engine
 
 
 class MyTestCase(unittest.TestCase):

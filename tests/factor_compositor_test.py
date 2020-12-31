@@ -1,7 +1,8 @@
 import unittest
 
 import AShareData.DateUtils
-from AShareData.DBInterface import MySQLInterface, prepare_engine
+from AShareData.DBInterface import MySQLInterface
+from AShareData.config import prepare_engine
 from AShareData.FactorCompositor import *
 
 

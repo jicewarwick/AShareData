@@ -2,7 +2,8 @@ import datetime as dt
 import unittest
 
 from AShareData.AShareDataReader import AShareDataReader
-from AShareData.DBInterface import MySQLInterface, prepare_engine
+from AShareData.DBInterface import MySQLInterface
+from AShareData.config import prepare_engine
 
 
 class MyTestCase(unittest.TestCase):

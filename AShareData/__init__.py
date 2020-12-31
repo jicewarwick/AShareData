@@ -4,10 +4,11 @@ import logging
 from .analysis.holding import IndustryComparison
 from .analysis.trading import TradingAnalysis
 from .AShareDataReader import AShareDataReader
+from .config import get_db_interface, get_global_config, set_global_config
 from .data_source.TushareData import TushareData
 from .data_source.WebData import WebDataCrawler
 from .DateUtils import TradingCalendar
-from .DBInterface import generate_db_interface_from_config, MySQLInterface
+from .DBInterface import MySQLInterface
 from .FactorCompositor import AccountingDateCacheCompositor, ConstLimitStockFactorCompositor, IndexCompositor
 
 ch = logging.StreamHandler()

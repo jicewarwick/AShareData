@@ -11,19 +11,22 @@ from sortedcontainers import SortedDict
 from tqdm import tqdm
 
 from . import AShareDataReader, constants, DateUtils, DBInterface, utils
+from .config import get_db_interface
 from .data_source.DataSource import DataSource
 from .Factor import CompactFactor
 from .Tickers import FundTickers, StockTickerSelector
 
 
 class FactorCompositor(DataSource):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         """
         Factor Compositor
 
         This class composite factors from raw market/financial info
         :param db_interface: DBInterface
         """
+        if not db_interface:
+            db_interface = get_db_interface()
         super().__init__(db_interface)
         self.data_reader = AShareDataReader(db_interface)
 
@@ -33,7 +36,7 @@ class FactorCompositor(DataSource):
 
 
 class ConstLimitStockFactorCompositor(FactorCompositor):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         """
         标识一字涨跌停板
 
@@ -46,7 +49,7 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
         super().__init__(db_interface)
         self.table_name = '一字涨跌停'
         stock_selection_policy = utils.StockSelectionPolicy(select_pause=True)
-        self.paused_stock_selector = StockTickerSelector(db_interface, stock_selection_policy)
+        self.paused_stock_selector = StockTickerSelector(stock_selection_policy, db_interface)
 
     def update(self):
         price_table_name = '股票日行情'
@@ -87,7 +90,7 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
 
 
 class FundAdjFactorCompositor(FactorCompositor):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         """
         计算基金的复权因子
 
@@ -131,13 +134,13 @@ class FundAdjFactorCompositor(FactorCompositor):
 
 
 class IndexCompositor(FactorCompositor):
-    def __init__(self, db_interface: DBInterface, index_composition_policy: utils.IndexCompositionPolicy):
+    def __init__(self, index_composition_policy: utils.IndexCompositionPolicy, db_interface: DBInterface = None):
         """自建指数收益计算器"""
         super().__init__(db_interface)
         self.table_name = '自合成指数'
         self.policy = index_composition_policy
-        self.units_factor = CompactFactor(self.db_interface, index_composition_policy.unit_base)
-        self.stock_ticker_selector = StockTickerSelector(self.db_interface, self.policy.stock_selection_policy)
+        self.units_factor = CompactFactor(index_composition_policy.unit_base, self.db_interface)
+        self.stock_ticker_selector = StockTickerSelector(self.policy.stock_selection_policy, self.db_interface)
 
     def update(self):
         """ 更新市场收益率 """
@@ -184,7 +187,7 @@ class AccountingDateCacheCompositor(FactorCompositor):
     财报日期缓存工具
     """
 
-    def __init__(self, db_interface):
+    def __init__(self, db_interface=None):
         super().__init__(db_interface)
 
     def update(self):

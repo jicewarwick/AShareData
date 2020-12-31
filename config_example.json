@@ -1,9 +1,17 @@
 {
-    "tushare_token": "********",
-    "driver": "********",
-    "host": "********",
-    "port": 0,
-    "database": "********",
-    "username": "********",
-    "password": "********"
+    "tushare": {
+        "token": "********"
+    },
+    "db_interface": {
+        "driver": "********",
+        "host": "********",
+        "port": 0,
+        "database": "********",
+        "username": "********",
+        "password": "********"
+    },
+    "join_quant": {
+        "mobile": "***********",
+        "password": "************"
+    }
 }

@@ -4,7 +4,7 @@ import json
 import logging
 import re
 from itertools import product
-from typing import Callable, Dict, Mapping, Sequence, Union
+from typing import Callable, Mapping, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -13,9 +13,9 @@ from cached_property import cached_property
 from ratelimiter import RateLimiter
 from tqdm import tqdm
 
-from .. import constants, DateUtils, utils
 from .DataSource import DataSource
-from ..DBInterface import DBInterface, generate_db_interface_from_config
+from .. import config, constants, DateUtils, utils
+from ..DBInterface import DBInterface
 from ..Tickers import StockTickers
 
 START_DATE = {
@@ -31,7 +31,7 @@ START_DATE = {
 
 
 class TushareData(DataSource):
-    def __init__(self, tushare_token: str, db_interface: DBInterface, param_json_loc: str = None) -> None:
+    def __init__(self, tushare_token: str = None, db_interface: DBInterface = None, param_json_loc: str = None) -> None:
         """
         Tushare to Database. 将tushare下载的数据写入数据库中
 
@@ -39,6 +39,9 @@ class TushareData(DataSource):
         :param db_interface: DBInterface
         :param param_json_loc: tushare 返回df的列名信息
         """
+        if not tushare_token:
+            tushare_token = config.get_global_config()['tushare_token']
+            db_interface = config.get_db_interface()
         super().__init__(db_interface)
         self._pro = ts.pro_api(tushare_token)
         self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
@@ -140,8 +143,13 @@ class TushareData(DataSource):
         cal_date = cal_date.sort_values()
         cal_date.name = '交易日期'
         cal_date = cal_date.map(DateUtils.date_type2datetime)
+        cal_date.index.name = 'index'
+        db_data = self.db_interface.read_table(table_name)
+        db_data = db_data.loc[db_data['交易日期'] < cal_date.min(), :]
+        data = pd.concat([db_data.set_index('index').iloc[:, 0], cal_date], ignore_index=True)
 
-        self.db_interface.update_df(cal_date, table_name)
+        self.db_interface.purge_table(table_name)
+        self.db_interface.insert_df(data, table_name)
 
     def update_stock_list_date(self) -> None:
         """ 获取所有股票列表, 包括上市, 退市和暂停上市的股票
@@ -189,10 +197,8 @@ class TushareData(DataSource):
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
         storage = []
         list_status = ['L', 'D']
-        fields = ['ts_code', 'list_date', 'delist_date']
         for status in list_status:
             storage.append(self._pro.hk_basic(list_status=status))
-            # storage.append(self._pro.hk_basic(exchange='', list_status=status, fields=fields))
         output = pd.concat(storage)
         output['证券类型'] = '港股股票'
         list_info = self._format_list_date(output.loc[:, ['ts_code', 'list_date', 'delist_date', '证券类型']])
@@ -557,7 +563,7 @@ class TushareData(DataSource):
                 df['ann_date'].where(df['ann_date'].notnull(), df['imp_ann_date'], inplace=True)
                 df.drop(['div_proc', 'imp_ann_date'], axis=1, inplace=True)
                 df = self._standardize_df(df, column_desc)
-                self.db_interface.update_df(df, data_category)
+                self.db_interface.insert_df(df, data_category)
                 pbar.update()
 
         logging.getLogger(__name__).info(f'{data_category}信息下载完成.')
@@ -700,7 +706,7 @@ class TushareData(DataSource):
         hk_cal = DateUtils.HKTradingCalendar(self.db_interface)
         start_date = self._check_db_timestamp(table_name, START_DATE['hk_daily'])
         end_date = hk_cal.yesterday()
-        dates = hk_cal.select_dates(start_date=start_date, end_date=end_date)
+        dates = hk_cal.select_dates(start_date=start_date, end_date=end_date, inclusive=(False, True))
 
         rate = self._factor_param[table_name]['每分钟限速']
         rate_limiter = RateLimiter(rate, 60)
@@ -718,7 +724,7 @@ class TushareData(DataSource):
         desc = self._factor_param[table_name]['输出参数']
         df = self._pro.hk_daily(trade_date=date, fields=list(desc.keys()))
         price_df = self._standardize_df(df, desc)
-        self.db_interface.update_df(price_df, table_name)
+        self.db_interface.insert_df(price_df, table_name)
         return price_df
 
     #######################################
@@ -734,11 +740,10 @@ class TushareData(DataSource):
         :param date: 日期
         :return: 指数行情信息
         """
-        db_table_name = '指数日行情'
-        table_name = '输出参数'
-        desc = self._factor_param['指数日线行情'][table_name]
+        table_name = '指数日行情'
+        desc = self._factor_param[table_name]['输出参数']
         price_fields = list(desc.keys())
-        basic_desc = self._factor_param['大盘指数每日指标'][table_name]
+        basic_desc = self._factor_param['大盘指数每日指标']['输出参数']
         basic_fields = list(basic_desc.keys())
 
         storage = []
@@ -754,19 +759,23 @@ class TushareData(DataSource):
         valuation_info = self._standardize_df(valuation_info, basic_desc)
         data = pd.concat([price_info, valuation_info], axis=1)
         data = data.loc[data.index.get_level_values('ID').isin(indexes), :]
-        self.db_interface.insert_df(data, db_table_name)
+        self.db_interface.insert_df(data, table_name)
 
     def update_index_daily(self):
         table_name = '指数日行情'
         start_date = self._check_db_timestamp(table_name, START_DATE['index_daily'])
-        dates = self.calendar.select_dates(start_date, dt.date.today())
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
+
+        rate = self._factor_param[table_name]['每分钟限速']
+        rate_limiter = RateLimiter(rate, period=60)
 
         logging.getLogger(__name__).debug(f'开始下载{table_name}.')
         with tqdm(dates) as pbar:
             for date in dates:
-                pbar.set_description(f'下载{date}的{table_name}')
-                self.get_index_daily(date)
-                pbar.update()
+                with rate_limiter:
+                    pbar.set_description(f'下载{date}的{table_name}')
+                    self.get_index_daily(date)
+                    pbar.update()
         logging.getLogger(__name__).info(f'{table_name}下载完成')
 
     @DateUtils.dtlize_input_dates
@@ -955,9 +964,8 @@ class TushareData(DataSource):
         return ticker
 
     @classmethod
-    def from_config(cls, config: Union[str, Dict]):
-        if isinstance(config, str):
-            with open(config, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-        db_interface = generate_db_interface_from_config(config)
-        return cls(db_interface=db_interface, tushare_token=config['tushare_token'])
+    def from_config(cls, config_loc: str):
+        with open(config_loc, 'r', encoding='utf-8') as f:
+            mod_config = json.load(f)
+        db_interface = config.generate_db_interface_from_config(config_loc)
+        return cls(db_interface=db_interface, tushare_token=mod_config['tushare']['token'])

@@ -1,6 +1,7 @@
 import unittest
 
-from AShareData.DBInterface import MySQLInterface, prepare_engine
+from AShareData.DBInterface import MySQLInterface
+from AShareData.config import prepare_engine
 from AShareData.Tickers import *
 
 
@@ -47,7 +48,7 @@ class MyTestCase(unittest.TestCase):
         self.ticker_test(ticker)
 
     def test_option_ticker(self):
-        ticker = OptionTickers(self.db_interface)
+        ticker = OptionTickers(, self.db_interface
         self.ticker_test(ticker)
 
 

@@ -3,6 +3,7 @@ import datetime as dt
 from cached_property import cached_property
 
 from .. import DateUtils
+from ..config import get_db_interface
 from ..DBInterface import DBInterface
 
 
@@ -10,6 +11,8 @@ class DataSource(object):
     """Data Source Base Class"""
 
     def __init__(self, db_interface: DBInterface) -> None:
+        if not db_interface:
+            db_interface = get_db_interface()
         self.db_interface = db_interface
 
     @cached_property

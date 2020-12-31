@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from .DataSource import DataSource
 from .. import DateUtils, utils
+from ..config import get_db_interface
 from ..DBInterface import DBInterface
 from ..Tickers import StockTickers
 
@@ -21,7 +22,9 @@ class WebDataCrawler(DataSource):
     }
     _ZZ_INDUSTRY_URL = 'http://www.csindex.com.cn/zh-CN/downloads/industry-price-earnings-ratio-detail'
 
-    def __init__(self, db_interface: DBInterface, db_schema_loc: str = None, init: bool = False) -> None:
+    def __init__(self, db_schema_loc: str = None, init: bool = False, db_interface: DBInterface = None) -> None:
+        if not db_interface:
+            db_interface = get_db_interface()
         super().__init__(db_interface)
         if init:
             logging.getLogger(__name__).debug('检查数据库完整性.')

@@ -10,6 +10,7 @@ import pandas as pd
 from cached_property import cached_property
 
 from . import constants, DateUtils, utils
+from .config import get_db_interface
 from .DBInterface import DBInterface
 
 
@@ -18,11 +19,13 @@ class Factor(object):
     Factor base class
     """
 
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
+    def __init__(self, table_name: str, factor_names: Union[str, Sequence[str]], db_interface: DBInterface = None):
         super().__init__()
         self.table_name = table_name
         self.factor_names = factor_names
 
+        if not db_interface:
+            db_interface = get_db_interface()
         self.db_interface = db_interface
         self.calendar = DateUtils.TradingCalendar(db_interface)
 
@@ -45,8 +48,8 @@ class Factor(object):
 
 
 class IndexConstitute(Factor):
-    def __init__(self, db_interface: DBInterface):
-        super().__init__(db_interface, '指数成分股权重', '')
+    def __init__(self, db_interface: DBInterface = None):
+        super().__init__('指数成分股权重', '', db_interface)
 
     @DateUtils.dtlize_input_dates
     def get_data(self, index_ticker: str, date: DateUtils.DateType):
@@ -63,8 +66,9 @@ class NonFinancialFactor(Factor):
     非财报数据
     """
 
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]] = None):
-        super().__init__(db_interface, table_name, factor_names)
+    def __init__(self, table_name: str, factor_names: Union[str, Sequence[str]] = None,
+                 db_interface: DBInterface = None):
+        super().__init__(table_name, factor_names, db_interface)
         self._check_args(table_name, factor_names)
         assert not any([it in table_name for it in constants.FINANCIAL_STATEMENTS_TYPE]), \
             f'{table_name} 为财报数据, 请使用 FinancialFactor 类!'
@@ -81,9 +85,9 @@ class CompactFactor(NonFinancialFactor):
     该类可以缓存以提升效率
     """
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name, factor_name)
-        self.data = db_interface.read_table(factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, factor_name, db_interface)
+        self.data = self.db_interface.read_table(factor_name)
 
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
@@ -127,7 +131,7 @@ class IndustryFactor(CompactFactor):
     股票行业分类
     """
 
-    def __init__(self, db_interface: DBInterface, provider: str, level: int) -> None:
+    def __init__(self, provider: str, level: int, db_interface: DBInterface = None) -> None:
         """
         :param db_interface: DB Interface
         :param provider: Industry classification data provider
@@ -135,7 +139,7 @@ class IndustryFactor(CompactFactor):
         """
         assert 0 < level <= constants.INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
         table_name = f'{provider}行业'
-        super().__init__(db_interface, table_name)
+        super().__init__(table_name, db_interface)
 
         if level != constants.INDUSTRY_LEVEL[provider]:
             translation = utils.load_param('industry.json')
@@ -167,8 +171,8 @@ class OnTheRecordFactor(NonFinancialFactor):
         有记录的数据, 例如涨跌停, 一字板, 停牌等
     """
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface=db_interface)
         self.factor_names = factor_name
 
     @DateUtils.dtlize_input_dates
@@ -183,7 +187,7 @@ class OnTheRecordFactor(NonFinancialFactor):
 
 class CompactRecordFactor(NonFinancialFactor):
     def __init__(self, compact_factor: CompactFactor, factor_name: str):
-        super().__init__(compact_factor.db_interface, compact_factor.table_name, compact_factor.factor_names)
+        super().__init__(compact_factor.table_name, compact_factor.factor_names, compact_factor.db_interface)
         self.base_factor = compact_factor
         self.factor_names = factor_name
 
@@ -202,8 +206,8 @@ class ContinuousFactor(NonFinancialFactor):
     有连续记录的数据
     """
 
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
-        super().__init__(db_interface, table_name, factor_names)
+    def __init__(self, table_name: str, factor_names: Union[str, Sequence[str]], db_interface: DBInterface = None):
+        super().__init__(table_name, factor_names, db_interface)
 
     @DateUtils.dtlize_input_dates
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
@@ -238,7 +242,7 @@ class AccountingFactor(Factor):
     fields = {}
     date_cache = {}
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
         if len(self.fields) == 0:
             fields_data = utils.load_param('db_schema.json')
             for statement_type in constants.FINANCIAL_STATEMENTS_TYPE:
@@ -257,7 +261,7 @@ class AccountingFactor(Factor):
                 raise RuntimeError('You must build cache first to use accounting factors!')
 
         table_name = self.fields[factor_name]
-        super().__init__(db_interface, f'合并{table_name}', factor_name)
+        super().__init__(f'合并{table_name}', factor_name, db_interface)
         self.report_month = None
         self.buffer_length = 365 * 2
 
@@ -312,8 +316,8 @@ class QuarterlyFactor(AccountingFactor):
     季报数据
     """
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
         self.func = self.balance_sheet_func if self.table_name == '合并资产负债表' else self.cash_flow_or_profit_func
 
     @staticmethod
@@ -332,8 +336,8 @@ class QuarterlyFactor(AccountingFactor):
 class LatestAccountingFactor(AccountingFactor):
     """最新财报数据"""
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -343,8 +347,8 @@ class LatestAccountingFactor(AccountingFactor):
 class LatestQuarterAccountingFactor(QuarterlyFactor):
     """最新财报季度数据"""
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -363,8 +367,8 @@ class YearlyReportAccountingFactor(AccountingFactor):
     年报数据
     """
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
         self.report_month = 12
 
     @staticmethod
@@ -375,8 +379,8 @@ class YearlyReportAccountingFactor(AccountingFactor):
 class QOQAccountingFactor(QuarterlyFactor):
     """环比数据"""
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -393,8 +397,8 @@ class QOQAccountingFactor(QuarterlyFactor):
 class YOYPeriodAccountingFactor(AccountingFactor):
     """同比数据"""
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -405,8 +409,8 @@ class YOYPeriodAccountingFactor(AccountingFactor):
 class YOYQuarterAccountingFactor(QuarterlyFactor):
     """季度同比数据"""
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -423,8 +427,8 @@ class YOYQuarterAccountingFactor(QuarterlyFactor):
 class TTMAccountingFactor(AccountingFactor):
     """TTM数据"""
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:

@@ -3,7 +3,8 @@ import unittest
 
 from AShareData.data_source.WebData import WebDataCrawler
 from AShareData.DateUtils import TradingCalendar
-from AShareData.DBInterface import MySQLInterface, prepare_engine
+from AShareData.DBInterface import MySQLInterface
+from AShareData.config import prepare_engine
 
 
 class WebDataSourceTest(unittest.TestCase):
@@ -11,7 +12,7 @@ class WebDataSourceTest(unittest.TestCase):
         config_loc = 'config.json'
         engine = prepare_engine(config_loc)
         db_interface = MySQLInterface(engine)
-        self.web_crawler = WebDataCrawler(db_interface)
+        self.web_crawler = WebDataCrawler(db_interface=db_interface)
         self.calendar = TradingCalendar(db_interface)
 
     def test_sw_industry(self):

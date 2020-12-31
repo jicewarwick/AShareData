@@ -4,6 +4,7 @@ import inspect
 from functools import wraps
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
+from .config import get_db_interface
 from .DBInterface import DBInterface
 
 DateType = Union[str, dt.datetime, dt.date]
@@ -185,8 +186,10 @@ class TradingCalendarBase(object):
 class TradingCalendar(TradingCalendarBase):
     """A Share Trading Calendar"""
 
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         super().__init__()
+        if not db_interface:
+            db_interface = get_db_interface()
         calendar_df = db_interface.read_table('交易日历')
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
 
@@ -194,8 +197,10 @@ class TradingCalendar(TradingCalendarBase):
 class HKTradingCalendar(TradingCalendarBase):
     """A Share Trading Calendar"""
 
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         super().__init__()
+        if not db_interface:
+            db_interface = get_db_interface()
         calendar_df = db_interface.read_table('港股交易日历')
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
 

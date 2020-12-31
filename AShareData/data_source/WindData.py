@@ -8,8 +8,9 @@ from cached_property import cached_property
 from tqdm import tqdm
 
 from .DataSource import DataSource
-from .. import constants, DateUtils, utils
-from ..DBInterface import DBInterface, generate_db_interface_from_config
+from .. import config, constants, DateUtils, utils
+from ..config import get_db_interface
+from ..DBInterface import DBInterface
 from ..Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
     StockTickers
 
@@ -151,7 +152,9 @@ class WindWrapper(object):
 class WindData(DataSource):
     """Wind 数据源"""
 
-    def __init__(self, db_interface: DBInterface, param_json_loc: str = None):
+    def __init__(self, db_interface: DBInterface = None, param_json_loc: str = None):
+        if not db_interface:
+            db_interface = get_db_interface()
         super().__init__(db_interface)
 
         self._factor_param = utils.load_param('wind_param.json', param_json_loc)
@@ -529,6 +532,6 @@ class WindData(DataSource):
                                  default_start_date=default_start_date)
 
     @classmethod
-    def from_config(cls, config: str):
-        db_interface = generate_db_interface_from_config(config)
+    def from_config(cls, config_loc: str):
+        db_interface = config.generate_db_interface_from_config(config_loc)
         return cls(db_interface)

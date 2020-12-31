@@ -8,8 +8,8 @@ class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         config_loc = 'config.json'
         db_interface = generate_db_interface_from_config(config_loc)
-        self.industry_obj = IndustryComparison(db_interface, index='000905.SH', industry_provider='中信',
-                                               industry_level=2)
+        self.industry_obj = IndustryComparison(index='000905.SH', industry_provider='中信', industry_level=2,
+                                               db_interface=db_interface)
 
     def test_something(self):
         holding = self.industry_obj.import_holding('holding.xlsx', date=dt.datetime(2020, 12, 18))
