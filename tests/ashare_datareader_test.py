@@ -3,14 +3,13 @@ import unittest
 
 from AShareData.AShareDataReader import AShareDataReader
 from AShareData.DBInterface import MySQLInterface
-from AShareData.config import prepare_engine
+from AShareData.config import set_global_config
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = 'config.json'
-        engine = prepare_engine(config_loc)
-        self.db = AShareDataReader(MySQLInterface(engine))
+        set_global_config('config.json')
+        self.db = AShareDataReader()
 
     def test_calendar(self):
         print(self.db.calendar.calendar)

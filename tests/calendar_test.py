@@ -2,14 +2,13 @@ import unittest
 
 from AShareData.DateUtils import *
 from AShareData.DBInterface import MySQLInterface
-from AShareData.config import prepare_engine
+from AShareData.config import set_global_config
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = 'config.json'
-        engine = prepare_engine(config_loc)
-        self.calendar = TradingCalendar(MySQLInterface(engine))
+        set_global_config('config.json')
+        self.calendar = TradingCalendar()
 
     def test_is_trading_day(self):
         self.assertFalse(self.calendar.is_trading_date(dt.date(2019, 10, 1)))

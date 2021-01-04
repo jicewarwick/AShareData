@@ -9,6 +9,7 @@ class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         config_loc = 'config.json'
         engine = prepare_engine(config_loc)
+        set_global_config('config.json')
         self.db_interface = MySQLInterface(engine)
 
     def test_read_data(self):

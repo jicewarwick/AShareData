@@ -1,13 +1,14 @@
 import datetime as dt
 import unittest
 
+from AShareData import set_global_config
 from AShareData.PortfolioAnalysis import ASharePortfolioAnalysis
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self):
-        config_loc = 'config.json'
-        self.portfolio_analysis = ASharePortfolioAnalysis(config_loc)
+        set_global_config('config.json')
+        self.portfolio_analysis = ASharePortfolioAnalysis()
         self.data_reader = self.portfolio_analysis.data_reader
 
     def test_summary_statistics(self):

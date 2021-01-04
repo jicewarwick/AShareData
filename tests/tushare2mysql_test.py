@@ -1,12 +1,12 @@
 import unittest
 
-from AShareData import TushareData
+from AShareData import set_global_config, TushareData
 
 
 class Tushare2MySQLTest(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = 'config.json'
-        self.downloader = TushareData.from_config(config_loc)
+        set_global_config('config.json')
+        self.downloader = TushareData()
 
     def test_calendar(self):
         print(self.downloader.calendar.calendar)

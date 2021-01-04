@@ -1,19 +1,16 @@
 import datetime as dt
 import unittest
 
+from AShareData.config import set_global_config
 from AShareData.data_source.WebData import WebDataCrawler
 from AShareData.DateUtils import TradingCalendar
-from AShareData.DBInterface import MySQLInterface
-from AShareData.config import prepare_engine
 
 
 class WebDataSourceTest(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = 'config.json'
-        engine = prepare_engine(config_loc)
-        db_interface = MySQLInterface(engine)
-        self.web_crawler = WebDataCrawler(db_interface=db_interface)
-        self.calendar = TradingCalendar(db_interface)
+        set_global_config('config.json')
+        self.web_crawler = WebDataCrawler()
+        self.calendar = TradingCalendar()
 
     def test_sw_industry(self):
         self.web_crawler.get_sw_industry()

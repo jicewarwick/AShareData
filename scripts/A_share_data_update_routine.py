@@ -3,8 +3,7 @@ import sys
 from AShareData import ConstLimitStockFactorCompositor, set_global_config, TushareData, WindData
 
 if __name__ == '__main__':
-    config_loc = sys.argv[1]
-    set_global_config(config_loc)
+    set_global_config(sys.argv[1])
 
     tushare_crawler = TushareData()
     tushare_crawler.update_base_info()

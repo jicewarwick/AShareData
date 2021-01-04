@@ -1,16 +1,14 @@
 import unittest
 
 import AShareData.DateUtils
-from AShareData.DBInterface import MySQLInterface
-from AShareData.config import prepare_engine
+from AShareData.config import set_global_config
 from AShareData.FactorCompositor import *
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = 'config.json'
-        engine = prepare_engine(config_loc)
-        self.factor_compositor = FactorCompositor(MySQLInterface(engine))
+        set_global_config('config.json')
+        self.factor_compositor = FactorCompositor()
 
     def test_market_return(self):
         ticker: str = '000001.IND'

@@ -1,18 +1,18 @@
 import unittest
 
-from AShareData import generate_db_interface_from_config
+from AShareData import set_global_config
 from AShareData.Factor import *
 from AShareData.Tickers import *
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = 'config.json'
-        self.db_interface = generate_db_interface_from_config(config_loc)
+        set_global_config('config.json')
+        self.db_interface = get_db_interface()
         self.start_date = dt.datetime(2005, 1, 1)
         self.end_date = dt.datetime(2010, 1, 1)
         # self.ids = ['000001.SZ']
-        self.ids = StockTickers(self.db_interface).ticker(dt.date(2005, 1, 1))
+        self.ids = StockTickers().ticker(dt.date(2005, 1, 1))
 
     def test_compact_record_factor(self):
         compact_factor = CompactFactor('证券名称', self.db_interface)
