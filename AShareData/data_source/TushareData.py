@@ -40,7 +40,7 @@ class TushareData(DataSource):
         :param param_json_loc: tushare 返回df的列名信息
         """
         if not tushare_token:
-            tushare_token = config.get_global_config()['tushare_token']
+            tushare_token = config.get_global_config()['tushare']['token']
             db_interface = config.get_db_interface()
         super().__init__(db_interface)
         self._pro = ts.pro_api(tushare_token)

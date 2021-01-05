@@ -1,5 +1,4 @@
 import json
-import logging
 from typing import Dict, Optional, Union
 
 import sqlalchemy as sa
@@ -47,6 +46,4 @@ def get_db_interface():
     global __db_interface__
     if not __db_interface__:
         __db_interface__ = generate_db_interface_from_config(get_global_config())
-    else:
-        logging.error('db_interface already set.')
     return __db_interface__
