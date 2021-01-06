@@ -46,7 +46,7 @@ class DiscreteTickers(TickersBase):
 
     def __init__(self, asset_type: str, db_interface: DBInterface = None) -> None:
         super().__init__(db_interface)
-        self.cache = db_interface.read_table('证券代码', text_statement=f'证券类型="{asset_type}"').reset_index()
+        self.cache = self.db_interface.read_table('证券代码', text_statement=f'证券类型="{asset_type}"').reset_index()
 
 
 class StockTickers(DiscreteTickers):
@@ -117,7 +117,7 @@ class ConglomerateTickers(TickersBase):
 
     def __init__(self, sql_statement: str, db_interface: DBInterface = None) -> None:
         super().__init__(db_interface)
-        self.cache = db_interface.read_table('证券代码', text_statement=sql_statement).reset_index()
+        self.cache = self.db_interface.read_table('证券代码', text_statement=sql_statement).reset_index()
 
 
 class OptionTickers(ConglomerateTickers):
@@ -207,6 +207,8 @@ class StockTickerSelector(object):
         :param policy: 选股条件
         """
         super().__init__()
+        if not db_interface:
+            db_interface = get_db_interface()
         self.db_interface = db_interface
         self.stock_ticker = StockTickers(self.db_interface)
         self.policy = policy
