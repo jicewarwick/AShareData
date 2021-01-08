@@ -3,9 +3,11 @@ from functools import lru_cache
 import numpy as np
 from cached_property import cached_property
 
-from . import config, DateUtils
+from . import DateUtils
+from .config import generate_db_interface_from_config, get_db_interface
 from .DBInterface import DBInterface
-from .Factor import CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, OnTheRecordFactor
+from .Factor import BinaryFactor, CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, OnTheRecordFactor, \
+    UnaryFactor
 from .Tickers import StockTickers
 
 
@@ -21,7 +23,7 @@ class AShareDataReader(object):
         if db_interface:
             self.db_interface = db_interface
         else:
-            self.db_interface = config.get_db_interface()
+            self.db_interface = get_db_interface()
 
     @cached_property
     def calendar(self) -> DateUtils.TradingCalendar:
@@ -68,54 +70,39 @@ class AShareDataReader(object):
         """总股本"""
         return CompactFactor('总股本', self.db_interface)
 
+    @cached_property
     def floating_share(self) -> CompactFactor:
         """流通股本"""
         return CompactFactor('流通股本', self.db_interface)
 
-    # @cached_property
-    def market_cap(self):
+    @cached_property
+    def market_cap(self) -> BinaryFactor:
         """市值"""
-        pass
+        return self.total_share * self.close
 
-    def log_cap(self):
-        pass
+    @cached_property
+    def log_cap(self) -> UnaryFactor:
+        return self.market_cap.log()
 
-    def cap_weight(self):
-        pass
+    @cached_property
+    def hfq_close(self) -> BinaryFactor:
+        return self.adj_factor * self.close
 
-    def cap_wighted_return(self):
-        pass
+    @cached_property
+    def daily_return(self) -> UnaryFactor:
+        return self.hfq_close.pct_change()
 
-    def hfq_close(self):
-        pass
+    @cached_property
+    def log_return(self) -> UnaryFactor:
+        return self.hfq_close.log().diff()
 
-    def qfq_close(self):
-        pass
+    @cached_property
+    def index_close(self) -> ContinuousFactor:
+        return ContinuousFactor('指数日行情', '收盘点位', self.db_interface)
 
-    def daily_return(self):
-        pass
-
-    def log_return(self):
-        pass
-
-    def index_close(self, ts_code: str):
-        pass
-
-    def index_return(self, ts_code: str):
-        pass
-
-    def shibor_rate(self, maturity: str = '1年'):
-        pass
-        # return self._db_reader.get_factor('Shibor利率数据', maturity).div(constants.TRADING_DAYS_IN_YEAR)
-
-    def log_shibor_return(self, maturity: str = '1年'):
-        pass
-
-    def excess_market_return(self, index_name: str = '沪深300'):
-        pass
-
-    def excess_return(self):
-        pass
+    @cached_property
+    def index_return(self) -> UnaryFactor:
+        return self.index_close.pct_change()
 
     @cached_property
     def index_constitute(self) -> IndexConstitute:
@@ -124,6 +111,22 @@ class AShareDataReader(object):
     @lru_cache(5)
     def industry(self, provider: str, level: int) -> IndustryFactor:
         return IndustryFactor(provider, level, self.db_interface)
+
+    @cached_property
+    def overnight_shibor(self) -> ContinuousFactor:
+        return ContinuousFactor('shibor利率数据', '隔夜', self.db_interface)
+
+    @cached_property
+    def three_month_shibor(self) -> ContinuousFactor:
+        return ContinuousFactor('shibor利率数据', '3个月', self.db_interface)
+
+    @cached_property
+    def six_month_shibor(self) -> ContinuousFactor:
+        return ContinuousFactor('shibor利率数据', '6个月', self.db_interface)
+
+    @cached_property
+    def one_year_shibor(self) -> ContinuousFactor:
+        return ContinuousFactor('shibor利率数据', '1年', self.db_interface)
 
     @staticmethod
     def exponential_weight(n: int, half_life: int):

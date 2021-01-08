@@ -1,6 +1,6 @@
 import unittest
 
-from AShareData import set_global_config
+from AShareData import set_global_config, TradingCalendar
 from AShareData.Factor import *
 from AShareData.Tickers import *
 
@@ -9,10 +9,13 @@ class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         set_global_config('config.json')
         self.db_interface = get_db_interface()
-        self.start_date = dt.datetime(2005, 1, 1)
-        self.end_date = dt.datetime(2010, 1, 1)
-        # self.ids = ['000001.SZ']
-        self.ids = StockTickers().ticker(dt.date(2005, 1, 1))
+        self.calendar = TradingCalendar()
+        self.start_date = dt.datetime(2020, 12, 1)
+        self.end_date = dt.datetime(2020, 12, 18)
+        self.ids = ['000001.SZ', '000002.SZ']
+        # self.ids = StockTickers().ticker(dt.date(2005, 1, 1))
+        self.close = ContinuousFactor('股票日行情', '收盘价', self.db_interface)
+        self.adj = CompactFactor('复权因子', self.db_interface)
 
     def test_compact_record_factor(self):
         compact_factor = CompactFactor('证券名称', self.db_interface)
@@ -68,8 +71,31 @@ class MyTestCase(unittest.TestCase):
         print(a)
 
     def test_index_constitute(self):
-        index_constitute = IndexConstitute(self.db_interface, '指数成分股权重')
+        index_constitute = IndexConstitute(self.db_interface)
         print(index_constitute.get_data('000300.SH', '20200803'))
+
+    def test_sum_factor(self):
+        sum_hfq = self.close + self.adj
+        sum_hfq_close_data = sum_hfq.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
+        print(sum_hfq_close_data)
+        uni_sum = self.close + 1
+        print(uni_sum.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
+
+    def test_mul_factor(self):
+        hfq = self.close * self.adj
+        hfq_close_data = hfq.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
+        print(hfq_close_data)
+
+    def test_factor_pct_change(self):
+        hfq = self.close * self.adj
+        hfq_chg = hfq.pct_change()
+        pct_chg_data = hfq_chg.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
+        print(pct_chg_data)
+
+    def test_factor_max(self):
+        f = self.adj.max()
+        f_max = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
+        print(f_max)
 
 
 if __name__ == '__main__':

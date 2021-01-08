@@ -365,9 +365,9 @@ class MySQLInterface(DBInterface):
             q = q.filter(extract('month', t.columns['报告期']) == report_month)
         if text_statement:
             q = q.filter(text(text_statement))
-        if ids is not None:
+        if (ids is not None) and ('ID' in columns):
             q = q.filter(t.columns['ID'].in_(ids))
-        if index_code is not None:
+        if (index_code is not None) and ('IndexCode' in columns):
             q = q.filter(t.columns['IndexCode'] == index_code)
 
         ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)

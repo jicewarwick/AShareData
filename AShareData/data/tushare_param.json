@@ -391,7 +391,7 @@
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "ID",
+			"ts_code": "IndexCode",
 			"trade_date": "DateTime",
 			"total_mv": "总市值",
 			"float_mv": "流通市值",
@@ -1985,7 +1985,7 @@
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "ID",
+			"ts_code": "IndexCode",
 			"trade_date": "DateTime",
 			"close": "收盘点位",
 			"open": "开盘点位",
