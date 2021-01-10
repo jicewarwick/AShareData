@@ -5,7 +5,7 @@ import tempfile
 from collections import namedtuple
 from dataclasses import dataclass
 from importlib.resources import open_text
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from . import constants
 
@@ -42,6 +42,15 @@ def load_param(default_loc: str, param_json_loc: str = None) -> Dict[str, Any]:
 def chunk_list(l: list, n: int):
     for i in range(0, len(l), n):
         yield l[i:i + n]
+
+
+def format_stock_ticker(ticker: Union[str, int]) -> str:
+    if isinstance(ticker, str):
+        ticker = int(ticker)
+    if ticker < 600000:
+        return f'{ticker:06d}.SZ'
+    else:
+        return f'{ticker:06d}.SH'
 
 
 def format_czc_ticker(ticker: str) -> str:

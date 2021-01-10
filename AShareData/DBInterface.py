@@ -1,5 +1,4 @@
 import datetime as dt
-import json
 import logging
 import time
 from typing import List, Mapping, Optional, Sequence, Union
@@ -9,7 +8,6 @@ import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, DateTime, extract, Float, Integer, Table, Text, VARCHAR
 from sqlalchemy.dialects.mysql import DOUBLE, insert
-from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func, text
 
@@ -84,15 +82,8 @@ class DBInterface(object):
     def get_column_max(self, table_name: str, column: str):
         raise NotImplementedError()
 
-
-def prepare_engine(config_loc: str) -> sa.engine.Engine:
-    """Create sqlalchemy engine from config file"""
-    with open(config_loc, 'r') as f:
-        config = json.load(f)
-    url = URL(drivername=config['driver'], host=config['host'], port=config['port'], database=config['database'],
-              username=config['username'], password=config['password'],
-              query={'charset': 'utf8mb4'})
-    return sa.create_engine(url)
+    def delete_id_records(self, table_name: str, ticker: str):
+        raise NotImplementedError()
 
 
 class MySQLInterface(DBInterface):
@@ -150,7 +141,11 @@ class MySQLInterface(DBInterface):
         """
         col_names = list(table_schema.keys())
         col_types = [self._type_mapper[it] for it in table_schema.values()]
-        primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'IndexCode'] if it in col_names]
+        if 'id' in col_names:
+            primary_keys = ['id']
+        else:
+            primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'IndexCode'] if it in col_names]
+
         existing_tables = [it.lower() for it in self.meta.tables]
         if table_name.lower() in existing_tables:
             logging.getLogger(__name__).debug(f'表 {table_name} 已存在.')
@@ -175,7 +170,7 @@ class MySQLInterface(DBInterface):
         table = self.meta.tables[table_name]
         conn = self.engine.connect()
         conn.execute(table.delete())
-        logging.getLogger(__name__).info(f'table {table_name} purged')
+        logging.getLogger(__name__).debug(f'table {table_name} purged')
 
     def insert_df(self, df: Union[pd.Series, pd.DataFrame], table_name: str) -> None:
         if df.empty:
@@ -325,7 +320,8 @@ class MySQLInterface(DBInterface):
                    start_date: dt.datetime = None, end_date: dt.datetime = None,
                    dates: Union[Sequence[dt.datetime], dt.datetime] = None,
                    report_period: dt.datetime = None, report_month: int = None,
-                   ids: Sequence[str] = None, text_statement: str = None) -> Union[pd.Series, pd.DataFrame]:
+                   ids: Sequence[str] = None, index_code: str = None,
+                   text_statement: str = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
         :param table_name: 表名
@@ -336,6 +332,8 @@ class MySQLInterface(DBInterface):
         :param report_period: 报告期
         :param report_month: 报告月份
         :param ids: 合约代码
+        :param index_code: 指数代码
+        :param text_statement: SQL指令
         :return:
         """
         table_name = table_name.lower()
@@ -367,8 +365,10 @@ class MySQLInterface(DBInterface):
             q = q.filter(extract('month', t.columns['报告期']) == report_month)
         if text_statement:
             q = q.filter(text(text_statement))
-        if ids is not None:
+        if (ids is not None) and ('ID' in columns):
             q = q.filter(t.columns['ID'].in_(ids))
+        if (index_code is not None) and ('IndexCode' in columns):
+            q = q.filter(t.columns['IndexCode'] == index_code)
 
         ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)
         session.close()
@@ -388,6 +388,13 @@ class MySQLInterface(DBInterface):
         primary_key = [it.name for it in table.primary_key]
         if primary_key:
             return primary_key
+
+    def delete_id_records(self, table_name: str, ticker: str):
+        table_name = table_name.lower()
+        t = self.meta.tables[table_name]
+        stmt = t.delete().where(t.c.ID == ticker)
+        conn = self.engine.connect()
+        conn.execute(stmt)
 
 
 def compute_diff(input_data: pd.Series, db_data: pd.Series) -> Optional[pd.Series]:

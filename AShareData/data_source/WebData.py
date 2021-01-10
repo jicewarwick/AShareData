@@ -6,11 +6,11 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-import AShareData.DateUtils
-from . import utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface
-from .Tickers import StockTickers
+from .. import DateUtils, utils
+from ..config import get_db_interface
+from ..DBInterface import DBInterface
+from ..Tickers import StockTickers
 
 
 class WebDataCrawler(DataSource):
@@ -22,7 +22,9 @@ class WebDataCrawler(DataSource):
     }
     _ZZ_INDUSTRY_URL = 'http://www.csindex.com.cn/zh-CN/downloads/industry-price-earnings-ratio-detail'
 
-    def __init__(self, db_interface: DBInterface, db_schema_loc: str = None, init: bool = False) -> None:
+    def __init__(self, db_schema_loc: str = None, init: bool = False, db_interface: DBInterface = None) -> None:
+        if not db_interface:
+            db_interface = get_db_interface()
         super().__init__(db_interface)
         if init:
             logging.getLogger(__name__).debug('检查数据库完整性.')
@@ -53,11 +55,11 @@ class WebDataCrawler(DataSource):
         raw_data.set_index(['DateTime', 'ID'], inplace=True)
         self.db_interface.update_df(raw_data[['行业名称']], '申万一级行业')
 
-    @AShareData.DateUtils.dtlize_input_dates
-    def get_zz_industry(self, date: AShareData.DateUtils.DateType) -> None:
+    @DateUtils.dtlize_input_dates
+    def get_zz_industry(self, date: DateUtils.DateType) -> None:
         """获取中证4级行业"""
         referer_template = 'http://www.csindex.com.cn/zh-CN/downloads/industry-price-earnings-ratio?type=zz1&date='
-        date_str = AShareData.DateUtils.date_type2str(date, '-')
+        date_str = DateUtils.date_type2str(date, '-')
         header = self._HEADER
         header['referer'] = referer_template + date_str
         storage = []

@@ -1,5 +1,6 @@
 import datetime as dt
 import itertools
+import json
 import logging
 import re
 from itertools import product
@@ -12,10 +13,10 @@ from cached_property import cached_property
 from ratelimiter import RateLimiter
 from tqdm import tqdm
 
-from . import constants, DateUtils, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface
-from .Tickers import StockTickers
+from .. import config, constants, DateUtils, utils
+from ..DBInterface import DBInterface
+from ..Tickers import StockTickers
 
 START_DATE = {
     'common': dt.datetime(1990, 1, 1),
@@ -30,7 +31,7 @@ START_DATE = {
 
 
 class TushareData(DataSource):
-    def __init__(self, tushare_token: str, db_interface: DBInterface, param_json_loc: str = None) -> None:
+    def __init__(self, tushare_token: str = None, db_interface: DBInterface = None, param_json_loc: str = None) -> None:
         """
         Tushare to Database. 将tushare下载的数据写入数据库中
 
@@ -38,6 +39,9 @@ class TushareData(DataSource):
         :param db_interface: DBInterface
         :param param_json_loc: tushare 返回df的列名信息
         """
+        if not tushare_token:
+            tushare_token = config.get_global_config()['tushare']['token']
+            db_interface = config.get_db_interface()
         super().__init__(db_interface)
         self._pro = ts.pro_api(tushare_token)
         self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
@@ -139,8 +143,13 @@ class TushareData(DataSource):
         cal_date = cal_date.sort_values()
         cal_date.name = '交易日期'
         cal_date = cal_date.map(DateUtils.date_type2datetime)
+        cal_date.index.name = 'index'
+        db_data = self.db_interface.read_table(table_name)
+        db_data = db_data.loc[db_data['交易日期'] < cal_date.min(), :]
+        data = pd.concat([db_data.set_index('index').iloc[:, 0], cal_date], ignore_index=True)
 
-        self.db_interface.update_df(cal_date, table_name)
+        self.db_interface.purge_table(table_name)
+        self.db_interface.insert_df(data, table_name)
 
     def update_stock_list_date(self) -> None:
         """ 获取所有股票列表, 包括上市, 退市和暂停上市的股票
@@ -162,6 +171,20 @@ class TushareData(DataSource):
         self.db_interface.update_df(list_info, '证券代码')
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
+    def update_index_list(self):
+        INDEX_PROVIDER = {'CSI': '中证指数',
+                          'SSE': '上交所指数',
+                          'SZSE': '深交所指数',
+                          'SW': '申万指数'}
+        storage = []
+        for provider in INDEX_PROVIDER:
+            storage.append(self._pro.index_basic(market=provider))
+        df = pd.concat(storage, ignore_index=True)
+        ind = df.name.str.endswith('(SH)')
+        sz_names = df.name.loc[ind].str.replace(r'\(SH\)', '')
+        df2 = df.loc[~(df.name.isin(sz_names) & (df.market == 'SZSE')) & (~ind), :]
+        df3 = df2.loc[df2.ts_code.str.len() < 11, :]
+
     # TODO
     def get_hk_stock_list_date(self):
         """ 获取所有港股股票列表, 包括上市, 退市和暂停上市的股票
@@ -174,10 +197,8 @@ class TushareData(DataSource):
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
         storage = []
         list_status = ['L', 'D']
-        fields = ['ts_code', 'list_date', 'delist_date']
         for status in list_status:
             storage.append(self._pro.hk_basic(list_status=status))
-            # storage.append(self._pro.hk_basic(exchange='', list_status=status, fields=fields))
         output = pd.concat(storage)
         output['证券类型'] = '港股股票'
         list_info = self._format_list_date(output.loc[:, ['ts_code', 'list_date', 'delist_date', '证券类型']])
@@ -542,7 +563,7 @@ class TushareData(DataSource):
                 df['ann_date'].where(df['ann_date'].notnull(), df['imp_ann_date'], inplace=True)
                 df.drop(['div_proc', 'imp_ann_date'], axis=1, inplace=True)
                 df = self._standardize_df(df, column_desc)
-                self.db_interface.update_df(df, data_category)
+                self.db_interface.insert_df(df, data_category)
                 pbar.update()
 
         logging.getLogger(__name__).info(f'{data_category}信息下载完成.')
@@ -557,36 +578,54 @@ class TushareData(DataSource):
         balance_sheet_desc = self._factor_param[balance_sheet]['输出参数']
         income_desc = self._factor_param[income]['输出参数']
         cash_flow_desc = self._factor_param[cash_flow]['输出参数']
-        report_type_desc = self._factor_param[balance_sheet]['主要报表类型说明']
         company_type_desc = self._factor_param[balance_sheet]['公司类型']
+
+        combined_types = ['1', '4', '5', '11']
+        mother_types = ['6', '9', '10', '12']
 
         def download_data(api_func: Callable, report_type_list: Sequence[str],
                           column_name_dict: Mapping[str, str], table_name: str) -> None:
             storage = []
             for i in report_type_list:
-                storage.append(api_func(ts_code=ticker, report_type=i))
-            df = pd.concat(storage)
+                storage.append(api_func(ts_code=ticker, report_type=i, fields=list(column_name_dict.keys())))
+            df = pd.concat(storage, ignore_index=True)
+            if df.empty:  # 000508 无数据
+                return
+            df = df.dropna(subset=['ann_date', 'f_ann_date', 'end_date'])  # 000166 申万宏源 早期数据无时间戳
+            # tmp = df.sort_values('end_date', ascending=False).rename(column_name_dict, axis=1)
+            # tmp = tmp.fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
+            # tmp.to_excel('raw.xlsx', index=False, freeze_panes=(1, 5))
 
-            df = df.fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
             df = df.sort_values('update_flag').groupby(['ann_date', 'end_date', 'report_type']).tail(1)
-            df = df.drop('update_flag', axis=1)
+            df = df.drop('update_flag', axis=1).fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
             df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).drop_duplicates(keep='first').reset_index()
-            df = df.drop('ann_date', axis=1).replace({'report_type': report_type_desc, 'comp_type': company_type_desc})
+            df = df.sort_values('report_type').drop(['ann_date', 'report_type'], axis=1)
+            df = df.replace({'comp_type': company_type_desc})
             df = self._standardize_df(df, column_name_dict)
+            df = df.loc[~df.index.duplicated(), :]
+            # df.to_excel('processed.xlsx', merge_cells=False, float_format='%.2f')
 
-            self.db_interface.update_df(df, table_name)
+            self.db_interface.delete_id_records(table_name, ticker)
+            try:
+                self.db_interface.insert_df(df, table_name)
+            except:
+                logging.getLogger(__name__).error(f'{ticker} - {table_name} failed to get coherent data')
 
         loop_vars = [(self._pro.balancesheet, balance_sheet_desc, balance_sheet),
                      (self._pro.income, income_desc, income),
                      (self._pro.cashflow, cash_flow_desc, cash_flow)]
         for f, desc, table in loop_vars:
-            download_data(f, ['1', '4', '5', '11'], desc, f'合并{table}')
-            download_data(f, ['6', '9', '10', '12'], desc, f'母公司{table}')
+            download_data(f, combined_types, desc, f'合并{table}')
+            download_data(f, mother_types, desc, f'母公司{table}')
 
     def init_accounting_data(self):
         tickers = self.stock_tickers.all_ticker()
-        rate_limiter = RateLimiter(self._factor_param['资产负债表']['每分钟限速'] / 4, 60)
-        logging.getLogger(__name__).debug(f'开始下载财报.')
+        db_ticker = self.db_interface.get_column_max('合并资产负债表', 'ID')
+        if db_ticker:
+            tickers = tickers[tickers.index(db_ticker):]
+
+        rate_limiter = RateLimiter(self._factor_param['资产负债表']['每分钟限速'] / 8, 60)
+        logging.getLogger(__name__).debug('开始下载财报.')
         with tqdm(tickers) as pbar:
             for ticker in tickers:
                 with rate_limiter:
@@ -594,7 +633,7 @@ class TushareData(DataSource):
                     self.get_financial(ticker)
                     pbar.update()
 
-        logging.getLogger(__name__).info(f'财报下载完成')
+        logging.getLogger(__name__).info('财报下载完成')
 
     def update_financial_data(self):
         table_name = '财报披露计划'
@@ -667,7 +706,7 @@ class TushareData(DataSource):
         hk_cal = DateUtils.HKTradingCalendar(self.db_interface)
         start_date = self._check_db_timestamp(table_name, START_DATE['hk_daily'])
         end_date = hk_cal.yesterday()
-        dates = hk_cal.select_dates(start_date=start_date, end_date=end_date)
+        dates = hk_cal.select_dates(start_date=start_date, end_date=end_date, inclusive=(False, True))
 
         rate = self._factor_param[table_name]['每分钟限速']
         rate_limiter = RateLimiter(rate, 60)
@@ -685,50 +724,59 @@ class TushareData(DataSource):
         desc = self._factor_param[table_name]['输出参数']
         df = self._pro.hk_daily(trade_date=date, fields=list(desc.keys()))
         price_df = self._standardize_df(df, desc)
-        self.db_interface.update_df(price_df, table_name)
+        self.db_interface.insert_df(price_df, table_name)
         return price_df
 
     #######################################
     # index funcs
     #######################################
-    def get_index_daily(self, start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None) -> None:
+    @DateUtils.strlize_input_dates
+    def get_index_daily(self, date: DateUtils.DateType) -> None:
         """
-        更新指数行情信息. 包括开高低收, 量额, 市盈, 市净, 市值
+        获取指数行情信息. 包括开高低收, 量额, 市盈, 市净, 市值
         默认指数为沪指, 深指, 中小盘, 创业板, 50, 300, 500
-        注:300不包含市盈等指标
+        注: 300不包含市盈等指标
 
-        :param start_date: 开始时间
-        :param end_date: 结束时间
+        :param date: 日期
         :return: 指数行情信息
         """
-        db_table_name = '指数日行情'
-        table_name = '输出参数'
-        desc = self._factor_param['指数日线行情'][table_name]
+        table_name = '指数日行情'
+        desc = self._factor_param[table_name]['输出参数']
         price_fields = list(desc.keys())
-        basic_desc = self._factor_param['大盘指数每日指标'][table_name]
+        basic_desc = self._factor_param['大盘指数每日指标']['输出参数']
         basic_fields = list(basic_desc.keys())
 
-        logging.getLogger(__name__).debug(f'开始下载{db_table_name}.')
         storage = []
         indexes = list(constants.STOCK_INDEXES.values())
-        start_date, end_date = DateUtils.date_type2str(start_date), DateUtils.date_type2str(end_date)
         for index in indexes:
-            storage.append(self._pro.index_daily(ts_code=index, start_date=start_date, end_date=end_date,
-                                                 fields=price_fields))
-        df = pd.concat(storage)
-        df['vol'] = df['vol'] * 100
-        df['amount'] = df['amount'] * 1000
-        df = self._standardize_df(df, desc)
-        self.db_interface.update_df(df, db_table_name)
+            storage.append(self._pro.index_daily(ts_code=index, start_date=date, end_date=date, fields=price_fields))
+        price_info = pd.concat(storage)
+        price_info['vol'] = price_info['vol'] * 100
+        price_info['amount'] = price_info['amount'] * 1000
+        price_info = self._standardize_df(price_info, desc)
 
-        storage.clear()
-        for index in indexes:
-            storage.append(self._pro.index_dailybasic(ts_code=index, start_date=start_date, end_date=end_date,
-                                                      fields=basic_fields))
-        df = pd.concat(storage)
-        df = self._standardize_df(df, basic_desc)
-        self.db_interface.update_df(df, db_table_name)
-        logging.getLogger(__name__).info(f'{db_table_name}下载完成')
+        valuation_info = self._pro.index_dailybasic(trade_date=date, fields=basic_fields)
+        valuation_info = self._standardize_df(valuation_info, basic_desc)
+        data = pd.concat([price_info, valuation_info], axis=1)
+        data = data.loc[data.index.get_level_values('ID').isin(indexes), :]
+        self.db_interface.insert_df(data, table_name)
+
+    def update_index_daily(self):
+        table_name = '指数日行情'
+        start_date = self._check_db_timestamp(table_name, START_DATE['index_daily'])
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
+
+        rate = self._factor_param[table_name]['每分钟限速']
+        rate_limiter = RateLimiter(rate, period=60)
+
+        logging.getLogger(__name__).debug(f'开始下载{table_name}.')
+        with tqdm(dates) as pbar:
+            for date in dates:
+                with rate_limiter:
+                    pbar.set_description(f'下载{date}的{table_name}')
+                    self.get_index_daily(date)
+                    pbar.update()
+        logging.getLogger(__name__).info(f'{table_name}下载完成')
 
     @DateUtils.dtlize_input_dates
     def get_index_weight(self, indexes: Sequence[str] = None,
@@ -914,3 +962,10 @@ class TushareData(DataSource):
         if ticker.endswith('.CZC') and len(ticker) <= 10:
             ticker = utils.format_czc_ticker(ticker)
         return ticker
+
+    @classmethod
+    def from_config(cls, config_loc: str):
+        with open(config_loc, 'r', encoding='utf-8') as f:
+            mod_config = json.load(f)
+        db_interface = config.generate_db_interface_from_config(config_loc)
+        return cls(db_interface=db_interface, tushare_token=mod_config['tushare']['token'])

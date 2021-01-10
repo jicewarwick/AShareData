@@ -1,16 +1,10 @@
-import json
 import sys
 
-from AShareData import MySQLInterface, prepare_engine, WindData
+from AShareData import set_global_config, WindData
 
 if __name__ == '__main__':
     config_loc = sys.argv[1]
-    with open(config_loc, 'r') as f:
-        config = json.load(f)
+    set_global_config(config_loc)
 
-    engine = prepare_engine(config_loc)
-    db_interface = MySQLInterface(engine, init=True)
-    self = db_interface
-
-    with WindData(db_interface) as wind_data:
+    with WindData() as wind_data:
         wind_data.get_stock_rt_price()

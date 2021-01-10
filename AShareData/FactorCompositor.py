@@ -1,29 +1,35 @@
 import datetime as dt
+import logging
 import os
 import pickle
 import zipfile
 from pathlib import Path
-from typing import Sequence
-import logging
+from typing import Sequence, Union
 
 import pandas as pd
+import statsmodels.api as sm
 from sortedcontainers import SortedDict
 from tqdm import tqdm
 
-from . import AShareDataReader, constants, DateUtils, DBInterface, utils
-from .DataSource import DataSource
-from .Factor import CompactFactor
-from .Tickers import StockTickerSelector, FundTickers
+from . import constants, DateUtils, utils
+from .AShareDataReader import AShareDataReader
+from .config import get_db_interface
+from .data_source.DataSource import DataSource
+from .DBInterface import DBInterface
+from .Factor import CachedFactor, CompactFactor, FactorBase
+from .Tickers import FundTickers, StockTickerSelector
 
 
 class FactorCompositor(DataSource):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         """
         Factor Compositor
 
         This class composite factors from raw market/financial info
         :param db_interface: DBInterface
         """
+        if not db_interface:
+            db_interface = get_db_interface()
         super().__init__(db_interface)
         self.data_reader = AShareDataReader(db_interface)
 
@@ -33,7 +39,7 @@ class FactorCompositor(DataSource):
 
 
 class ConstLimitStockFactorCompositor(FactorCompositor):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         """
         标识一字涨跌停板
 
@@ -46,7 +52,7 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
         super().__init__(db_interface)
         self.table_name = '一字涨跌停'
         stock_selection_policy = utils.StockSelectionPolicy(select_pause=True)
-        self.paused_stock_selector = StockTickerSelector(db_interface, stock_selection_policy)
+        self.paused_stock_selector = StockTickerSelector(stock_selection_policy, db_interface)
 
     def update(self):
         price_table_name = '股票日行情'
@@ -87,7 +93,7 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
 
 
 class FundAdjFactorCompositor(FactorCompositor):
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         """
         计算基金的复权因子
 
@@ -131,13 +137,13 @@ class FundAdjFactorCompositor(FactorCompositor):
 
 
 class IndexCompositor(FactorCompositor):
-    def __init__(self, db_interface: DBInterface, index_composition_policy: utils.IndexCompositionPolicy):
+    def __init__(self, index_composition_policy: utils.IndexCompositionPolicy, db_interface: DBInterface = None):
         """自建指数收益计算器"""
         super().__init__(db_interface)
         self.table_name = '自合成指数'
         self.policy = index_composition_policy
-        self.units_factor = CompactFactor(self.db_interface, index_composition_policy.unit_base)
-        self.stock_ticker_selector = StockTickerSelector(self.db_interface, self.policy.stock_selection_policy)
+        self.units_factor = CompactFactor(index_composition_policy.unit_base, self.db_interface)
+        self.stock_ticker_selector = StockTickerSelector(self.policy.stock_selection_policy, self.db_interface)
 
     def update(self):
         """ 更新市场收益率 """
@@ -184,7 +190,7 @@ class AccountingDateCacheCompositor(FactorCompositor):
     财报日期缓存工具
     """
 
-    def __init__(self, db_interface):
+    def __init__(self, db_interface=None):
         super().__init__(db_interface)
 
     def update(self):
@@ -263,3 +269,34 @@ class AccountingDateCacheCompositor(FactorCompositor):
 
         with zipfile.ZipFile(output_loc, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
             zf.writestr('cache.pkl', pickle.dumps(cache))
+
+
+class BetaCompositor(object):
+    def __init__(self, stock_return: FactorBase, market_ret: FactorBase):
+        self.stock_ret = stock_return
+        self.market_ret = market_ret
+
+    # TODO
+    def get_data(self, ids: Union[str, Sequence[str]], dates: Sequence[dt.datetime],
+                 look_back_period: int = 90) -> CachedFactor:
+        start_date = min(dates) - dt.timedelta(days=look_back_period)
+        end_date = max(dates)
+        stock_data = self.stock_ret.get_data(ids=ids, start_date=start_date, end_date=end_date).reset_index()
+        market_data = self.market_ret.get_data(start_date=start_date, end_date=end_date).droplevel(
+            'IndexCode').reset_index()
+
+        storage = []
+        for date in dates:
+            # date = dates[0]
+            pre_date = date - dt.timedelta(days=look_back_period)
+            stock_sub_info = stock_data.loc[(stock_data.DateTime < date) & (stock_data.DateTime >= pre_date), :]
+            market_sub_info = market_data.loc[(market_data.DateTime < date) & (market_data.DateTime >= pre_date), :]
+            combined_data = pd.merge(stock_sub_info, market_sub_info, on='DateTime')
+
+            def compute_beta(x):
+                return sm.OLS(x[1], sm.add_constant(x[2])).fit().params[1]
+
+            storage.append(combined_data.groupby('ID').apply(compute_beta, raw=True))
+
+        ret = pd.concat(storage)
+        return CachedFactor(ret, 'beta')

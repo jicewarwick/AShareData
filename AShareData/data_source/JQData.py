@@ -1,21 +1,28 @@
 import datetime as dt
+import json
 from typing import Mapping, Optional, Union
 
 import pandas as pd
 from cached_property import cached_property
 from tqdm import tqdm
 
-from . import DateUtils, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface
-from .Tickers import ETFOptionTickers, FutureTickers, IndexOptionTickers, StockTickers
+from .. import config, DateUtils, utils
+from ..DBInterface import DBInterface
+from ..Tickers import ETFOptionTickers, FutureTickers, IndexOptionTickers, StockTickers
 
 with utils.NullPrinter():
     import jqdatasdk as jq
 
 
 class JQData(DataSource):
-    def __init__(self, db_interface: DBInterface, mobile: str, password: str):
+    def __init__(self, db_interface: DBInterface = None, mobile: str = None, password: str = None):
+        if not db_interface:
+            db_interface = config.get_db_interface()
+            global_config = config.get_global_config()
+            mobile = global_config['join_quant']['mobile']
+            password = global_config['join_quant']['password']
+
         super().__init__(db_interface)
         self.mobile = mobile
         self.password = password
@@ -281,3 +288,10 @@ class JQData(DataSource):
             if ticker.endswith('.XZCE') and len(ticker) <= 11:
                 ticker = utils.full_czc_ticker(ticker)
             return ticker
+
+    @classmethod
+    def from_config(cls, config_loc: str):
+        with open(config_loc, 'r', encoding='utf-8') as f:
+            global_config = json.load(f)
+        db_interface = config.generate_db_interface_from_config(config_loc)
+        return cls(db_interface, global_config['join_quant']['mobile'], global_config['join_quant']['password'])

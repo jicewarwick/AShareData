@@ -1,47 +1,305 @@
 import datetime as dt
+import numbers
 import os
 import pickle
 import zipfile
-from cached_property import cached_property
+from functools import partial
 from pathlib import Path
 from typing import List, Sequence, Union
 
 import numpy as np
 import pandas as pd
+from cached_property import cached_property
 
 from . import constants, DateUtils, utils
+from .config import get_db_interface
 from .DBInterface import DBInterface
 
 
-class Factor(object):
+class FactorBase(object):
+    def __init__(self, factor_name: str = None):
+        super().__init__()
+        self.factor_name = factor_name
+
+    def set_factor_name(self, name):
+        self.factor_name = name
+
+    def get_data(self, *args, **kwargs):
+        """获取数据"""
+        raise NotImplementedError()
+
+    def __and__(self, other):
+        def sub_get_data(self, *args, **kwargs):
+            return self.f1.get_data(*args, **kwargs) & self.f2.get_data(*args, **kwargs)
+
+        Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+        return Foo(self, other)
+
+    def __invert__(self):
+        def sub_get_data(self, *args, **kwargs):
+            return ~self.f.get_data(*args, **kwargs)
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def __add__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) + other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) + self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __sub__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) - other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) - self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __mul__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) * other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) * self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __truediv__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) / other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) / self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __gt__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) > other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) > self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __lt__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) < other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) < self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __ge__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) >= other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) >= self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __le__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) <= other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) <= self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __eq__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) == other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) == self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __ne__(self, other):
+        if isinstance(other, (numbers.Number, np.number)):
+            def sub_get_data(self, *args, **kwargs):
+                return self.f.get_data(*args, **kwargs) != other
+
+            Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+            return Foo(self)
+        else:
+            def sub_get_data(self, *args, **kwargs):
+                return self.f1.get_data(*args, **kwargs) != self.f2.get_data(*args, **kwargs)
+
+            Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
+            return Foo(self, other)
+
+    def __abs__(self):
+        def sub_get_data(self, *args, **kwargs):
+            return self.f.get_data(*args, **kwargs).abs()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def __neg__(self):
+        def sub_get_data(self, *args, **kwargs):
+            return -self.f.get_data(*args, **kwargs)
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def max(self):
+        def sub_get_data(self, *args, **kwargs):
+            return self.f.get_data(*args, **kwargs).unstack().max()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def pct_change(self):
+        def sub_get_data(self, *args, **kwargs):
+            return self.f.get_data(*args, **kwargs).unstack().pct_change().stack().dropna()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def log(self):
+        def sub_get_data(self, *args, **kwargs):
+            return self.f.get_data(*args, **kwargs).log()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def diff(self):
+        def sub_get_data(self, *args, **kwargs):
+            return self.f.get_data(*args, **kwargs).diff()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def weight(self):
+        def sub_get_data(self, *args, **kwargs):
+            data = self.f.get_data(*args, **kwargs)
+            return data / data.groupby('DateTime').sum()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def corr(self, other):
+        pass
+
+    def bind_data_params(self, index_code: str = None):
+        self.get_data = partial(self.get_data, index_code=index_code)
+        return self
+
+
+class UnaryFactor(FactorBase):
+    def __init__(self, f: FactorBase):
+        super().__init__()
+        self.f = f
+
+    def get_data(self, *args, **kwargs):
+        """获取数据"""
+        raise NotImplementedError()
+
+
+class BinaryFactor(FactorBase):
+    def __init__(self, f1: FactorBase, f2: FactorBase):
+        super().__init__()
+        self.f1 = f1
+        self.f2 = f2
+
+    def get_data(self, *args, **kwargs):
+        """获取数据"""
+        raise NotImplementedError()
+
+
+class Factor(FactorBase):
     """
     Factor base class
     """
 
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
-        super().__init__()
+    def __init__(self, table_name: str, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name)
         self.table_name = table_name
-        self.factor_names = factor_names
 
+        if not db_interface:
+            db_interface = get_db_interface()
         self.db_interface = db_interface
-        self.calendar = DateUtils.TradingCalendar(db_interface)
 
     def get_data(self, *args, **kwargs):
         """获取数据"""
         raise NotImplementedError()
 
     # helper functions
-    def _check_args(self, table_name: str, factor_names: Union[str, Sequence[str]]):
+    def _check_args(self, table_name: str, factor_name: str):
         table_name = table_name.lower()
         assert self.db_interface.exist_table(table_name), f'数据库中不存在表 {table_name}'
 
-        if factor_names:
+        if factor_name:
             columns = self.db_interface.get_columns_names(table_name)
-            if isinstance(factor_names, str):
-                assert factor_names in columns, f'表 {table_name} 中不存在 {factor_names} 列'
-            else:
-                for name in factor_names:
-                    assert name in columns, f'表 {table_name} 中不存在 {name} 列'
+            assert factor_name in columns, f'表 {table_name} 中不存在 {factor_name} 列'
+
+
+class IndexConstitute(Factor):
+    def __init__(self, db_interface: DBInterface = None):
+        super().__init__('指数成分股权重', '', db_interface)
+
+    @DateUtils.dtlize_input_dates
+    def get_data(self, index_ticker: str, date: DateUtils.DateType):
+        date_str = DateUtils.date_type2str(date, '-')
+        stm = f'DateTime = (SELECT MAX(DateTime) FROM `{self.table_name}` WHERE DateTime <= "{date_str}" AND IndexCode = "{index_ticker}")'
+        ret = self.db_interface.read_table(self.table_name, index_code=index_ticker, text_statement=stm)
+        ret.index = pd.MultiIndex.from_product([[date], ret.index.get_level_values('ID')])
+        ret.index.names = ['DateTime', 'ID']
+        return ret
 
 
 class NonFinancialFactor(Factor):
@@ -49,9 +307,9 @@ class NonFinancialFactor(Factor):
     非财报数据
     """
 
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]] = None):
-        super().__init__(db_interface, table_name, factor_names)
-        self._check_args(table_name, factor_names)
+    def __init__(self, table_name: str, factor_name: str = None, db_interface: DBInterface = None):
+        super().__init__(table_name, factor_name, db_interface)
+        self._check_args(table_name, factor_name)
         assert not any([it in table_name for it in constants.FINANCIAL_STATEMENTS_TYPE]), \
             f'{table_name} 为财报数据, 请使用 FinancialFactor 类!'
 
@@ -61,15 +319,16 @@ class NonFinancialFactor(Factor):
 
 class CompactFactor(NonFinancialFactor):
     """
-    Compact Factors
+    Compact Factor
 
     数字变动很不平常的特性, 列如复权因子, 行业, 股本 等. 对于的数据库表格为: {'DateTime', 'ID', 'FactorName'}
     该类可以缓存以提升效率
     """
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name, factor_name)
-        self.data = db_interface.read_table(factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, factor_name, db_interface)
+        self.data = self.db_interface.read_table(factor_name)
+        self.calendar = DateUtils.TradingCalendar(db_interface)
 
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
@@ -105,7 +364,9 @@ class CompactFactor(NonFinancialFactor):
         df = data.unstack().reindex(date_list).ffill()
         if dates:
             df = df.loc[dates, :]
-        return df
+        ret = df.stack()
+        ret.index.names = ['DateTime', 'ID']
+        return ret
 
 
 class IndustryFactor(CompactFactor):
@@ -113,7 +374,7 @@ class IndustryFactor(CompactFactor):
     股票行业分类
     """
 
-    def __init__(self, db_interface: DBInterface, provider: str, level: int) -> None:
+    def __init__(self, provider: str, level: int, db_interface: DBInterface = None) -> None:
         """
         :param db_interface: DB Interface
         :param provider: Industry classification data provider
@@ -121,7 +382,7 @@ class IndustryFactor(CompactFactor):
         """
         assert 0 < level <= constants.INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
         table_name = f'{provider}行业'
-        super().__init__(db_interface, table_name)
+        super().__init__(table_name, db_interface)
 
         if level != constants.INDUSTRY_LEVEL[provider]:
             translation = utils.load_param('industry.json')
@@ -153,9 +414,9 @@ class OnTheRecordFactor(NonFinancialFactor):
         有记录的数据, 例如涨跌停, 一字板, 停牌等
     """
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
-        self.factor_names = factor_name
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface=db_interface)
+        self.factor_name = factor_name
 
     @DateUtils.dtlize_input_dates
     def get_data(self, date: DateUtils.DateType) -> List:
@@ -169,9 +430,9 @@ class OnTheRecordFactor(NonFinancialFactor):
 
 class CompactRecordFactor(NonFinancialFactor):
     def __init__(self, compact_factor: CompactFactor, factor_name: str):
-        super().__init__(compact_factor.db_interface, compact_factor.table_name, compact_factor.factor_names)
+        super().__init__(compact_factor.table_name, compact_factor.factor_name, compact_factor.db_interface)
         self.base_factor = compact_factor
-        self.factor_names = factor_name
+        self.factor_name = factor_name
 
     @DateUtils.dtlize_input_dates
     def get_data(self, date: DateUtils.DateType) -> List:
@@ -188,28 +449,28 @@ class ContinuousFactor(NonFinancialFactor):
     有连续记录的数据
     """
 
-    def __init__(self, db_interface: DBInterface, table_name: str, factor_names: Union[str, Sequence[str]]):
-        super().__init__(db_interface, table_name, factor_names)
+    def __init__(self, table_name: str, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(table_name, factor_name, db_interface)
 
-    @DateUtils.dtlize_input_dates
+    # @DateUtils.dtlize_input_dates
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                 ids: Sequence[str] = None, unstack: bool = True) -> Union[pd.Series, pd.DataFrame]:
+                 ids: Sequence[str] = None, index_code: str = None,
+                 unstack: bool = False) -> Union[pd.Series, pd.DataFrame]:
         """
         :param start_date: start date
         :param end_date: end date
         :param dates: selected dates
         :param ids: query stocks
+        :param index_code: query index
         :param unstack: if unstack data from long to wide
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
 
-        df = self.db_interface.read_table(self.table_name, columns=self.factor_names,
+        df = self.db_interface.read_table(self.table_name, columns=self.factor_name,
                                           start_date=start_date, end_date=end_date,
-                                          dates=dates, ids=ids)
-        if not isinstance(self.factor_names, str):
-            df.columns = self.factor_names
-            return df
+                                          dates=dates, ids=ids, index_code=index_code)
+        df.columns = [self.factor_name]
 
         if isinstance(df.index, pd.MultiIndex) & unstack:
             df = df.unstack()
@@ -224,7 +485,7 @@ class AccountingFactor(Factor):
     fields = {}
     date_cache = {}
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
         if len(self.fields) == 0:
             fields_data = utils.load_param('db_schema.json')
             for statement_type in constants.FINANCIAL_STATEMENTS_TYPE:
@@ -243,7 +504,7 @@ class AccountingFactor(Factor):
                 raise RuntimeError('You must build cache first to use accounting factors!')
 
         table_name = self.fields[factor_name]
-        super().__init__(db_interface, f'合并{table_name}', factor_name)
+        super().__init__(f'合并{table_name}', factor_name, db_interface)
         self.report_month = None
         self.buffer_length = 365 * 2
 
@@ -264,7 +525,7 @@ class AccountingFactor(Factor):
             end_date = max(end_date)
         buffer_start = start_date - buffer
 
-        data = self.db_interface.read_table(self.table_name, self.factor_names,
+        data = self.db_interface.read_table(self.table_name, self.factor_name,
                                             start_date=buffer_start, end_date=end_date, report_month=self.report_month,
                                             ids=ids)
         tickers = data.index.get_level_values('ID').unique().tolist()
@@ -298,8 +559,8 @@ class QuarterlyFactor(AccountingFactor):
     季报数据
     """
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
         self.func = self.balance_sheet_func if self.table_name == '合并资产负债表' else self.cash_flow_or_profit_func
 
     @staticmethod
@@ -317,8 +578,9 @@ class QuarterlyFactor(AccountingFactor):
 
 class LatestAccountingFactor(AccountingFactor):
     """最新财报数据"""
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -327,8 +589,9 @@ class LatestAccountingFactor(AccountingFactor):
 
 class LatestQuarterAccountingFactor(QuarterlyFactor):
     """最新财报季度数据"""
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -347,8 +610,8 @@ class YearlyReportAccountingFactor(AccountingFactor):
     年报数据
     """
 
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
         self.report_month = 12
 
     @staticmethod
@@ -358,8 +621,9 @@ class YearlyReportAccountingFactor(AccountingFactor):
 
 class QOQAccountingFactor(QuarterlyFactor):
     """环比数据"""
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -375,8 +639,9 @@ class QOQAccountingFactor(QuarterlyFactor):
 
 class YOYPeriodAccountingFactor(AccountingFactor):
     """同比数据"""
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -386,8 +651,9 @@ class YOYPeriodAccountingFactor(AccountingFactor):
 
 class YOYQuarterAccountingFactor(QuarterlyFactor):
     """季度同比数据"""
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
@@ -403,10 +669,20 @@ class YOYQuarterAccountingFactor(QuarterlyFactor):
 
 class TTMAccountingFactor(AccountingFactor):
     """TTM数据"""
-    def __init__(self, db_interface: DBInterface, factor_name: str):
-        super().__init__(db_interface, factor_name)
+
+    def __init__(self, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(factor_name, db_interface)
 
     @staticmethod
     def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
         val = data.loc[date_cache.q0] - data.loc[date_cache.q4] + data.loc[date_cache.y1]
         return val
+
+
+class CachedFactor(FactorBase):
+    def __init__(self, data: Union[pd.Series, pd.DataFrame], factor_name: str = None):
+        super().__init__(factor_name)
+        self.data = data
+
+    def get_data(self, *args, **kwargs):
+        return self.data

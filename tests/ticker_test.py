@@ -1,14 +1,14 @@
 import unittest
 
-from AShareData.DBInterface import MySQLInterface, prepare_engine
+from AShareData.config import set_global_config
+from AShareData.DBInterface import MySQLInterface
 from AShareData.Tickers import *
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        config_loc = 'config.json'
-        engine = prepare_engine(config_loc)
-        self.db_interface = MySQLInterface(engine)
+        set_global_config('config.json')
+        self.db_interface = MySQLInterface()
 
     @staticmethod
     def ticker_test(ticker_obj):
@@ -46,9 +46,9 @@ class MyTestCase(unittest.TestCase):
         ticker = ExchangeFundTickers(self.db_interface)
         self.ticker_test(ticker)
 
-    def test_option_ticker(self):
-        ticker = OptionTickers(self.db_interface)
-        self.ticker_test(ticker)
+    # def test_option_ticker(self):
+    # ticker = OptionTickers(, self.db_interface
+    # self.ticker_test(ticker)
 
 
 if __name__ == '__main__':

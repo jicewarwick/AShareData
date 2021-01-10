@@ -7,10 +7,11 @@ import WindPy
 from cached_property import cached_property
 from tqdm import tqdm
 
-from . import constants, DateUtils, utils
 from .DataSource import DataSource
-from .DBInterface import DBInterface
-from .Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
+from .. import config, constants, DateUtils, utils
+from ..config import get_db_interface
+from ..DBInterface import DBInterface
+from ..Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
     StockTickers
 
 
@@ -151,7 +152,9 @@ class WindWrapper(object):
 class WindData(DataSource):
     """Wind 数据源"""
 
-    def __init__(self, db_interface: DBInterface, param_json_loc: str = None):
+    def __init__(self, db_interface: DBInterface = None, param_json_loc: str = None):
+        if not db_interface:
+            db_interface = get_db_interface()
         super().__init__(db_interface)
 
         self._factor_param = utils.load_param('wind_param.json', param_json_loc)
@@ -442,8 +445,9 @@ class WindData(DataSource):
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{table_name}')
-                data = self.w.wss(indexes, "open,low,high,close,volume,amt", date=date, priceAdj='U', cycle='D')
-                data.rename(self._factor_param[table_name], axis=1, inplace=True)
+                indicators = "open,low,high,close,volume,amt,mkt_cap_ard,total_shares,float_a_shares,free_float_shares,pe_ttm"
+                data = self.w.wss(indexes, indicators, date=date, priceAdj='U', cycle='D')
+                data = data.rename(self._factor_param[table_name], axis=1).rename({'ID', 'IndexCode'}, axis=1)
                 self.db_interface.insert_df(data, table_name)
                 pbar.update()
 
@@ -526,3 +530,8 @@ class WindData(DataSource):
 
         self.sparse_data_queryer(data_func, current_data, new_data, f'更新{table_name}',
                                  default_start_date=default_start_date)
+
+    @classmethod
+    def from_config(cls, config_loc: str):
+        db_interface = config.generate_db_interface_from_config(config_loc)
+        return cls(db_interface)
