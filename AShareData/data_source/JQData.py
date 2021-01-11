@@ -90,11 +90,12 @@ class JQData(DataSource):
         auction_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=[auction_time])
         auction_db_data = self._auction_data_to_price_data(auction_data)
 
-        first_minute = date + dt.timedelta(hours=9, minutes=31)
         real_first_minute = date + dt.timedelta(hours=9, minutes=30)
-        first_minute_data = jq.get_price(tickers, start_date=first_minute, end_date=first_minute, frequency='1m',
+        first_minute = date + dt.timedelta(hours=9, minutes=31)
+        first_minute_raw = jq.get_price(tickers, start_date=first_minute, end_date=first_minute, frequency='1m',
                                          fq=None, fill_paused=True)
-        first_minute_data = self._standardize_df(first_minute_data, renaming_dict)
+        first_minute_raw.time = real_first_minute
+        first_minute_data = self._standardize_df(first_minute_raw, renaming_dict)
         tmp = first_minute_data.loc[:, diff_columns].droplevel('DateTime').fillna(0) - \
               auction_db_data.loc[:, diff_columns].droplevel('DateTime').fillna(0)
         tmp['DateTime'] = real_first_minute
