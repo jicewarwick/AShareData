@@ -9,7 +9,6 @@ from tqdm import tqdm
 
 from .DataSource import DataSource
 from .. import config, constants, DateUtils, utils
-from ..config import get_db_interface
 from ..DBInterface import DBInterface
 from ..Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
     StockTickers
@@ -153,8 +152,6 @@ class WindData(DataSource):
     """Wind 数据源"""
 
     def __init__(self, db_interface: DBInterface = None, param_json_loc: str = None):
-        if not db_interface:
-            db_interface = get_db_interface()
         super().__init__(db_interface)
 
         self._factor_param = utils.load_param('wind_param.json', param_json_loc)

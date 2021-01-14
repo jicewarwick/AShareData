@@ -1,6 +1,6 @@
 import sys
 
-from AShareData import ConstLimitStockFactorCompositor, set_global_config, TushareData, WindData
+from AShareData import ConstLimitStockFactorCompositor, JQData, set_global_config, TushareData, WindData
 
 if __name__ == '__main__':
     set_global_config(sys.argv[1])
@@ -35,6 +35,8 @@ if __name__ == '__main__':
         wind_data.update_future_daily_data()
         wind_data.update_stock_option_daily_data()
 
-        wind_data.update_minutes_data()
+    with JQData() as jq_data:
+        jq_data.update_stock_morning_auction_data()
+        jq_data.update_stock_minute()
 
     ConstLimitStockFactorCompositor().update()

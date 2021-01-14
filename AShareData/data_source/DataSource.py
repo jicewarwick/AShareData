@@ -10,7 +10,7 @@ from ..DBInterface import DBInterface
 class DataSource(object):
     """Data Source Base Class"""
 
-    def __init__(self, db_interface: DBInterface) -> None:
+    def __init__(self, db_interface: DBInterface = None) -> None:
         if not db_interface:
             db_interface = get_db_interface()
         self.db_interface = db_interface

@@ -758,7 +758,7 @@ class TushareData(DataSource):
         valuation_info = self._pro.index_dailybasic(trade_date=date, fields=basic_fields)
         valuation_info = self._standardize_df(valuation_info, basic_desc)
         data = pd.concat([price_info, valuation_info], axis=1)
-        data = data.loc[data.index.get_level_values('ID').isin(indexes), :]
+        data = data.loc[data.index.get_level_values('IndexCode').isin(indexes), :]
         self.db_interface.insert_df(data, table_name)
 
     def update_index_daily(self):

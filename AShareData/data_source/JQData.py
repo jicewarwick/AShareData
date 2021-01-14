@@ -154,6 +154,18 @@ class JQData(DataSource):
                 self.get_stock_minute(date)
                 pbar.update()
 
+    def update_stock_morning_auction_data(self):
+        table_name = '股票集合竞价数据'
+        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        start_date = self.calendar.offset(db_timestamp.date(), 1)
+        end_date = dt.datetime.today()
+        dates = self.calendar.select_dates(start_date, end_date)
+        with tqdm(dates) as pbar:
+            for date in dates:
+                pbar.set_description(f'更新{date}的{table_name}')
+                self.stock_open_auction_data(date)
+                pbar.update()
+
     @DateUtils.dtlize_input_dates
     def stock_open_auction_data(self, date: DateUtils.DateType):
         table_name = '股票集合竞价数据'
@@ -164,6 +176,7 @@ class JQData(DataSource):
         data = jq.get_call_auction(tickers, start_date=date_str, end_date=date_str)
         auction_time = dt.datetime.combine(date.date(), dt.time(hour=9, minute=25))
         data.time = auction_time
+        data = data.loc[data.volume > 0, :]
         db_data = self._standardize_df(data, renaming_dict)
         self.db_interface.insert_df(db_data, table_name)
 
