@@ -6,7 +6,7 @@ class BarraDescriptor(object):
         self.factor_zoo = factor_zoo
 
     def nature_log_of_market_cap(self):
-        return self.factor_zoo.market_cap.log()
+        return self.factor_zoo.stock_market_cap.log()
 
     def beta(self, window: int, half_life: int):
         y = self.factor_zoo.excess_return()

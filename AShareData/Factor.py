@@ -14,6 +14,7 @@ from cached_property import cached_property
 from . import constants, DateUtils, utils
 from .config import get_db_interface
 from .DBInterface import DBInterface
+from .utils import TickerSelector
 
 
 class FactorBase(object):
@@ -332,12 +333,13 @@ class CompactFactor(NonFinancialFactor):
 
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                 ids: Union[Sequence[str], str] = None) -> pd.DataFrame:
+                 ids: Union[Sequence[str], str] = None, ticker_selector: TickerSelector = None) -> pd.DataFrame:
         """
         :param start_date: start date
         :param end_date: end date
         :param dates: selected dates
         :param ids: query stocks
+        :param ticker_selector: TickerSelector that specifies criteria
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
         if isinstance(dates, dt.datetime):
@@ -366,6 +368,9 @@ class CompactFactor(NonFinancialFactor):
             df = df.loc[dates, :]
         ret = df.stack()
         ret.index.names = ['DateTime', 'ID']
+        if ticker_selector:
+            index = ticker_selector.generate_index(dates=dates)
+            ret = ret.reindex(index)
         return ret
 
 
@@ -419,7 +424,7 @@ class OnTheRecordFactor(NonFinancialFactor):
         self.factor_name = factor_name
 
     @DateUtils.dtlize_input_dates
-    def get_data(self, date: DateUtils.DateType) -> List:
+    def get_data(self, date: DateUtils.DateType, **kwargs) -> List:
         """
         :param date: selected dates
         :return: list of IDs on the record
@@ -434,13 +439,13 @@ class CompactRecordFactor(NonFinancialFactor):
         self.base_factor = compact_factor
         self.factor_name = factor_name
 
-    @DateUtils.dtlize_input_dates
-    def get_data(self, date: DateUtils.DateType) -> List:
+    # @DateUtils.dtlize_input_dates
+    def get_data(self, date: DateUtils.DateType, **kwargs) -> List:
         """
         :param date: selected dates
         :return: list of IDs on the record
         """
-        tmp = self.base_factor.get_data(dates=[date]).stack()
+        tmp = self.base_factor.get_data(dates=[date])
         return tmp.loc[tmp].index.get_level_values('ID').tolist()
 
 
@@ -455,25 +460,26 @@ class ContinuousFactor(NonFinancialFactor):
     # @DateUtils.dtlize_input_dates
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                 ids: Sequence[str] = None, index_code: str = None,
-                 unstack: bool = False) -> Union[pd.Series, pd.DataFrame]:
+                 ids: Sequence[str] = None, ticker_selector: TickerSelector = None,
+                 index_code: str = None, **kwargs) -> Union[pd.Series, pd.DataFrame]:
         """
         :param start_date: start date
         :param end_date: end date
         :param dates: selected dates
         :param ids: query stocks
+        :param ticker_selector: TickerSelector that specifies criteria
         :param index_code: query index
-        :param unstack: if unstack data from long to wide
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
 
         df = self.db_interface.read_table(self.table_name, columns=self.factor_name,
                                           start_date=start_date, end_date=end_date,
                                           dates=dates, ids=ids, index_code=index_code)
-        df.columns = [self.factor_name]
 
-        if isinstance(df.index, pd.MultiIndex) & unstack:
-            df = df.unstack()
+        if ticker_selector:
+            index = ticker_selector.generate_index(dates=dates)
+            df = df.reindex(index)
+
         return df
 
 
@@ -564,11 +570,11 @@ class QuarterlyFactor(AccountingFactor):
         self.func = self.balance_sheet_func if self.table_name == '合并资产负债表' else self.cash_flow_or_profit_func
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         raise NotImplementedError()
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         raise NotImplementedError()
 
     @staticmethod
@@ -583,7 +589,7 @@ class LatestAccountingFactor(AccountingFactor):
         super().__init__(factor_name, db_interface)
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         return data.loc[date_cache.q0]
 
 
@@ -594,13 +600,13 @@ class LatestQuarterAccountingFactor(QuarterlyFactor):
         super().__init__(factor_name, db_interface)
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         val = (data.loc[date_cache.q0] - data.loc[date_cache.q1]) / \
               (data.loc[date_cache.q4] - data.loc[date_cache.q5]) - 1
         return val
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         val = data.loc[date_cache.q0] / data.loc[date_cache.q1] - 1
         return val
 
@@ -615,7 +621,7 @@ class YearlyReportAccountingFactor(AccountingFactor):
         self.report_month = 12
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         return data.loc[date_cache.y1]
 
 
@@ -626,13 +632,13 @@ class QOQAccountingFactor(QuarterlyFactor):
         super().__init__(factor_name, db_interface)
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         val = (data.loc[date_cache.q0] - data.loc[date_cache.q1]) / \
               (data.loc[date_cache.q1] - data.loc[date_cache.q2]) - 1
         return val
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         val = data.loc[date_cache.q0] / data.loc[date_cache.q1] - 1
         return val
 
@@ -644,7 +650,7 @@ class YOYPeriodAccountingFactor(AccountingFactor):
         super().__init__(factor_name, db_interface)
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         val = data.loc[date_cache.q0] / data.loc[date_cache.q4] - 1
         return val
 
@@ -656,13 +662,13 @@ class YOYQuarterAccountingFactor(QuarterlyFactor):
         super().__init__(factor_name, db_interface)
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         val = (data.loc[date_cache.q0] - data.loc[date_cache.q1]) / \
               (data.loc[date_cache.q4] - data.loc[date_cache.q5]) - 1
         return val
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         val = data.loc[date_cache.q0] / data.loc[date_cache.q4] - 1
         return val
 
@@ -674,7 +680,7 @@ class TTMAccountingFactor(AccountingFactor):
         super().__init__(factor_name, db_interface)
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def func(data: pd.DataFrame, date_cache: utils.DateCache, **kwargs) -> np.float:
         val = data.loc[date_cache.q0] - data.loc[date_cache.q4] + data.loc[date_cache.y1]
         return val
 

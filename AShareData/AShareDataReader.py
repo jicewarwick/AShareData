@@ -56,12 +56,12 @@ class AShareDataReader(object):
         return OnTheRecordFactor('一字涨跌停', self.db_interface)
 
     @cached_property
-    def close(self) -> ContinuousFactor:
+    def stock_close(self) -> ContinuousFactor:
         """收盘价"""
         return ContinuousFactor('股票日行情', '收盘价', self.db_interface)
 
     @cached_property
-    def volume(self) -> ContinuousFactor:
+    def stock_volume(self) -> ContinuousFactor:
         """成交量"""
         return ContinuousFactor('股票日行情', '成交量', self.db_interface)
 
@@ -76,17 +76,31 @@ class AShareDataReader(object):
         return CompactFactor('流通股本', self.db_interface)
 
     @cached_property
-    def market_cap(self) -> BinaryFactor:
+    def free_floating_share(self) -> CompactFactor:
+        """自由流通股本"""
+        return CompactFactor('自由流通股本', self.db_interface)
+
+    @cached_property
+    def stock_market_cap(self) -> BinaryFactor:
         """市值"""
-        return self.total_share * self.close
+        return self.total_share * self.stock_close
+
+    @cached_property
+    def stock_free_floating_market_cap(self) -> BinaryFactor:
+        """自由流通市值"""
+        return self.free_floating_share * self.stock_close
 
     @cached_property
     def log_cap(self) -> UnaryFactor:
-        return self.market_cap.log()
+        return self.stock_market_cap.log()
 
     @cached_property
     def hfq_close(self) -> BinaryFactor:
-        return self.adj_factor * self.close
+        return self.adj_factor * self.stock_close
+
+    @cached_property
+    def hfq_close(self) -> BinaryFactor:
+        return self.adj_factor * self.stock_close
 
     @cached_property
     def daily_return(self) -> UnaryFactor:

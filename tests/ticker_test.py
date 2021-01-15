@@ -1,14 +1,14 @@
 import unittest
 
-from AShareData.config import set_global_config
-from AShareData.DBInterface import MySQLInterface
+from AShareData.config import set_global_config, get_db_interface
 from AShareData.Tickers import *
+from AShareData.utils import StockSelectionPolicy
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         set_global_config('config.json')
-        self.db_interface = MySQLInterface()
+        self.db_interface = get_db_interface()
 
     @staticmethod
     def ticker_test(ticker_obj):
@@ -50,6 +50,14 @@ class MyTestCase(unittest.TestCase):
     # ticker = OptionTickers(, self.db_interface
     # self.ticker_test(ticker)
 
+    def test_ticker_selection(self):
+        policy = StockSelectionPolicy()
+        policy.ignore_new_stock_period = dt.timedelta(days=360)
+        policy.select_st = False
+        selector = StockTickerSelector(policy=policy)
+        dates = [dt.datetime(2020, 1, 7), dt.datetime(2020, 12, 28)]
+        ret = selector.generate_index(dates)
+        print(ret)
 
 if __name__ == '__main__':
     unittest.main()

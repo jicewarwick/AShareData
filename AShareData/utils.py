@@ -5,7 +5,9 @@ import tempfile
 from collections import namedtuple
 from dataclasses import dataclass
 from importlib.resources import open_text
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
+
+import pandas as pd
 
 from . import constants
 
@@ -65,14 +67,19 @@ def full_czc_ticker(ticker: str) -> str:
     return ticker
 
 
+class SecuritySelectionPolicy:
+    pass
+
+
 @dataclass
-class StockSelectionPolicy:
+class StockSelectionPolicy(SecuritySelectionPolicy):
     """
     股票筛选条件:
         :param name: 名称
         :param industry_provider: 股票行业分类标准
         :param industry_level: 股票行业分类标准
         :param industry: 股票所在行业
+        :param select_st: 仅选取 风险警告股, 包括 PT, ST, SST, \*ST, (即将)退市股 等
         :param ignore_st: 排除 风险警告股, 包括 PT, ST, SST, \*ST, (即将)退市股 等
         :param ignore_new_stock_period: 新股纳入市场收益计算的时间
         :param ignore_pause: 排除停牌股
@@ -95,7 +102,7 @@ class StockSelectionPolicy:
 
 
 @dataclass
-class IndexCompositionPolicy:
+class StockIndexCompositionPolicy:
     """
     自建指数信息
         :param ticker: 新建指数入库代码. 建议以`.IND`结尾, 代表自合成指数
@@ -112,3 +119,14 @@ class IndexCompositionPolicy:
 
 
 DateCache = namedtuple('DateCache', ['q0', 'q1', 'q2', 'y1', 'q4', 'q5', 'y3', 'y5'])
+
+
+class TickerSelector(object):
+    def __init__(self):
+        super().__init__()
+
+    def generate_index(self, *args, **kwargs) -> pd.MultiIndex:
+        raise NotImplementedError()
+
+    def ticker(self, *args, **kwargs) -> List[str]:
+        raise NotImplementedError()

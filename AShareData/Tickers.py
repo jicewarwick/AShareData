@@ -1,13 +1,15 @@
 import datetime as dt
-from typing import Dict, List, Sequence
+from itertools import product
+from typing import Dict, List, Sequence, Union
 
+import pandas as pd
 from cached_property import cached_property
 
 from . import DateUtils
 from .config import get_db_interface
 from .DBInterface import DBInterface
 from .Factor import CompactFactor, CompactRecordFactor, IndustryFactor, OnTheRecordFactor
-from .utils import StockSelectionPolicy
+from .utils import StockSelectionPolicy, TickerSelector
 
 
 class TickersBase(object):
@@ -198,7 +200,7 @@ class ActiveManagedOTCStockFundTickers(InvestmentStyleFundTickers):
                          db_interface)
 
 
-class StockTickerSelector(object):
+class StockTickerSelector(TickerSelector):
     """股票代码选择器"""
 
     def __init__(self, policy: StockSelectionPolicy, db_interface: DBInterface = None) -> None:
@@ -258,5 +260,15 @@ class StockTickerSelector(object):
         elif self.policy.ignore_st:
             ids = ids - set(self.risk_warned_stock_selector.get_data(date))
 
-        ids = list(ids)
+        ids = sorted(list(ids))
         return ids
+
+    def generate_index(self, start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
+                       dates: Union[DateUtils.DateType, Sequence[DateUtils.DateType]] = None) -> pd.MultiIndex:
+        storage = []
+        if not dates:
+            dates = self.calendar.select_dates(start_date, end_date)
+        for date in dates:
+            ids = self.ticker(date)
+            storage.extend(list(product([date], ids)))
+        return pd.MultiIndex.from_tuples(storage, names=['DateTime', 'ID'])

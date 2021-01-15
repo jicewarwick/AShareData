@@ -137,7 +137,7 @@ class FundAdjFactorCompositor(FactorCompositor):
 
 
 class IndexCompositor(FactorCompositor):
-    def __init__(self, index_composition_policy: utils.IndexCompositionPolicy, db_interface: DBInterface = None):
+    def __init__(self, index_composition_policy: utils.StockIndexCompositionPolicy, db_interface: DBInterface = None):
         """自建指数收益计算器"""
         super().__init__(db_interface)
         self.table_name = '自合成指数'
@@ -170,11 +170,11 @@ class IndexCompositor(FactorCompositor):
         # pre data
         pre_date = self.calendar.offset(date, -1)
         pre_units = self.units_factor.get_data(dates=pre_date, ids=ids)
-        pre_close_data = self.data_reader.close.get_data(dates=pre_date, ids=ids)
+        pre_close_data = self.data_reader.stock_close.get_data(dates=pre_date, ids=ids)
         pre_adj = self.data_reader.adj_factor.get_data(dates=pre_date, ids=ids)
 
         # data
-        close_data = self.data_reader.close.get_data(dates=date, ids=ids)
+        close_data = self.data_reader.stock_close.get_data(dates=date, ids=ids)
         adj = self.data_reader.adj_factor.get_data(dates=date, ids=ids)
 
         # computation
@@ -272,13 +272,13 @@ class AccountingDateCacheCompositor(FactorCompositor):
 
 
 class BetaCompositor(object):
-    def __init__(self, stock_return: FactorBase, market_ret: FactorBase):
-        self.stock_ret = stock_return
+    def __init__(self, stock_ret: FactorBase, market_ret: FactorBase):
+        self.stock_ret = stock_ret
         self.market_ret = market_ret
 
     # TODO
-    def get_data(self, ids: Union[str, Sequence[str]], dates: Sequence[dt.datetime],
-                 look_back_period: int = 90) -> CachedFactor:
+    def get_factor(self, ids: Union[str, Sequence[str]], dates: Sequence[dt.datetime],
+                   look_back_period: int = 90) -> CachedFactor:
         start_date = min(dates) - dt.timedelta(days=look_back_period)
         end_date = max(dates)
         stock_data = self.stock_ret.get_data(ids=ids, start_date=start_date, end_date=end_date).reset_index()

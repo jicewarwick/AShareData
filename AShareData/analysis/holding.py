@@ -36,7 +36,7 @@ class IndustryComparison(object):
     def _holding_to_ratio(self, holding: pd.Series):
         date = holding.index.get_level_values('DateTime').unique()[0]
 
-        price_info = self.data_reader.close.get_data(dates=[date]).stack()
+        price_info = self.data_reader.stock_close.get_data(dates=[date]).stack()
         price_info.name = 'close'
         tmp = holding.join(price_info, how='inner')
         cap = tmp['quantity'] * tmp['close']
