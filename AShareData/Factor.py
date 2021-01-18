@@ -3,13 +3,12 @@ import numbers
 import os
 import pickle
 import zipfile
-from functools import partial
+from functools import cached_property, partial
 from pathlib import Path
 from typing import List, Sequence, Union
 
 import numpy as np
 import pandas as pd
-from cached_property import cached_property
 
 from . import constants, DateUtils, utils
 from .config import get_db_interface

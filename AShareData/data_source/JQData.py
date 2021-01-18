@@ -1,9 +1,9 @@
 import datetime as dt
 import json
+from functools import cached_property
 from typing import Mapping, Optional, Union
 
 import pandas as pd
-from cached_property import cached_property
 from tqdm import tqdm
 
 from .DataSource import DataSource
@@ -93,7 +93,7 @@ class JQData(DataSource):
         real_first_minute = date + dt.timedelta(hours=9, minutes=30)
         first_minute = date + dt.timedelta(hours=9, minutes=31)
         first_minute_raw = jq.get_price(tickers, start_date=first_minute, end_date=first_minute, frequency='1m',
-                                         fq=None, fill_paused=True)
+                                        fq=None, fill_paused=True)
         first_minute_raw.time = real_first_minute
         first_minute_data = self._standardize_df(first_minute_raw, renaming_dict)
         tmp = first_minute_data.loc[:, diff_columns].droplevel('DateTime').fillna(0) - \

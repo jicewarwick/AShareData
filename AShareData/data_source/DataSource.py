@@ -1,6 +1,5 @@
 import datetime as dt
-
-from cached_property import cached_property
+from functools import cached_property
 
 from .. import DateUtils
 from ..config import get_db_interface

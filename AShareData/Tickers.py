@@ -1,9 +1,9 @@
 import datetime as dt
+from functools import cached_property
 from itertools import product
 from typing import Dict, List, Sequence, Union
 
 import pandas as pd
-from cached_property import cached_property
 
 from . import DateUtils
 from .config import get_db_interface

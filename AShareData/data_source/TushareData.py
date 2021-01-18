@@ -3,13 +3,13 @@ import itertools
 import json
 import logging
 import re
+from functools import cached_property
 from itertools import product
 from typing import Callable, Mapping, Sequence, Union
 
 import numpy as np
 import pandas as pd
 import tushare as ts
-from cached_property import cached_property
 from ratelimiter import RateLimiter
 from tqdm import tqdm
 

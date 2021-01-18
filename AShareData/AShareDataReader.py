@@ -1,7 +1,6 @@
-from functools import lru_cache
+from functools import cached_property, lru_cache
 
 import numpy as np
-from cached_property import cached_property
 
 from . import DateUtils
 from .config import generate_db_interface_from_config, get_db_interface

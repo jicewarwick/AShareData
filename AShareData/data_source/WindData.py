@@ -1,10 +1,10 @@
 import datetime as dt
+from functools import cached_property
 from typing import Dict, List, Sequence, Union
 
 import numpy as np
 import pandas as pd
 import WindPy
-from cached_property import cached_property
 from tqdm import tqdm
 
 from .DataSource import DataSource
