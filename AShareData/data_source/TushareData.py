@@ -171,6 +171,7 @@ class TushareData(DataSource):
         self.db_interface.update_df(list_info, '证券代码')
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
+    # TODO
     def update_index_list(self):
         INDEX_PROVIDER = {'CSI': '中证指数',
                           'SSE': '上交所指数',
@@ -181,7 +182,7 @@ class TushareData(DataSource):
             storage.append(self._pro.index_basic(market=provider))
         df = pd.concat(storage, ignore_index=True)
         ind = df.name.str.endswith('(SH)')
-        sz_names = df.name.loc[ind].str.replace(r'\(SH\)', '')
+        sz_names = df.name.loc[ind].str.replace(r'\(SH\)', '', regex=False)
         df2 = df.loc[~(df.name.isin(sz_names) & (df.market == 'SZSE')) & (~ind), :]
         df3 = df2.loc[df2.ts_code.str.len() < 11, :]
 
@@ -286,7 +287,7 @@ class TushareData(DataSource):
         for exchange in constants.FUTURE_EXCHANGES + constants.STOCK_EXCHANGES:
             storage.append(self._pro.opt_basic(exchange=exchange, fields=list(desc.keys())))
         output = pd.concat(storage)
-        output.opt_code = output.opt_code.str.replace('OP', '')
+        output.opt_code = output.opt_code.str.replace('OP$', '', regex=True)
         output.opt_code = self.format_ticker(output['opt_code'].tolist())
         output.ts_code = self.format_ticker(output['ts_code'].tolist())
 

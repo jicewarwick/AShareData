@@ -315,7 +315,7 @@ class WindData(DataSource):
             wind_data = self.w.wsd(ticker, f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
                                    date, date, industryType=constants.INDUSTRY_LEVEL[provider])
             wind_data.name = f'{provider}行业'
-            wind_data = wind_data.str.replace('III|Ⅲ|IV|Ⅳ$', '')
+            wind_data = wind_data.str.replace('III|Ⅲ|IV|Ⅳ$', '', regex=True)
             return wind_data
 
         table_name = f'{provider}行业'
