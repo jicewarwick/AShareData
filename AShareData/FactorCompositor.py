@@ -13,7 +13,6 @@ from tqdm import tqdm
 
 from . import constants, DateUtils, utils
 from .AShareDataReader import AShareDataReader
-from .config import get_db_interface
 from .data_source.DataSource import DataSource
 from .DBInterface import DBInterface
 from .Factor import CachedFactor, CompactFactor, FactorBase
@@ -28,8 +27,6 @@ class FactorCompositor(DataSource):
         This class composite factors from raw market/financial info
         :param db_interface: DBInterface
         """
-        if not db_interface:
-            db_interface = get_db_interface()
         super().__init__(db_interface)
         self.data_reader = AShareDataReader(db_interface)
 
@@ -77,7 +74,7 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
                                                                           ids=target_stocks)
                         price = data.loc[(slice(None), target_stocks), '最高价'] * adj_factor.loc[(date, target_stocks)]
                         pre_price = pre_data.loc[(slice(None), target_stocks), '最高价'] * \
-                                    adj_factor.loc[(date, target_stocks)]
+                                    adj_factor.loc[(pre_date, target_stocks)]
                         diff_price = pd.concat([pre_price, price]).unstack().diff().iloc[1, :].dropna()
                         diff_price = diff_price.loc[diff_price != 0]
                         if diff_price.shape[0] > 1:
