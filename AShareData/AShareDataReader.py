@@ -19,10 +19,10 @@ class AShareDataReader(object):
 
         :param db_interface: DBInterface
         """
-        if db_interface:
-            self.db_interface = db_interface
-        else:
-            self.db_interface = get_db_interface()
+
+        if not db_interface:
+            db_interface = get_db_interface()
+        self.db_interface = db_interface
 
     @cached_property
     def calendar(self) -> DateUtils.TradingCalendar:

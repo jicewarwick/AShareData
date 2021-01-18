@@ -143,7 +143,7 @@ class JQData(DataSource):
         table_name = '股票分钟行情'
         db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
-        if dt.datetime.now().hour < 17:
+        if dt.datetime.now().hour < 16:
             end_date = self.calendar.yesterday()
         else:
             end_date = dt.datetime.today()
