@@ -14,7 +14,6 @@ class MyTestCase(unittest.TestCase):
         self.start_date = dt.datetime(2020, 12, 1)
         self.end_date = dt.datetime(2020, 12, 18)
         self.ids = ['000001.SZ', '000002.SZ']
-        # self.ids = StockTickers().ticker(dt.date(2005, 1, 1))
         self.close = ContinuousFactor('股票日行情', '收盘价', self.db_interface)
         self.adj = CompactFactor('复权因子', self.db_interface)
 
@@ -49,7 +48,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_yearly_report_factor(self):
         f = YearlyReportAccountingFactor('未分配利润', self.db_interface)
-        ids = list(set(self.ids) - set(['600087.SH', '600788.SH', '600722.SH']))
+        ids = list(set(self.ids) - {'600087.SH', '600788.SH', '600722.SH'})
         a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=ids)
         print(a)
 
@@ -99,6 +98,20 @@ class MyTestCase(unittest.TestCase):
         f = self.adj.max()
         f_max = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
         print(f_max)
+
+    def test_beta_factor(self):
+        ids: Union[str, Sequence[str]] = ['000001.SZ', '600000.SH']
+        dates: Sequence[dt.datetime] = [dt.datetime(2020, 1, 15), dt.datetime(2020, 5, 13)]
+        look_back_period: int = 60
+        min_trading_days: int = 40
+
+        policy = StockSelectionPolicy(ignore_new_stock_period=dt.timedelta(days=365), ignore_st=True)
+        ticker_selector = StockTickerSelector(policy)
+
+        beta_factor = BetaFactor(self.db_interface)
+        print(beta_factor.get_data(dates, ids, look_back_period=look_back_period, min_trading_days=min_trading_days))
+        print(beta_factor.get_data(dates, ticker_selector=ticker_selector, look_back_period=look_back_period,
+                                   min_trading_days=min_trading_days))
 
 
 if __name__ == '__main__':

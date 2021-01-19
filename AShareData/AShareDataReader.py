@@ -5,8 +5,8 @@ import numpy as np
 from . import DateUtils
 from .config import generate_db_interface_from_config, get_db_interface
 from .DBInterface import DBInterface
-from .Factor import BinaryFactor, CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, OnTheRecordFactor, \
-    UnaryFactor
+from .Factor import BetaFactor, BinaryFactor, CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, \
+    OnTheRecordFactor, UnaryFactor
 from .Tickers import StockTickers
 
 
@@ -98,10 +98,6 @@ class AShareDataReader(object):
         return self.adj_factor * self.stock_close
 
     @cached_property
-    def hfq_close(self) -> BinaryFactor:
-        return self.adj_factor * self.stock_close
-
-    @cached_property
     def daily_return(self) -> UnaryFactor:
         return self.hfq_close.pct_change()
 
@@ -124,6 +120,10 @@ class AShareDataReader(object):
     @lru_cache(5)
     def industry(self, provider: str, level: int) -> IndustryFactor:
         return IndustryFactor(provider, level, self.db_interface)
+
+    @cached_property
+    def beta(self) -> BetaFactor:
+        return BetaFactor(self.db_interface)
 
     @cached_property
     def overnight_shibor(self) -> ContinuousFactor:

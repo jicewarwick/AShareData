@@ -4,10 +4,9 @@ import os
 import pickle
 import zipfile
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Sequence
 
 import pandas as pd
-import statsmodels.api as sm
 from sortedcontainers import SortedDict
 from tqdm import tqdm
 
@@ -15,7 +14,7 @@ from . import constants, DateUtils, utils
 from .AShareDataReader import AShareDataReader
 from .data_source.DataSource import DataSource
 from .DBInterface import DBInterface
-from .Factor import CachedFactor, CompactFactor, FactorBase
+from .Factor import CompactFactor
 from .Tickers import FundTickers, StockTickerSelector
 
 
@@ -266,34 +265,3 @@ class AccountingDateCacheCompositor(FactorCompositor):
 
         with zipfile.ZipFile(output_loc, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
             zf.writestr('cache.pkl', pickle.dumps(cache))
-
-
-class BetaCompositor(object):
-    def __init__(self, stock_ret: FactorBase, market_ret: FactorBase):
-        self.stock_ret = stock_ret
-        self.market_ret = market_ret
-
-    # TODO
-    def get_factor(self, ids: Union[str, Sequence[str]], dates: Sequence[dt.datetime],
-                   look_back_period: int = 90) -> CachedFactor:
-        start_date = min(dates) - dt.timedelta(days=look_back_period)
-        end_date = max(dates)
-        stock_data = self.stock_ret.get_data(ids=ids, start_date=start_date, end_date=end_date).reset_index()
-        market_data = self.market_ret.get_data(start_date=start_date, end_date=end_date).droplevel(
-            'IndexCode').reset_index()
-
-        storage = []
-        for date in dates:
-            # date = dates[0]
-            pre_date = date - dt.timedelta(days=look_back_period)
-            stock_sub_info = stock_data.loc[(stock_data.DateTime < date) & (stock_data.DateTime >= pre_date), :]
-            market_sub_info = market_data.loc[(market_data.DateTime < date) & (market_data.DateTime >= pre_date), :]
-            combined_data = pd.merge(stock_sub_info, market_sub_info, on='DateTime')
-
-            def compute_beta(x):
-                return sm.OLS(x[1], sm.add_constant(x[2])).fit().params[1]
-
-            storage.append(combined_data.groupby('ID').apply(compute_beta, raw=True))
-
-        ret = pd.concat(storage)
-        return CachedFactor(ret, 'beta')

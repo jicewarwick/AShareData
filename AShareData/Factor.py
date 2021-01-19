@@ -9,6 +9,7 @@ from typing import List, Sequence, Union
 
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 
 from . import constants, DateUtils, utils
 from .config import get_db_interface
@@ -30,14 +31,14 @@ class FactorBase(object):
 
     def __and__(self, other):
         def sub_get_data(self, *args, **kwargs):
-            return self.f1.get_data(*args, **kwargs) & self.f2.get_data(*args, **kwargs)
+            return self.f1.get_data(**kwargs) & self.f2.get_data(**kwargs)
 
         Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
         return Foo(self, other)
 
     def __invert__(self):
         def sub_get_data(self, *args, **kwargs):
-            return ~self.f.get_data(*args, **kwargs)
+            return ~self.f.get_data(**kwargs)
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
@@ -45,13 +46,13 @@ class FactorBase(object):
     def __add__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) + other
+                return self.f.get_data(**kwargs) + other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) + self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) + self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
@@ -59,13 +60,13 @@ class FactorBase(object):
     def __sub__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) - other
+                return self.f.get_data(**kwargs) - other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) - self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) - self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
@@ -73,13 +74,13 @@ class FactorBase(object):
     def __mul__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) * other
+                return self.f.get_data(**kwargs) * other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) * self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) * self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
@@ -87,13 +88,13 @@ class FactorBase(object):
     def __truediv__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) / other
+                return self.f.get_data(**kwargs) / other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) / self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) / self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
@@ -101,13 +102,13 @@ class FactorBase(object):
     def __gt__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) > other
+                return self.f.get_data(**kwargs) > other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) > self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) > self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
@@ -115,13 +116,13 @@ class FactorBase(object):
     def __lt__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) < other
+                return self.f.get_data(**kwargs) < other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) < self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) < self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
@@ -129,13 +130,13 @@ class FactorBase(object):
     def __ge__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) >= other
+                return self.f.get_data(**kwargs) >= other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) >= self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) >= self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
@@ -143,13 +144,13 @@ class FactorBase(object):
     def __le__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) <= other
+                return self.f.get_data(**kwargs) <= other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) <= self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) <= self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
@@ -157,13 +158,13 @@ class FactorBase(object):
     def __eq__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) == other
+                return self.f.get_data(**kwargs) == other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) == self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) == self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
@@ -171,62 +172,62 @@ class FactorBase(object):
     def __ne__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
             def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) != other
+                return self.f.get_data(**kwargs) != other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
             def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) != self.f2.get_data(*args, **kwargs)
+                return self.f1.get_data(**kwargs) != self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __abs__(self):
         def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).abs()
+            return self.f.get_data(**kwargs).abs()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def __neg__(self):
         def sub_get_data(self, *args, **kwargs):
-            return -self.f.get_data(*args, **kwargs)
+            return -self.f.get_data(**kwargs)
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def max(self):
         def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).unstack().max()
+            return self.f.get_data(**kwargs).unstack().max()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def pct_change(self):
         def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).unstack().pct_change().stack().dropna()
+            return self.f.get_data(**kwargs).unstack().pct_change().stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def log(self):
         def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).log()
+            return self.f.get_data(**kwargs).log()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def diff(self):
         def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).diff()
+            return self.f.get_data(**kwargs).diff()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def weight(self):
         def sub_get_data(self, *args, **kwargs):
-            data = self.f.get_data(*args, **kwargs)
+            data = self.f.get_data(**kwargs)
             return data / data.groupby('DateTime').sum()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
@@ -292,7 +293,6 @@ class IndexConstitute(Factor):
     def __init__(self, db_interface: DBInterface = None):
         super().__init__('指数成分股权重', '', db_interface)
 
-    @DateUtils.dtlize_input_dates
     def get_data(self, index_ticker: str, date: DateUtils.DateType):
         date_str = DateUtils.date_type2str(date, '-')
         stm = f'DateTime = (SELECT MAX(DateTime) FROM `{self.table_name}` WHERE DateTime <= "{date_str}" AND IndexCode = "{index_ticker}")'
@@ -396,7 +396,6 @@ class IndustryFactor(CompactFactor):
 
             self.data = self.data.map(new_translation)
 
-    @DateUtils.dtlize_input_dates
     def list_constitutes(self, date: DateUtils.DateType, industry: str) -> List[str]:
         """
         获取行业内的股票构成
@@ -422,7 +421,6 @@ class OnTheRecordFactor(NonFinancialFactor):
         super().__init__(factor_name, db_interface=db_interface)
         self.factor_name = factor_name
 
-    @DateUtils.dtlize_input_dates
     def get_data(self, date: DateUtils.DateType, **kwargs) -> List:
         """
         :param date: selected dates
@@ -438,7 +436,6 @@ class CompactRecordFactor(NonFinancialFactor):
         self.base_factor = compact_factor
         self.factor_name = factor_name
 
-    # @DateUtils.dtlize_input_dates
     def get_data(self, date: DateUtils.DateType, **kwargs) -> List:
         """
         :param date: selected dates
@@ -456,7 +453,6 @@ class ContinuousFactor(NonFinancialFactor):
     def __init__(self, table_name: str, factor_name: str, db_interface: DBInterface = None):
         super().__init__(table_name, factor_name, db_interface)
 
-    # @DateUtils.dtlize_input_dates
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
                  ids: Sequence[str] = None, ticker_selector: TickerSelector = None,
@@ -513,7 +509,6 @@ class AccountingFactor(Factor):
         self.report_month = None
         self.buffer_length = 365 * 2
 
-    @DateUtils.dtlize_input_dates
     def get_data(self, dates: Sequence[dt.datetime] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
                  ids: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
@@ -691,3 +686,38 @@ class CachedFactor(FactorBase):
 
     def get_data(self, *args, **kwargs):
         return self.data
+
+
+class BetaFactor(FactorBase):
+    def __init__(self, db_interface: DBInterface = None):
+        super().__init__('Beta')
+        if not db_interface:
+            db_interface = get_db_interface()
+        stock_ret = ContinuousFactor('股票日行情', '收盘价', db_interface) * CompactFactor('复权因子', db_interface)
+        self.stock_ret = stock_ret.pct_change()
+        self.market_ret = ContinuousFactor('指数日行情', '收盘点位', db_interface).pct_change()
+        self.calendar = DateUtils.TradingCalendar(db_interface)
+
+    def get_data(self, dates: Sequence[dt.datetime],
+                 ids: Union[str, Sequence[str]] = None, ticker_selector: TickerSelector = None,
+                 look_back_period: int = 60, min_trading_days: int = 40) -> pd.Series:
+        storage = []
+        for date in dates:
+            if ticker_selector:
+                ids = ticker_selector.ticker(date)
+            start_date = self.calendar.offset(date, -look_back_period - 1)
+            end_date = self.calendar.offset(date, -1)
+            stock_data = self.stock_ret.get_data(ids=ids, start_date=start_date, end_date=end_date).reset_index()
+            market_data = self.market_ret.get_data(start_date=start_date, end_date=end_date).droplevel(
+                'IndexCode').reset_index()
+            combined_data = pd.merge(stock_data, market_data, on='DateTime')
+
+            for ID, group in combined_data.groupby('ID'):
+                if group.shape[0] < min_trading_days:
+                    beta = np.nan
+                else:
+                    beta = sm.OLS(group.iloc[:, 2], sm.add_constant(group.iloc[:, 3])).fit().params[1]
+                data = pd.Series(beta, index=pd.MultiIndex.from_tuples([(date, ID)], names=('DateTime', 'ID')))
+                storage.append(data)
+
+        return pd.concat(storage).sort_index()
