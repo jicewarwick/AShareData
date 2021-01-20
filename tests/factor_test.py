@@ -108,7 +108,7 @@ class MyTestCase(unittest.TestCase):
         policy = StockSelectionPolicy(ignore_new_stock_period=dt.timedelta(days=365), ignore_st=True)
         ticker_selector = StockTickerSelector(policy)
 
-        beta_factor = BetaFactor(self.db_interface)
+        beta_factor = BetaFactor(db_interface=self.db_interface)
         print(beta_factor.get_data(dates, ids, look_back_period=look_back_period, min_trading_days=min_trading_days))
         print(beta_factor.get_data(dates, ticker_selector=ticker_selector, look_back_period=look_back_period,
                                    min_trading_days=min_trading_days))
