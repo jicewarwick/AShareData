@@ -417,7 +417,6 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
         return df
 
-    @DateUtils.strlize_input_dates
     def update_stock_names(self, ticker: str = None) -> pd.DataFrame:
         """获取曾用名
 
@@ -569,7 +568,6 @@ class TushareData(DataSource):
 
         logging.getLogger(__name__).info(f'{data_category}信息下载完成.')
 
-    @DateUtils.strlize_input_dates
     def get_financial(self, ticker: str) -> None:
         """ 获取公司的 资产负债表, 现金流量表 和 利润表, 并写入数据库 """
         balance_sheet = '资产负债表'
@@ -599,7 +597,7 @@ class TushareData(DataSource):
 
             df = df.sort_values('update_flag').groupby(['ann_date', 'end_date', 'report_type']).tail(1)
             df = df.drop('update_flag', axis=1).fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
-            df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).drop_duplicates(keep='first').reset_index()
+            df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).sort_index().drop_duplicates(keep='first').reset_index()
             df = df.sort_values('report_type').drop(['ann_date', 'report_type'], axis=1)
             df = df.replace({'comp_type': company_type_desc})
             df = self._standardize_df(df, column_name_dict)
