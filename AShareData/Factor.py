@@ -506,6 +506,7 @@ class AccountingFactor(Factor):
 
         table_name = self.fields[factor_name]
         super().__init__(f'合并{table_name}', factor_name, db_interface)
+        self.calendar = DateUtils.TradingCalendar(self.db_interface)
         self.report_month = None
         self.buffer_length = 365 * 2
 
@@ -522,7 +523,7 @@ class AccountingFactor(Factor):
         buffer = dt.timedelta(days=self.buffer_length)
         if dates:
             start_date = min(dates)
-            end_date = max(end_date)
+            end_date = max(dates)
         buffer_start = start_date - buffer
 
         data = self.db_interface.read_table(self.table_name, self.factor_name,

@@ -6,7 +6,7 @@ from . import DateUtils
 from .config import generate_db_interface_from_config, get_db_interface
 from .DBInterface import DBInterface
 from .Factor import BetaFactor, BinaryFactor, CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, \
-    OnTheRecordFactor, UnaryFactor
+    OnTheRecordFactor, UnaryFactor, TTMAccountingFactor
 from .Tickers import StockTickers
 
 
@@ -97,6 +97,7 @@ class AShareDataReader(object):
     def hfq_close(self) -> BinaryFactor:
         return self.adj_factor * self.stock_close
 
+    # TODO
     @cached_property
     def daily_return(self) -> UnaryFactor:
         return self.hfq_close.pct_change()
@@ -124,6 +125,15 @@ class AShareDataReader(object):
     @cached_property
     def beta(self) -> BetaFactor:
         return BetaFactor(self.db_interface)
+
+    @cached_property
+    def earning_ttm(self) -> TTMAccountingFactor:
+        return TTMAccountingFactor('净利润(不含少数股东损益)', self.db_interface)
+
+    # TODO
+    @cached_property
+    def pe_ttm(self):
+        pass
 
     @cached_property
     def overnight_shibor(self) -> ContinuousFactor:
