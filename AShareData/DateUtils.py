@@ -218,25 +218,35 @@ class ReportingDate(object):
 
     @staticmethod
     @dtlize_input_dates
-    def qoq_date(date: DateType) -> dt.datetime:
+    def yearly_offset(date: DateType, delta: int = 1) -> dt.datetime:
         """
-        返回上个报告期
+        返回后``delta``年的年报的报告期
         :param date: 报告期
-        :return: 去年上个报告期
+        :param delta: 时长（年）
+        :return: 前``delta``个年报的报告期
         """
-        qoq_dict = {3: dt.datetime(date.year - 1, 12, 31),
-                    6: dt.datetime(date.year, 3, 31),
-                    9: dt.datetime(date.year, 6, 30),
-                    12: dt.datetime(date.year, 9, 30)}
-        return qoq_dict[date.month]
+        return dt.datetime(date.year + delta, 12, 31)
 
     @staticmethod
     @dtlize_input_dates
-    def yearly_dates_offset(date: DateType, delta: int = 1) -> dt.datetime:
+    def quarterly_offset(date: DateType, delta: int = 1) -> dt.datetime:
         """
-        返回前``delta``个年报的报告期
+        返回前``delta``个季度后的报告期
         :param date: 报告期
-        :param delta: 回溯时长（年）
-        :return: 前``delta``个年报的报告期
+        :param delta: 时长（季度）
+        :return: ``delta``个季度后的报告期
         """
-        return dt.datetime(date.year - delta, 12, 31)
+        rep = date.year * 12 + date.month + delta * 3 - 1
+        month = rep % 12 + 1
+        day = 31 if month == 3 or month == 12 else 30
+        return dt.datetime(rep // 12, month, day)
+
+    @classmethod
+    def offset(cls, report_date, offset_str: str):
+        delta = -int(offset_str[1:])
+        if offset_str[0] == 'q':
+            return cls.quarterly_offset(report_date, delta)
+        elif offset_str[0] == 'y':
+            return cls.yearly_offset(report_date, delta)
+        else:
+            raise ValueError(f'Illegal offset_str: {offset_str}')

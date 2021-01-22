@@ -9,7 +9,7 @@ from .data_source.TushareData import TushareData
 from .data_source.WebData import WebDataCrawler
 from .DateUtils import TradingCalendar
 from .DBInterface import MySQLInterface
-from .FactorCompositor import AccountingDateCacheCompositor, ConstLimitStockFactorCompositor, IndexCompositor
+from .FactorCompositor import ConstLimitStockFactorCompositor, IndexCompositor
 
 ch = logging.StreamHandler()
 ch.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s'))

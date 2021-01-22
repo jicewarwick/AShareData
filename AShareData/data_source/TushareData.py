@@ -597,11 +597,13 @@ class TushareData(DataSource):
 
             df = df.sort_values('update_flag').groupby(['ann_date', 'end_date', 'report_type']).tail(1)
             df = df.drop('update_flag', axis=1).fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
-            df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).sort_index().drop_duplicates(keep='first').reset_index()
+            df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).sort_index().drop_duplicates(
+                keep='first').reset_index()
             df = df.sort_values('report_type').drop(['ann_date', 'report_type'], axis=1)
             df = df.replace({'comp_type': company_type_desc})
             df = self._standardize_df(df, column_name_dict)
             df = df.loc[~df.index.duplicated(), :]
+            df = self.append_report_date_cache(df)
             # df.to_excel('processed.xlsx', merge_cells=False, float_format='%.2f')
 
             self.db_interface.delete_id_records(table_name, ticker)
@@ -968,3 +970,38 @@ class TushareData(DataSource):
             mod_config = json.load(f)
         db_interface = config.generate_db_interface_from_config(config_loc)
         return cls(db_interface=db_interface, tushare_token=mod_config['tushare']['token'])
+
+    @staticmethod
+    def append_report_date_cache(data: pd.DataFrame) -> pd.DataFrame:
+        dates = data.index.get_level_values('DateTime').unique()
+        storage = []
+
+        def deal_data(report_date, offset_str: str):
+            pre_report_date = DateUtils.ReportingDate.offset(report_date, offset_str)
+            pre_record = info.loc[info.index.get_level_values('报告期') == pre_report_date].tail(1)
+            pre_date = None if pre_record.empty else pre_record.index.get_level_values('DateTime')[0]
+            return pre_date
+
+        for date in dates:
+            info = data.loc[data.index.get_level_values('DateTime') <= date, :]
+            newest_entry = info.tail(1)
+            report_date = pd.to_datetime(newest_entry.index.get_level_values('报告期')[0])
+
+            # quarterly
+            q1 = deal_data(report_date, 'q1')
+            q2 = deal_data(report_date, 'q2')
+            q4 = deal_data(report_date, 'q4')
+            q5 = deal_data(report_date, 'q5')
+
+            # yearly
+            y1 = deal_data(report_date, 'y1')
+            y2 = deal_data(report_date, 'y2')
+            y3 = deal_data(report_date, 'y3')
+            y5 = deal_data(report_date, 'y5')
+
+            res = pd.DataFrame([q1, q2, q4, q5, y1, y2, y3, y5]).T.set_index(newest_entry.index)
+            res.columns = ['q1', 'q2', 'q4', 'q5', 'y1', 'y2', 'y3', 'y5']
+            storage.append(res)
+
+        cache = pd.concat(storage)
+        return pd.concat([data, cache], axis=1)
