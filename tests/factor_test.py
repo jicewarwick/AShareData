@@ -11,8 +11,8 @@ class MyTestCase(unittest.TestCase):
         set_global_config('config.json')
         self.db_interface = get_db_interface()
         self.calendar = TradingCalendar()
-        self.start_date = dt.datetime(2020, 12, 1)
-        self.end_date = dt.datetime(2020, 12, 18)
+        self.start_date = dt.datetime(2002, 3, 1)
+        self.end_date = dt.datetime(2002, 3, 30)
         self.ids = ['000001.SZ', '000002.SZ']
         self.close = ContinuousFactor('股票日行情', '收盘价', self.db_interface)
         self.adj = CompactFactor('复权因子', self.db_interface)
@@ -37,38 +37,38 @@ class MyTestCase(unittest.TestCase):
         print(industry_factor.all_industries)
 
     def test_latest_accounting_factor(self):
-        f = LatestAccountingFactor('未分配利润', self.db_interface)
+        f = LatestAccountingFactor('期末总股本', self.db_interface)
         a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
         print(a)
 
     def test_latest_quarter_report_factor(self):
-        f = LatestQuarterAccountingFactor('未分配利润', self.db_interface)
+        f = LatestQuarterAccountingFactor('期末总股本', self.db_interface)
         a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
         print(a)
 
     def test_yearly_report_factor(self):
-        f = YearlyReportAccountingFactor('未分配利润', self.db_interface)
+        f = YearlyReportAccountingFactor('期末总股本', self.db_interface)
         ids = list(set(self.ids) - {'600087.SH', '600788.SH', '600722.SH'})
         a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=ids)
         print(a)
 
     def test_qoq_report_factor(self):
-        f = QOQAccountingFactor('未分配利润', self.db_interface)
+        f = QOQAccountingFactor('期末总股本', self.db_interface)
         a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
         print(a)
 
     def test_yoy_period_report_factor(self):
-        f = YOYPeriodAccountingFactor('未分配利润', self.db_interface)
+        f = YOYPeriodAccountingFactor('期末总股本', self.db_interface)
         a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
         print(a)
 
     def test_yoy_quarter_factor(self):
-        f = YOYQuarterAccountingFactor('未分配利润', self.db_interface)
+        f = YOYQuarterAccountingFactor('期末总股本', self.db_interface)
         a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
         print(a)
 
     def test_ttm_factor(self):
-        f = TTMAccountingFactor('营业总收入', self.db_interface)
+        f = TTMAccountingFactor('期末总股本', self.db_interface)
         a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
         print(a)
 

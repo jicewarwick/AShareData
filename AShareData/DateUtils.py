@@ -250,3 +250,25 @@ class ReportingDate(object):
             return cls.yearly_offset(report_date, delta)
         else:
             raise ValueError(f'Illegal offset_str: {offset_str}')
+
+    @staticmethod
+    def get_latest_report_date(date: Union[dt.date, dt.datetime] = None) -> List[dt.datetime]:
+        """
+
+        上市公司季报披露时间:
+        一季报：4月1日——4月30日。
+        二季报（中报）：7月1日——8月30日。
+        三季报：10月1日——10月31日。
+        四季报（年报）：1月1日——4月30日。
+
+        :return: 最新财报的报告期
+        """
+        if not date:
+            date = dt.date.today()
+        year = date.year
+        if date.month < 5:
+            return [dt.datetime(year, 3, 30), dt.datetime(year-1, 12, 31)]
+        elif date.month < 9:
+            return [dt.datetime(year, 6, 31)]
+        else:
+            return [dt.datetime(year, 9, 30)]

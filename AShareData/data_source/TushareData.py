@@ -639,7 +639,23 @@ class TushareData(DataSource):
     def update_financial_data(self):
         table_name = '财报披露计划'
         desc = self._factor_param[table_name]['输出参数']
-        df = self._pro.disclosure_date(end_date='20200930', fields=list(desc.keys()))
+        ref_table = '合并资产负债表'
+        db_timestamp = self.db_interface.get_latest_timestamp(ref_table)
+        update_tickers = self.stock_tickers.new_ticker(db_timestamp)
+
+        report_dates = DateUtils.ReportingDate.get_latest_report_date()
+        for report_date in report_dates:
+            df = self._pro.disclosure_date(end_date=DateUtils.date_type2str(report_date), fields=list(desc.keys()))
+            df.actual_date = df.actual_date.apply(DateUtils.date_type2datetime)
+            df.modify_date = df.modify_date.apply(DateUtils.date_type2datetime)
+            df = df.loc[(df.actual_date > db_timestamp) | (df.modify_date > db_timestamp), :]
+            update_tickers.extend(df.ts_code)
+
+        with tqdm(update_tickers) as pbar:
+            for ticker in update_tickers:
+                pbar.set_description(f'更新{ticker}的财报')
+                self.get_financial(ticker)
+                pbar.update()
 
     # todo: TBD
     def get_financial_index(self, ticker: str, period: str) -> pd.DataFrame:

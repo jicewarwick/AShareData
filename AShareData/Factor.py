@@ -521,6 +521,8 @@ class AccountingFactor(Factor):
         data = self.db_interface.read_table(self.table_name, columns=db_columns,
                                             start_date=buffer_start, end_date=end_date, report_month=self.report_month,
                                             ids=ids)
+        if isinstance(data, pd.Series):
+            data = data.to_frame()
         tickers = data.index.get_level_values('ID').unique().tolist()
         storage = []
         for ticker in tickers:
@@ -562,6 +564,9 @@ class AccountingFactor(Factor):
 
     def gather_data(self, ticker_data: pd.DataFrame, relevant_rec: pd.DataFrame,
                     offset_strs: List[str]) -> pd.DataFrame:
+        if not offset_strs:
+            relevant_rec.columns = ['q0']
+            return relevant_rec
         storage = [self.loc_pre_data(ticker_data, relevant_rec, offset_str).iloc[:, 0].values for offset_str in
                    offset_strs]
         storage.append(relevant_rec.iloc[:, 0].values)
