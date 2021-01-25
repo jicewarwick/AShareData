@@ -42,6 +42,13 @@ class TickersBase(object):
         info = self.cache.loc[self.cache.ID == ticker, :]
         return info.DateTime.iloc[0]
 
+    def new_ticker(self, start_date: dt.datetime, end_date: dt.datetime = None) -> List[str]:
+        if not end_date:
+            end_date = dt.datetime.today()
+        u_data = self.cache.loc[(start_date <= self.cache.DateTime) & (self.cache.DateTime <= end_date), :]
+        tmp = u_data.groupby('ID').tail(1)
+        return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
+
 
 class DiscreteTickers(TickersBase):
     """细类证券代码基类"""
