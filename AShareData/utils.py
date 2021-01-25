@@ -2,7 +2,6 @@ import datetime as dt
 import json
 import sys
 import tempfile
-from collections import namedtuple
 from dataclasses import dataclass
 from importlib.resources import open_text
 from typing import Any, Dict, List, Union
@@ -73,26 +72,17 @@ class SecuritySelectionPolicy:
 
 @dataclass
 class StockSelectionPolicy(SecuritySelectionPolicy):
-    """
-    股票筛选条件:
-        :param industry_provider: 股票行业分类标准
-        :param industry_level: 股票行业分类标准
-        :param industry: 股票所在行业
-        :param select_st: 仅选取 风险警告股, 包括 PT, ST, SST, *ST, (即将)退市股 等
-        :param ignore_st: 排除 风险警告股, 包括 PT, ST, SST, *ST, (即将)退市股 等
-        :param ignore_new_stock_period: 新股纳入市场收益计算的时间
-        :param ignore_pause: 排除停牌股
-        :param ignore_const_limit: 排除一字板股票
-    """
-    industry_provider: str = None
-    industry_level: int = None
-    industry: str = None
-    ignore_new_stock_period: dt.timedelta = None
-    select_st: bool = False
-    ignore_st: bool = False
-    select_pause: bool = False
-    ignore_pause: bool = False
-    ignore_const_limit: bool = False
+    """ 股票筛选条件 """
+    industry_provider: str = None  # 股票行业分类标准
+    industry_level: int = None  # 股票行业分类标准
+    industry: str = None  # 股票所在行业
+    ignore_new_stock_period: dt.timedelta = None  # 新股纳入市场收益计算的时间
+    select_new_stock_period: dt.timedelta = None  # 仅选取新上市的股票, 可与 ignore_new_stock_period 搭配使用
+    select_st: bool = False  # 仅选取 风险警告股, 即 PT, ST, SST, *ST, (即将)退市股 等
+    ignore_st: bool = False  # 排除 风险警告股
+    select_pause: bool = False  # 选取停牌股
+    ignore_pause: bool = False  # 排除停牌股
+    ignore_const_limit: bool = False  # 排除一字板股票
 
     def __post_init__(self):
         if self.industry_provider:
@@ -102,22 +92,15 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
 
 @dataclass
 class StockIndexCompositionPolicy:
-    """
-    自建指数信息
-        :param ticker: 新建指数入库代码. 建议以`.IND`结尾, 代表自合成指数
-        :param stock_selection_policy: 股票筛选条件
-    """
-    ticker: str = None
-    name: str = None
-    unit_base: str = None
-    stock_selection_policy: StockSelectionPolicy = None
-    start_date: dt.datetime = None
+    """ 自建指数信息 """
+    ticker: str = None  # 新建指数入库代码. 建议以`.IND`结尾, 代表自合成指数
+    name: str = None  # 指数名称
+    unit_base: str = None  # 股本指标
+    stock_selection_policy: StockSelectionPolicy = None  # 股票筛选条件
+    start_date: dt.datetime = None  # 指数开始日期
 
     def __post_init__(self):
         assert self.unit_base in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本'], '非法股本字段!'
-
-
-DateCache = namedtuple('DateCache', ['q0', 'q1', 'q2', 'y1', 'q4', 'q5', 'y3', 'y5'])
 
 
 class TickerSelector(object):

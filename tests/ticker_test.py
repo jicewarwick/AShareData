@@ -58,9 +58,19 @@ class MyTestCase(unittest.TestCase):
         policy = StockSelectionPolicy()
         policy.ignore_new_stock_period = dt.timedelta(days=360)
         policy.select_st = False
-        selector = StockTickerSelector(policy=policy)
+        selector = StockTickerSelector(policy=policy, db_interface=self.db_interface)
         dates = [dt.datetime(2020, 1, 7), dt.datetime(2020, 12, 28)]
-        ret = selector.generate_index(dates)
+        ret = selector.generate_index(dates=dates)
+        print(ret)
+
+    def test_new_ticker_selection(self):
+        policy = StockSelectionPolicy()
+        policy.ignore_new_stock_period = dt.timedelta(days=60)
+        policy.select_new_stock_period = dt.timedelta(days=90)
+        policy.select_st = False
+        selector = StockTickerSelector(policy=policy, db_interface=self.db_interface)
+        dates = [dt.datetime(2020, 1, 7), dt.datetime(2020, 12, 28)]
+        ret = selector.generate_index(dates=dates)
         print(ret)
 
 

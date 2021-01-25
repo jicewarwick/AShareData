@@ -45,6 +45,8 @@ class TickersBase(object):
     def new_ticker(self, start_date: dt.datetime, end_date: dt.datetime = None) -> List[str]:
         if not end_date:
             end_date = dt.datetime.today()
+        if not start_date:
+            start_date = dt.datetime(1990, 12, 19)
         u_data = self.cache.loc[(start_date <= self.cache.DateTime) & (self.cache.DateTime <= end_date), :]
         tmp = u_data.groupby('ID').tail(1)
         return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
@@ -249,11 +251,17 @@ class StockTickerSelector(TickerSelector):
     def ticker(self, date: DateUtils.DateType, ids: Sequence[str] = None) -> List[str]:
         if not ids:
             ids = set(self.stock_ticker.ticker(date))
-        if self.policy.ignore_new_stock_period:
-            start_ref_date = self.calendar.offset(date, -self.policy.ignore_new_stock_period.days)
-            ids = set(self.stock_ticker.ticker(start_ref_date)) & ids
+
+        if self.policy.ignore_new_stock_period or self.policy.select_new_stock_period:
+            start_date, end_date = None, None
+            if self.policy.ignore_new_stock_period:
+                end_date = self.calendar.offset(date, -self.policy.ignore_new_stock_period.days)
+            if self.policy.select_new_stock_period:
+                start_date = self.calendar.offset(date, -self.policy.select_new_stock_period.days - 1)
+            ids = set(self.stock_ticker.new_ticker(start_date=start_date, end_date=end_date)) & ids
+
         if self.industry_info and self.policy.industry:
-            ids = ids & set(self.industry_info.list_constitutes(self.policy.industry))
+            ids = ids & set(self.industry_info.list_constitutes(date=date, industry=self.policy.industry))
         if self.policy.ignore_const_limit:
             ids = ids - set(self.const_limit_selector.get_data(date))
 
