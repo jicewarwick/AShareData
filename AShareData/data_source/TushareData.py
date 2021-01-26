@@ -602,7 +602,8 @@ class TushareData(DataSource):
             df = df.sort_values('report_type').drop(['ann_date', 'report_type'], axis=1)
             df = df.replace({'comp_type': company_type_desc})
             df = self._standardize_df(df, column_name_dict)
-            df = df.loc[~df.index.duplicated(), :]
+            df = df.loc[~df.index.duplicated(), :].sort_index()
+            df = df.loc[df.index.get_level_values('报告期').month % 3 == 0, :]
             df = self.append_report_date_cache(df)
             # df.to_excel('processed.xlsx', merge_cells=False, float_format='%.2f')
 
