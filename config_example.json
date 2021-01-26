@@ -13,5 +13,9 @@
     "join_quant": {
         "mobile": "***********",
         "password": "************"
+    },
+    "tdx_server": {
+        "host": "**************",
+        "port": 0
     }
 }

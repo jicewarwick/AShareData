@@ -259,14 +259,6 @@ class JQData(DataSource):
             self.get_stock_option_daily(date)
 
     @staticmethod
-    def _auction_data_to_price_data(auction_data: pd.DataFrame) -> pd.DataFrame:
-        auction_data['开盘价'] = auction_data['成交价']
-        auction_data['最高价'] = auction_data['成交价']
-        auction_data['最低价'] = auction_data['成交价']
-        auction_data['收盘价'] = auction_data['成交价']
-        return auction_data.drop('成交价', axis=1)
-
-    @staticmethod
     def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str]) -> Union[pd.Series, pd.DataFrame]:
         dates_columns = [it for it in df.columns if it.endswith('date') | it.endswith('time')]
         for it in dates_columns:
