@@ -21,10 +21,6 @@ class MyTestCase(unittest.TestCase):
                                                     unit_base=unit_base,
                                                     start_date=start_date)
 
-    def test_accounting_cache(self):
-        cache = AccountingDateCacheCompositor(self.factor_compositor.db_interface)
-        cache.update()
-
 
 if __name__ == '__main__':
     unittest.main()

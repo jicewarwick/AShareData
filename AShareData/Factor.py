@@ -535,12 +535,16 @@ class AccountingFactor(Factor):
             calc_data = self.func(pre_data)
             calc_data.index = calc_data.index.get_level_values('DateTime')
 
-            res_index = pd.MultiIndex.from_product([list(related_dates.keys()), [ticker]])
+            res_index = pd.MultiIndex.from_product([list(related_dates.keys()), [ticker]], names=('DateTime', 'ID'))
             val = calc_data.loc[related_dates.values()].values
             content = pd.DataFrame(val, index=res_index)
             storage.append(content)
 
-        return pd.concat(storage)
+        ret = pd.concat(storage)
+        if ret.shape[1] == 1:
+            ret = ret.iloc[:, 0]
+            ret.name = self.factor_name
+        return ret
 
     @staticmethod
     def func(data: pd.DataFrame) -> np.float:

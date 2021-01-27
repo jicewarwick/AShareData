@@ -132,8 +132,8 @@ class AShareDataReader(object):
 
     # TODO
     @cached_property
-    def pe_ttm(self):
-        pass
+    def pe_ttm(self) -> BinaryFactor:
+        return self.stock_market_cap / self.earning_ttm
 
     @cached_property
     def overnight_shibor(self) -> ContinuousFactor:
