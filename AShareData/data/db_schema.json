@@ -8,38 +8,38 @@
 		"交易日期": "datetime"
 	},
 	"证券代码": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"证券类型": "varchar",
 		"上市状态": "boolean"
 	},
 	"证券名称": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"证券名称": "str"
 	},
 	"复权因子": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"复权因子": "float"
 	},
 	"总股本": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"总股本": "double"
 	},
 	"A股总股本": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"A股总股本": "double"
 	},
 	"A股流通股本": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"A股流通股本": "double"
 	},
 	"自由流通股本": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"自由流通股本": "double"
 	},
@@ -50,7 +50,7 @@
 		"总经理": "str",
 		"董秘": "str",
 		"注册资本": "double",
-		"注册日期": "datetime",
+		"注册日期": "date",
 		"所在省份": "str",
 		"所在城市": "str",
 		"公司介绍": "str",
@@ -62,7 +62,7 @@
 		"经营范围": "str"
 	},
 	"分红送股": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"报告期": "datetime",
 		"每股送股比例": "float",
@@ -76,7 +76,7 @@
 		"实施公告日": "datetime"
 	},
 	"股票日行情": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"开盘价": "float",
 		"最高价": "float",
@@ -96,7 +96,7 @@
 		"成交额": "double"
 	},
 	"指数日行情": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"开盘点位": "float",
 		"最高点位": "float",
@@ -117,8 +117,8 @@
 		"ID": "varchar",
 		"申购代码": "varchar",
 		"名称": "str",
-		"上网发行日期": "datetime",
-		"上市日期": "datetime",
+		"上网发行日期": "date",
+		"上市日期": "date",
 		"发行总量": "double",
 		"上网发行总量": "double",
 		"发行价格": "float",
@@ -128,42 +128,42 @@
 		"中签率": "float"
 	},
 	"申万一级行业": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"行业名称": "str"
 	},
 	"中信行业": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"中信行业": "str"
 	},
 	"申万行业": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"申万行业": "str"
 	},
 	"Wind行业": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"Wind行业": "str"
 	},
 	"中证行业": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"中证行业": "str"
 	},
 	"沪深股通成份股": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"沪深股通成份股": "boolean"
 	},
 	"沪深港股通持股明细": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"持股数量": "int"
 	},
 	"Shibor利率数据": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"隔夜": "float",
 		"1周": "float",
 		"2周": "float",
@@ -174,15 +174,15 @@
 		"1年": "float"
 	},
 	"指数成分股权重": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"IndexCode": "varchar",
 		"权重": "float"
 	},
 	"资产负债表": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
-		"报告期": "datetime",
+		"报告期": "date",
 		"公司类型": "str",
 		"期末总股本": "double",
 		"资本公积金": "double",
@@ -317,9 +317,9 @@
 		"持有待售的负债": "double"
 	},
 	"利润表": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
-		"报告期": "datetime",
+		"报告期": "date",
 		"公司类型": "str",
 		"基本每股收益": "float",
 		"稀释每股收益": "float",
@@ -383,9 +383,9 @@
 		"可分配利润": "double"
 	},
 	"现金流量表": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
-		"报告期": "datetime",
+		"报告期": "date",
 		"公司类型": "str",
 		"净利润": "double",
 		"财务费用": "double",
@@ -479,13 +479,13 @@
 		"产品代码": "varchar",
 		"合约乘数": "int",
 		"最小报价单位": "float",
-		"上市日期": "datetime",
-		"最后交易日": "datetime",
+		"上市日期": "date",
+		"最后交易日": "date",
 		"交割月份": "varchar",
-		"最后交割日": "datetime"
+		"最后交割日": "date"
 	},
 	"期货日行情": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"开盘价": "float",
 		"最高价": "float",
@@ -505,15 +505,15 @@
 		"行权方式": "varchar",
 		"行权价格": "float",
 		"合约乘数": "float",
-		"上市日期": "datetime",
-		"到期日期": "datetime",
-		"最后行权日期": "datetime",
-		"最后交易日期": "datetime",
-		"最后交割日期": "datetime",
+		"上市日期": "date",
+		"到期日期": "date",
+		"最后行权日期": "date",
+		"最后交易日期": "date",
+		"最后交割日期": "date",
 		"最小价格波幅": "float"
 	},
 	"期权日行情": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"成交额": "double",
 		"开盘价": "float",
@@ -529,7 +529,7 @@
 		"Rho": "float"
 	},
 	"场内基金日行情": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"开盘价": "float",
 		"最高价": "float",
@@ -541,14 +541,14 @@
 		"单位净值": "float"
 	},
 	"股票停牌": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"证券名称": "varchar",
 		"停牌类型": "varchar",
 		"停牌原因": "varchar"
 	},
 	"一字涨跌停": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"涨跌停": "int"
 	},
@@ -561,13 +561,13 @@
 		"发行期限（年）": "float",
 		"面值": "float",
 		"发行总额": "float",
-		"起息日期": "datetime",
-		"到期日期": "datetime",
+		"起息日期": "date",
+		"到期日期": "date",
 		"年付息次数": "int",
-		"上市日期": "datetime",
-		"摘牌日": "datetime",
-		"转股起始日": "datetime",
-		"转股截止日": "datetime",
+		"上市日期": "date",
+		"摘牌日": "date",
+		"转股起始日": "date",
+		"转股截止日": "date",
 		"初始转股价": "float",
 		"到期赎回价格(含税)": "float"
 	},
@@ -576,28 +576,28 @@
 		"证券名称": "str",
 		"管理人": "varchar",
 		"证券类型": "varchar",
-		"成立日期": "datetime",
-		"到期日期": "datetime",
-		"上市时间": "datetime",
-		"发行日期": "datetime",
-		"退市日期": "datetime",
+		"成立日期": "date",
+		"到期日期": "date",
+		"上市时间": "date",
+		"发行日期": "date",
+		"退市日期": "date",
 		"管理费": "float",
 		"托管费": "float",
 		"投资风格": "varchar"
 	},
 	"场外基金净值": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"单位净值": "float"
 	},
 	"场外基金规模": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"资产净值": "double",
 		"合计资产净值": "double"
 	},
 	"公募基金分红": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"每股派息": "float"
 	},
@@ -629,7 +629,7 @@
 		"买5量": "double"
 	},
 	"可转债日行情": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"开盘价": "float",
 		"最高价": "float",
@@ -639,7 +639,7 @@
 		"成交额": "double"
 	},
 	"港股日行情": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"开盘价": "float",
 		"最高价": "float",
@@ -649,7 +649,7 @@
 		"成交额": "double"
 	},
 	"美股日行情": {
-		"DateTime": "datetime",
+		"DateTime": "date",
 		"ID": "varchar",
 		"开盘价": "float",
 		"最高价": "float",
