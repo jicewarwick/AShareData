@@ -6,7 +6,7 @@ from . import DateUtils
 from .config import generate_db_interface_from_config, get_db_interface
 from .DBInterface import DBInterface
 from .Factor import BetaFactor, BinaryFactor, CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, \
-    OnTheRecordFactor, UnaryFactor, TTMAccountingFactor
+    LatestAccountingFactor, OnTheRecordFactor, TTMAccountingFactor, UnaryFactor
 from .Tickers import StockTickers
 
 
@@ -103,8 +103,16 @@ class AShareDataReader(object):
         return self.hfq_close.pct_change()
 
     @cached_property
+    def forward_return(self) -> UnaryFactor:
+        return self.daily_return.shift(-1)
+
+    @cached_property
     def log_return(self) -> UnaryFactor:
         return self.hfq_close.log().diff()
+
+    @cached_property
+    def forward_log_return(self) -> UnaryFactor:
+        return self.log_return.shift(-1)
 
     @cached_property
     def index_close(self) -> ContinuousFactor:
@@ -124,13 +132,20 @@ class AShareDataReader(object):
 
     @cached_property
     def beta(self) -> BetaFactor:
-        return BetaFactor(self.db_interface)
+        return BetaFactor(db_interface=self.db_interface)
+
+    @cached_property
+    def book_val(self) -> LatestAccountingFactor:
+        return LatestAccountingFactor('股东权益合计(不含少数股东权益)', self.db_interface)
 
     @cached_property
     def earning_ttm(self) -> TTMAccountingFactor:
         return TTMAccountingFactor('净利润(不含少数股东损益)', self.db_interface)
 
-    # TODO
+    @cached_property
+    def bm(self) -> BinaryFactor:
+        return self.book_val / self.stock_market_cap
+
     @cached_property
     def pe_ttm(self) -> BinaryFactor:
         return self.stock_market_cap / self.earning_ttm

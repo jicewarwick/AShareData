@@ -209,7 +209,7 @@ class FactorBase(object):
 
     def log(self):
         def sub_get_data(self, **kwargs):
-            return self.f.get_data(**kwargs).log()
+            return np.log(self.f.get_data(**kwargs))
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
@@ -217,6 +217,13 @@ class FactorBase(object):
     def diff(self):
         def sub_get_data(self, **kwargs):
             return self.f.get_data(**kwargs).diff()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def shift(self, n: int):
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).shift(n)
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
@@ -499,12 +506,13 @@ class AccountingFactor(Factor):
 
     def get_data(self, dates: Sequence[dt.datetime] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                 ids: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
+                 ids: Sequence[str] = None, ticker_selector: TickerSelector = None) -> Union[pd.Series, pd.DataFrame]:
         """
         :param start_date: start date
         :param end_date: end date
         :param dates: selected dates
         :param ids: query stocks
+        :param ticker_selector: TickerSelector that specifies criteria
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
         buffer = dt.timedelta(days=self.buffer_length)
@@ -544,6 +552,10 @@ class AccountingFactor(Factor):
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]
             ret.name = self.factor_name
+
+        if ticker_selector:
+            index = ticker_selector.generate_index(dates=dates)
+            ret = ret.reindex(index)
         return ret
 
     @staticmethod
