@@ -1,15 +1,14 @@
 import datetime as dt
+from functools import cached_property
 from typing import Dict, List, Sequence, Union
 
 import numpy as np
 import pandas as pd
 import WindPy
-from cached_property import cached_property
 from tqdm import tqdm
 
 from .DataSource import DataSource
 from .. import config, constants, DateUtils, utils
-from ..config import get_db_interface
 from ..DBInterface import DBInterface
 from ..Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
     StockTickers
@@ -153,8 +152,6 @@ class WindData(DataSource):
     """Wind 数据源"""
 
     def __init__(self, db_interface: DBInterface = None, param_json_loc: str = None):
-        if not db_interface:
-            db_interface = get_db_interface()
         super().__init__(db_interface)
 
         self._factor_param = utils.load_param('wind_param.json', param_json_loc)
@@ -318,7 +315,7 @@ class WindData(DataSource):
             wind_data = self.w.wsd(ticker, f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
                                    date, date, industryType=constants.INDUSTRY_LEVEL[provider])
             wind_data.name = f'{provider}行业'
-            wind_data = wind_data.str.replace('III|Ⅲ|IV|Ⅳ$', '')
+            wind_data = wind_data.str.replace('III|Ⅲ|IV|Ⅳ$', '', regex=True)
             return wind_data
 
         table_name = f'{provider}行业'
@@ -447,7 +444,7 @@ class WindData(DataSource):
                 pbar.set_description(f'下载{date}的{table_name}')
                 indicators = "open,low,high,close,volume,amt,mkt_cap_ard,total_shares,float_a_shares,free_float_shares,pe_ttm"
                 data = self.w.wss(indexes, indicators, date=date, priceAdj='U', cycle='D')
-                data.rename(self._factor_param[table_name], axis=1, inplace=True)
+                data = data.rename(self._factor_param[table_name], axis=1).rename({'ID', 'IndexCode'}, axis=1)
                 self.db_interface.insert_df(data, table_name)
                 pbar.update()
 
