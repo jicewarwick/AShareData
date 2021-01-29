@@ -1,5 +1,6 @@
 alphalens
 numpy
+linearmodels
 pandas
 pytdx
 ratelimiter
