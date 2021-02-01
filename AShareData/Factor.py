@@ -772,7 +772,8 @@ class BetaFactor(FactorBase):
                 if group.shape[0] < min_trading_days:
                     beta = np.nan
                 else:
-                    beta = sm.OLS(group.iloc[:, 2], sm.add_constant(group.iloc[:, 3])).fit().params[1]
+                    cov_matrix = np.cov(group.iloc[:, 2], group.iloc[:, 3])
+                    beta = cov_matrix[0, 1] / cov_matrix[1, 1]
                 data = pd.Series(beta, index=pd.MultiIndex.from_tuples([(date, ID)], names=('DateTime', 'ID')))
                 storage.append(data)
 
