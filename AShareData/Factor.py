@@ -5,7 +5,6 @@ from typing import Dict, List, Sequence, Union
 
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 
 from . import constants, DateUtils, utils
 from .config import get_db_interface
@@ -200,13 +199,6 @@ class FactorBase(object):
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
-    def pct_change(self):
-        def sub_get_data(self, **kwargs):
-            return self.f.get_data(**kwargs).unstack().pct_change().stack().dropna()
-
-        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
-        return Foo(self)
-
     def log(self):
         def sub_get_data(self, **kwargs):
             return np.log(self.f.get_data(**kwargs))
@@ -214,16 +206,37 @@ class FactorBase(object):
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
+    def pct_change(self):
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).unstack().pct_change().stack().dropna()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
     def diff(self):
         def sub_get_data(self, **kwargs):
-            return self.f.get_data(**kwargs).diff()
+            return self.f.get_data(**kwargs).unstack().diff().stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def shift(self, n: int):
         def sub_get_data(self, **kwargs):
-            return self.f.get_data(**kwargs).shift(n)
+            return self.f.get_data(**kwargs).unstack().shift(n).stack().dropna()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def diff_shift(self, shift: int):
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).unstack().diff().shift(shift).stack().dropna()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def pct_change_shift(self, shift: int):
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).unstack().pct_change().shift(shift).stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)

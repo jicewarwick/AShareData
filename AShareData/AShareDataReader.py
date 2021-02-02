@@ -97,14 +97,13 @@ class AShareDataReader(object):
     def hfq_close(self) -> BinaryFactor:
         return self.adj_factor * self.stock_close
 
-    # TODO
     @cached_property
-    def daily_return(self) -> UnaryFactor:
+    def stock_return(self) -> UnaryFactor:
         return self.hfq_close.pct_change()
 
     @cached_property
     def forward_return(self) -> UnaryFactor:
-        return self.daily_return.shift(-1)
+        return self.hfq_close.pct_change_shift(-1)
 
     @cached_property
     def log_return(self) -> UnaryFactor:
@@ -112,7 +111,7 @@ class AShareDataReader(object):
 
     @cached_property
     def forward_log_return(self) -> UnaryFactor:
-        return self.log_return.shift(-1)
+        return self.hfq_close.log().diff_shift(-1)
 
     @cached_property
     def index_close(self) -> ContinuousFactor:
@@ -121,6 +120,10 @@ class AShareDataReader(object):
     @cached_property
     def index_return(self) -> UnaryFactor:
         return self.index_close.pct_change()
+
+    @cached_property
+    def index_log_return(self) -> UnaryFactor:
+        return self.index_close.log().diff()
 
     @cached_property
     def index_constitute(self) -> IndexConstitute:

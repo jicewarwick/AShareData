@@ -91,7 +91,7 @@ class MyTestCase(unittest.TestCase):
     def test_factor_pct_change(self):
         hfq = self.close * self.adj
         hfq_chg = hfq.pct_change()
-        pct_chg_data = hfq_chg.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
+        pct_chg_data = hfq_chg.get_data(start_date=self.start_date, end_date=self.end_date)
         print(pct_chg_data)
 
     def test_factor_max(self):
