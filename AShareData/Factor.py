@@ -341,21 +341,21 @@ class CompactFactor(NonFinancialFactor):
     该类可以缓存以提升效率
     """
 
-    def __init__(self, factor_name: str, db_interface: DBInterface = None):
-        super().__init__(factor_name, factor_name, db_interface)
-        self.data = self.db_interface.read_table(factor_name)
+    def __init__(self, table_name: str, db_interface: DBInterface = None):
+        super().__init__(table_name, table_name, db_interface)
+        self.data = self.db_interface.read_table(table_name)
         self.calendar = DateUtils.TradingCalendar(db_interface)
 
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                 ids: Union[Sequence[str], str] = None, ticker_selector: TickerSelector = None) -> pd.DataFrame:
+                 ids: Union[Sequence[str], str] = None, ticker_selector: TickerSelector = None) -> pd.Series:
         """
         :param start_date: start date
         :param end_date: end date
         :param dates: selected dates
         :param ids: query stocks
         :param ticker_selector: TickerSelector that specifies criteria
-        :return: pandas.DataFrame with DateTime as index and stock as column
+        :return: pandas.Series with DateTime as index and stock as column
         """
         if isinstance(dates, dt.datetime):
             dates = [dates]
@@ -386,6 +386,7 @@ class CompactFactor(NonFinancialFactor):
         if ticker_selector:
             index = ticker_selector.generate_index(dates=dates)
             ret = ret.reindex(index)
+        ret.name = self.factor_name
         return ret
 
 
@@ -403,6 +404,7 @@ class IndustryFactor(CompactFactor):
         assert 0 < level <= constants.INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
         table_name = f'{provider}行业'
         super().__init__(table_name, db_interface)
+        self.factor_name = f'{provider}{level}级行业'
 
         if level != constants.INDUSTRY_LEVEL[provider]:
             translation = utils.load_param('industry.json')
@@ -790,4 +792,6 @@ class BetaFactor(FactorBase):
                 data = pd.Series(beta, index=pd.MultiIndex.from_tuples([(date, ID)], names=('DateTime', 'ID')))
                 storage.append(data)
 
-        return pd.concat(storage).sort_index()
+        ret = pd.concat(storage).sort_index()
+        ret.name = self.factor_name
+        return ret
