@@ -31,7 +31,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_industry(self):
         print('')
-        industry_factor = IndustryFactor('中信', 2, self.db_interface)
+        industry_factor = IndustryFactor('中信', 3, self.db_interface)
         print(industry_factor.list_constitutes(dt.datetime(2019, 1, 7), '白酒'))
         print('')
         print(industry_factor.all_industries)
