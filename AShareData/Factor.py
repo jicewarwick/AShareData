@@ -454,6 +454,15 @@ class OnTheRecordFactor(NonFinancialFactor):
         tmp = self.db_interface.read_table(self.table_name, dates=[date])
         return tmp.index.get_level_values('ID').tolist()
 
+    def get_counts(self, start_date: DateUtils.DateType, end_date: DateUtils.DateType,
+                   ids: Sequence[str] = None) -> pd.Series:
+        tmp = self.db_interface.read_table(self.table_name, start_date=start_date, end_date=end_date, ids=ids)
+        tmp = tmp.reset_index().groupby('ID').count().reindex(ids).fillna(0)
+        res = tmp.iloc[:, 0]
+        res.index = pd.MultiIndex.from_product([[end_date], res.index], names=('DateTime', 'ID'))
+        res.name = f'{self.table_name}天数'
+        return res
+
 
 class CompactRecordFactor(NonFinancialFactor):
     def __init__(self, compact_factor: CompactFactor, factor_name: str):
