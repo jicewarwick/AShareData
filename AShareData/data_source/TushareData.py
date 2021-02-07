@@ -39,7 +39,7 @@ class TushareData(DataSource):
         :param db_interface: DBInterface
         :param param_json_loc: tushare 返回df的列名信息
         """
-        if not tushare_token:
+        if tushare_token is None:
             tushare_token = config.get_global_config()['tushare']['token']
             db_interface = config.get_db_interface()
         super().__init__(db_interface)
@@ -452,7 +452,7 @@ class TushareData(DataSource):
         """
         if (not trade_date) & (not start_date):
             raise ValueError('trade_date 和 start_date 必填一个!')
-        if not end_date:
+        if end_date is None:
             end_date = dt.datetime.today()
         dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
         pre_date = self.calendar.offset(dates[0], -1)
@@ -812,7 +812,7 @@ class TushareData(DataSource):
         column_desc = self._factor_param[data_category]['输出参数']
         indexes = constants.BOARD_INDEXES if indexes is None else indexes
 
-        if not end_date:
+        if end_date is None:
             end_date = dt.datetime.today()
         dates = self.calendar.last_day_of_month(start_date, end_date)
         dates = sorted(list(set([start_date] + dates + [end_date])))

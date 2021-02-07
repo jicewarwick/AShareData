@@ -17,7 +17,7 @@ with utils.NullPrinter():
 
 class JQData(DataSource):
     def __init__(self, db_interface: DBInterface = None, mobile: str = None, password: str = None):
-        if not db_interface:
+        if db_interface is None:
             db_interface = config.get_db_interface()
             global_config = config.get_global_config()
             mobile = global_config['join_quant']['mobile']

@@ -248,6 +248,8 @@ class MySQLInterface(DBInterface):
                 q = q.filter(table.columns[column_condition[0]] == column_condition[1])
             ret = q.one()[0]
             session.close()
+            if isinstance(ret, dt.date):
+                ret = dt.datetime.combine(ret, dt.time())
             return ret
 
     def get_column_min(self, table_name: str, column: str):

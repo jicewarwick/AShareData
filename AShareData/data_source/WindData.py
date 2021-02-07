@@ -54,7 +54,7 @@ class WindWrapper(object):
 
     @staticmethod
     def _standardize_date(date: DateUtils.DateType = None):
-        if not date:
+        if date is None:
             date = dt.date.today()
         if isinstance(date, (dt.date, dt.datetime)):
             date = date.strftime('%Y-%m-%d')

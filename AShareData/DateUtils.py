@@ -101,9 +101,9 @@ class TradingCalendarBase(object):
     def select_dates(self, start_date: DateType = None, end_date: DateType = None, inclusive=(True, True)) \
             -> List[dt.datetime]:
         """Get list of all trading days during[``start_date``, ``end_date``] inclusive"""
-        if not start_date:
+        if start_date is None:
             start_date = self.calendar[0]
-        if not end_date:
+        if end_date is None:
             end_date = dt.datetime.now()
         dates = self._select_dates(start_date, end_date, lambda pre, curr, next_: True)
         if dates and not inclusive[0]:
@@ -188,7 +188,7 @@ class TradingCalendar(TradingCalendarBase):
 
     def __init__(self, db_interface: DBInterface = None):
         super().__init__()
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         calendar_df = db_interface.read_table('交易日历')
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
@@ -199,7 +199,7 @@ class HKTradingCalendar(TradingCalendarBase):
 
     def __init__(self, db_interface: DBInterface = None):
         super().__init__()
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         calendar_df = db_interface.read_table('港股交易日历')
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
@@ -263,7 +263,7 @@ class ReportingDate(object):
 
         :return: 最新财报的报告期
         """
-        if not date:
+        if date is None:
             date = dt.date.today()
         year = date.year
         if date.month < 5:

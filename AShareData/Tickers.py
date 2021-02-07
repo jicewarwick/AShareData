@@ -16,7 +16,7 @@ class TickersBase(object):
     """证券代码基类"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         self.db_interface = db_interface
         self.cache = None
@@ -43,9 +43,9 @@ class TickersBase(object):
         return info.DateTime.iloc[0]
 
     def new_ticker(self, start_date: dt.datetime, end_date: dt.datetime = None) -> List[str]:
-        if not end_date:
+        if end_date is None:
             end_date = dt.datetime.today()
-        if not start_date:
+        if start_date is None:
             start_date = dt.datetime(1990, 12, 19)
         u_data = self.cache.loc[(start_date <= self.cache.DateTime) & (self.cache.DateTime <= end_date), :]
         tmp = u_data.groupby('ID').tail(1)
@@ -218,7 +218,7 @@ class StockTickerSelector(TickerSelector):
         :param policy: 选股条件
         """
         super().__init__()
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         self.db_interface = db_interface
         self.stock_ticker = StockTickers(self.db_interface)
@@ -249,7 +249,7 @@ class StockTickerSelector(TickerSelector):
 
     @DateUtils.dtlize_input_dates
     def ticker(self, date: DateUtils.DateType, ids: Sequence[str] = None) -> List[str]:
-        if not ids:
+        if ids is None:
             ids = set(self.stock_ticker.ticker(date))
 
         if self.policy.ignore_new_stock_period or self.policy.select_new_stock_period:
@@ -281,7 +281,7 @@ class StockTickerSelector(TickerSelector):
     def generate_index(self, start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
                        dates: Union[DateUtils.DateType, Sequence[DateUtils.DateType]] = None) -> pd.MultiIndex:
         storage = []
-        if not dates:
+        if dates is None:
             dates = self.calendar.select_dates(start_date, end_date)
         for date in dates:
             ids = self.ticker(date)

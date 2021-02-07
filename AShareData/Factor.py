@@ -295,7 +295,7 @@ class Factor(FactorBase):
         super().__init__(factor_name)
         self.table_name = table_name
 
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         self.db_interface = db_interface
 
@@ -373,9 +373,9 @@ class CompactFactor(NonFinancialFactor):
         if dates:
             end_date = max(dates)
             start_date = min(dates)
-        if not end_date:
+        if end_date is None:
             end_date = dt.datetime.today()
-        if not start_date:
+        if start_date is None:
             start_date = data.index.get_level_values('DateTime').min()
 
         previous_data = data.loc[data.index.get_level_values('DateTime') <= start_date].groupby('ID').tail(1)
@@ -768,15 +768,15 @@ class CachedFactor(FactorBase):
 class BetaFactor(FactorBase):
     def __init__(self, market_ret: FactorBase = None, rf_rate: FactorBase = None, db_interface: DBInterface = None):
         super().__init__('Beta')
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         stock_ret = ContinuousFactor('股票日行情', '收盘价', db_interface) * CompactFactor('复权因子', db_interface)
         self.stock_ret = stock_ret.pct_change()
-        if not market_ret:
+        if market_ret is None:
             market_ret = ContinuousFactor('指数日行情', '收盘点位', db_interface).pct_change()
             market_ret.bind_params(index_code='000300.SH')
         self.market_ret = market_ret
-        if not rf_rate:
+        if rf_rate is None:
             self.rf_rate = ContinuousFactor('shibor利率数据', '3个月', db_interface)
         self.calendar = DateUtils.TradingCalendar(db_interface)
 
