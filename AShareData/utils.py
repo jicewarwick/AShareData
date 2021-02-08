@@ -4,7 +4,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from importlib.resources import open_text
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
@@ -76,12 +76,17 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
     industry_provider: str = None  # 股票行业分类标准
     industry_level: int = None  # 股票行业分类标准
     industry: str = None  # 股票所在行业
-    ignore_new_stock_period: dt.timedelta = None  # 新股纳入市场收益计算的时间
-    select_new_stock_period: dt.timedelta = None  # 仅选取新上市的股票, 可与 ignore_new_stock_period 搭配使用
+
+    ignore_new_stock_period: int = None  # 新股纳入市场收益计算的时间(交易日天数)
+    select_new_stock_period: int = None  # 仅选取新上市的股票, 可与 ignore_new_stock_period 搭配使用
+
     select_st: bool = False  # 仅选取 风险警告股, 即 PT, ST, SST, *ST, (即将)退市股 等
     ignore_st: bool = False  # 排除 风险警告股
+
     select_pause: bool = False  # 选取停牌股
     ignore_pause: bool = False  # 排除停牌股
+    max_pause_days: Tuple[int, int] = None  # (i, n): 在前n个交易日中最大停牌天数不大于i
+
     ignore_const_limit: bool = False  # 排除一字板股票
 
     def __post_init__(self):
@@ -112,3 +117,23 @@ class TickerSelector(object):
 
     def ticker(self, *args, **kwargs) -> List[str]:
         raise NotImplementedError()
+
+
+def generate_factor_bin_names(factor_name: str, weight: bool = True, industry_neutral: bool = True, bins: int = 10):
+    i = 'I' if industry_neutral else 'N'
+    w = 'W' if weight else 'N'
+    return [f'{factor_name}_{i}{w}_G{it}inG{bins}' for it in range(1, bins + 1)]
+
+
+def decompose_bin_names(factor_bin_name):
+    tmp = factor_bin_name.split('_')
+    composition_info = tmp[1]
+    group_info = tmp[-1].split('in')
+
+    return {
+        'factor_name': tmp[0],
+        'industry_neutral': composition_info[0] == 'I',
+        'cap_weight': composition_info[1] == 'W',
+        'group': group_info[0],
+        'total_group': group_info[-1]
+    }

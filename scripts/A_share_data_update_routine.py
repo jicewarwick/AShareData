@@ -23,6 +23,7 @@ if __name__ == '__main__':
 
     tushare_crawler.update_fund_daily()
     tushare_crawler.update_fund_dividend()
+    tushare_crawler.update_financial_data()
 
     with WindData() as wind_data:
         wind_data.update_stock_daily_data()

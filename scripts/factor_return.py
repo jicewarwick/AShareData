@@ -11,8 +11,9 @@ if __name__ == '__main__':
 
     data_reader = AShareDataReader()
     stock_selection_policy = StockSelectionPolicy()
-    stock_selection_policy.ignore_new_stock_period = dt.timedelta(days=360)
+    stock_selection_policy.ignore_new_stock_period = 360
     stock_selection_policy.ignore_st = True
+    stock_selection_policy.ignore_pause = True
 
     policy = FactorPortfolioPolicy()
     policy.bins = [5, 10]

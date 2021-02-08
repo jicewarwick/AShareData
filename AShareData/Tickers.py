@@ -255,9 +255,9 @@ class StockTickerSelector(TickerSelector):
         if self.policy.ignore_new_stock_period or self.policy.select_new_stock_period:
             start_date, end_date = None, None
             if self.policy.ignore_new_stock_period:
-                end_date = self.calendar.offset(date, -self.policy.ignore_new_stock_period.days)
+                end_date = self.calendar.offset(date, -self.policy.ignore_new_stock_period)
             if self.policy.select_new_stock_period:
-                start_date = self.calendar.offset(date, -self.policy.select_new_stock_period.days - 1)
+                start_date = self.calendar.offset(date, -self.policy.select_new_stock_period - 1)
             ids = set(self.stock_ticker.new_ticker(start_date=start_date, end_date=end_date)) & ids
 
         if self.industry_info and self.policy.industry:
@@ -269,6 +269,13 @@ class StockTickerSelector(TickerSelector):
             ids = ids - set(self.paused_stock_selector.get_data(date))
         elif self.policy.select_pause:
             ids = ids & set(self.paused_stock_selector.get_data(date))
+        if self.policy.max_pause_days:
+            pause_days, period_length = self.policy.max_pause_days
+            start_date = self.calendar.offset(date, -period_length)
+            end_date = self.calendar.offset(date, -1)
+            pause_counts = self.paused_stock_selector.get_counts(start_date=start_date, end_date=end_date)
+            pause_counts = pause_counts.loc[pause_counts > pause_days]
+            ids = ids - set(pause_counts.index.get_level_values('ID'))
 
         if self.policy.select_st:
             ids = ids & set(self.risk_warned_stock_selector.get_data(date))
