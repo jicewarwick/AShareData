@@ -201,6 +201,8 @@ class FactorBase(object):
         return Foo(self)
 
     def max(self):
+        """analogue to max for each ``ID``"""
+
         def sub_get_data(self, **kwargs):
             return self.f.get_data(**kwargs).unstack().max()
 
@@ -208,6 +210,8 @@ class FactorBase(object):
         return Foo(self)
 
     def log(self):
+        """analogue to numpy.log"""
+
         def sub_get_data(self, **kwargs):
             return np.log(self.f.get_data(**kwargs))
 
@@ -215,6 +219,8 @@ class FactorBase(object):
         return Foo(self)
 
     def pct_change(self):
+        """analogue to pd.pct_change for each ``ID``"""
+
         def sub_get_data(self, **kwargs):
             return self.f.get_data(**kwargs).unstack().pct_change().stack().dropna()
 
@@ -222,6 +228,8 @@ class FactorBase(object):
         return Foo(self)
 
     def diff(self):
+        """analogue to pd.diff for each ``ID``"""
+
         def sub_get_data(self, **kwargs):
             return self.f.get_data(**kwargs).unstack().diff().stack().dropna()
 
@@ -229,6 +237,8 @@ class FactorBase(object):
         return Foo(self)
 
     def shift(self, n: int):
+        """analogue to pd.shift(n) for each ``ID``"""
+
         def sub_get_data(self, **kwargs):
             return self.f.get_data(**kwargs).unstack().shift(n).stack().dropna()
 
@@ -236,6 +246,8 @@ class FactorBase(object):
         return Foo(self)
 
     def diff_shift(self, shift: int):
+        """analogue to pd.diff().shift(n) for each ``ID``"""
+
         def sub_get_data(self, **kwargs):
             return self.f.get_data(**kwargs).unstack().diff().shift(shift).stack().dropna()
 
@@ -243,6 +255,8 @@ class FactorBase(object):
         return Foo(self)
 
     def pct_change_shift(self, shift: int):
+        """analogue to pd.pct_change().shift(n) for each ``ID``"""
+
         def sub_get_data(self, **kwargs):
             return self.f.get_data(**kwargs).unstack().pct_change().shift(shift).stack().dropna()
 
@@ -314,6 +328,8 @@ class Factor(FactorBase):
 
 
 class IndexConstitute(Factor):
+    """指数成分股权重"""
+
     def __init__(self, db_interface: DBInterface = None):
         super().__init__('指数成分股权重', '', db_interface)
 
@@ -343,10 +359,9 @@ class NonFinancialFactor(Factor):
 
 class CompactFactor(NonFinancialFactor):
     """
-    Compact Factor
+    数字变动很不平常的特性, 列如复权因子, 行业, 股本 等.
 
-    数字变动很不平常的特性, 列如复权因子, 行业, 股本 等. 对于的数据库表格为: {'DateTime', 'ID', 'FactorName'}
-    该类可以缓存以提升效率
+    对应的数据库表格为: {'DateTime', 'ID', 'FactorName'} 该类可以缓存以提升效率
     """
 
     def __init__(self, table_name: str, db_interface: DBInterface = None):
@@ -424,9 +439,10 @@ class IndustryFactor(CompactFactor):
     def list_constitutes(self, date: DateUtils.DateType, industry: str) -> List[str]:
         """
         获取行业内的股票构成
+
         :param date: 查询日期
         :param industry: 行业名称
-        :return:
+        :return: 行业构成
         """
         date_data = self.get_data(dates=date)
         data = date_data.loc[date_data == industry]
@@ -434,6 +450,7 @@ class IndustryFactor(CompactFactor):
 
     @cached_property
     def all_industries(self) -> List[str]:
+        """所有行业列表"""
         return self.data.dropna().unique().tolist()
 
 
@@ -456,6 +473,7 @@ class OnTheRecordFactor(NonFinancialFactor):
 
     def get_counts(self, start_date: DateUtils.DateType, end_date: DateUtils.DateType,
                    ids: Sequence[str] = None) -> pd.Series:
+        """返回 ``start_date`` 和 ``end_date`` (含)之间的记录次数"""
         tmp = self.db_interface.read_table(self.table_name, start_date=start_date, end_date=end_date, ids=ids)
         tmp = tmp.reset_index().groupby('ID').count().reindex(ids).fillna(0)
         res = tmp.iloc[:, 0]
@@ -776,6 +794,12 @@ class CachedFactor(FactorBase):
 
 class BetaFactor(FactorBase):
     def __init__(self, market_ret: FactorBase = None, rf_rate: FactorBase = None, db_interface: DBInterface = None):
+        """ Stock Beta
+
+        :param market_ret: 市场收益
+        :param rf_rate: 无风险收益
+        :param db_interface: Database Interface
+        """
         super().__init__('Beta')
         if db_interface is None:
             db_interface = get_db_interface()

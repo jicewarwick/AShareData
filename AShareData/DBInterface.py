@@ -99,10 +99,7 @@ class MySQLInterface(DBInterface):
     }
 
     def __init__(self, engine: sa.engine.Engine, init: bool = False, db_schema_loc: str = None) -> None:
-        """ DataFrame to MySQL Database Interface
-
-        Read and write pd.DataFrame to MySQL server. Feature:
-        - Insert new or update old records using on_duplicate_key_update()
+        """ MySQL server reads and writes interface
 
         :param engine: sqlalchemy engine
         :param init: if needed to initialize database tables

@@ -46,7 +46,14 @@ class TushareData(DataSource):
         self._pro = ts.pro_api(tushare_token)
         self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
 
+    def init_db(self):
+        """Initialize database data. They cannot be achieved by naive ``update_*`` function"""
+        self.init_hk_calendar()
+        self.init_stock_names()
+        self.init_accounting_data()
+
     def update_base_info(self):
+        """Update calendar and ticker lists"""
         self.update_calendar()
         self.update_hk_calendar()
         self.update_stock_list_date()
@@ -95,32 +102,6 @@ class TushareData(DataSource):
     def stock_tickers(self) -> StockTickers:
         return StockTickers(self.db_interface)
 
-    def update_routine(self) -> None:
-        """自动更新函数"""
-        logging.getLogger(__name__).info('Downloading data from Tushare')
-        self.get_company_info()
-        self.get_shibor(start_date=self._check_db_timestamp('Shibor利率数据', START_DATE['shibor']))
-        self.get_ipo_info(start_date=self._check_db_timestamp('IPO新股列表', START_DATE['common']))
-
-        # self.get_daily_hq(start_date=self._check_db_timestamp('股票日行情', dt.date(2008, 1, 1)), end_date=dt.date.today())
-        self.update_stock_names(start_date=self._check_db_timestamp('证券名称', START_DATE['common']))
-        self.update_pause_stock_info()
-        self.update_dividend()
-
-        # self.get_index_daily(self._check_db_timestamp('指数日行情', dt.date(2008, 1, 1)))
-        # latest = self._check_db_timestamp('指数成分股权重', '20050101')
-        # if latest < dt.datetime.now() - dt.timedelta(days=20):
-        #     self.get_index_weight(start_date=latest)
-
-        self.get_hs_constitute()
-        self.update_hs_holding()
-
-        # stocks = self.db_interface.get_all_id('合并资产负债表')
-        # stocks = list(set(self.all_stocks) - set(stocks)) if stocks else self.all_stocks
-        # if stocks:
-        #     self.get_financial(stocks)
-        logging.getLogger(__name__).info('Tushare data acquired')
-
     #######################################
     # listing funcs
     #######################################
@@ -152,7 +133,7 @@ class TushareData(DataSource):
         self.db_interface.insert_df(data, table_name)
 
     def update_stock_list_date(self) -> None:
-        """ 获取所有股票列表, 包括上市, 退市和暂停上市的股票
+        """ 更新所有股票列表, 包括上市, 退市和暂停上市的股票
 
         ref: https://tushare.pro/document/2?doc_id=25
 
@@ -172,23 +153,8 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     # TODO
-    def update_index_list(self):
-        INDEX_PROVIDER = {'CSI': '中证指数',
-                          'SSE': '上交所指数',
-                          'SZSE': '深交所指数',
-                          'SW': '申万指数'}
-        storage = []
-        for provider in INDEX_PROVIDER:
-            storage.append(self._pro.index_basic(market=provider))
-        df = pd.concat(storage, ignore_index=True)
-        ind = df.name.str.endswith('(SH)')
-        sz_names = df.name.loc[ind].str.replace(r'\(SH\)', '', regex=False)
-        df2 = df.loc[~(df.name.isin(sz_names) & (df.market == 'SZSE')) & (~ind), :]
-        df3 = df2.loc[df2.ts_code.str.len() < 11, :]
-
-    # TODO
     def get_hk_stock_list_date(self):
-        """ 获取所有港股股票列表, 包括上市, 退市和暂停上市的股票
+        """ 更新所有港股股票列表, 包括上市, 退市和暂停上市的股票
 
         ref: https://tushare.pro/document/2?doc_id=25
 
@@ -207,7 +173,7 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     def update_convertible_bond_list_date(self) -> None:
-        """ 获取可转债信息
+        """ 更新可转债信息
             ref: https://tushare.pro/document/2?doc_id=185
         """
         data_category = '可转债基本信息'
@@ -234,7 +200,7 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     def update_future_list_date(self) -> None:
-        """ 获取期货合约
+        """ 更新期货合约
             ref: https://tushare.pro/document/2?doc_id=135
         """
         data_category = '期货合约信息表'
@@ -276,7 +242,7 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     def update_option_list_date(self) -> None:
-        """ 获取期权合约
+        """ 更新期权合约
             ref: https://tushare.pro/document/2?doc_id=158
         """
         data_category = '期权合约信息'
@@ -307,7 +273,7 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     def update_fund_list_date(self) -> None:
-        """ 获取基金列表
+        """ 更新基金列表
             ref: https://tushare.pro/document/2?doc_id=19
         """
         data_category = '公募基金列表'
@@ -418,12 +384,11 @@ class TushareData(DataSource):
         return df
 
     def update_stock_names(self, ticker: str = None) -> pd.DataFrame:
-        """获取曾用名
+        """更新曾用名
 
         ref: https://tushare.pro/document/2?doc_id=100
 
         :param ticker: 证券代码(000001.SZ)
-        :param start_date: 开始日期
         """
         data_category = '证券名称'
         column_desc = self._factor_param[data_category]['输出参数']
@@ -438,7 +403,7 @@ class TushareData(DataSource):
 
     def get_daily_hq(self, trade_date: DateUtils.DateType = None,
                      start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None) -> None:
-        """更新每日行情, 写入数据库, 不返回
+        """更新每日行情
 
         行情信息包括: 开高低收, 量额, 复权因子, 股本
 
@@ -503,6 +468,7 @@ class TushareData(DataSource):
                 pbar.update()
 
     def update_pause_stock_info(self):
+        """更新股票停牌信息"""
         table_name = '股票停牌'
         renaming_dict = self._factor_param[table_name]['输出参数']
         start_date = self._check_db_timestamp(table_name, dt.date(1990, 12, 10)) + dt.timedelta(days=1)
@@ -851,6 +817,7 @@ class TushareData(DataSource):
     # funds funcs
     #######################################
     def update_fund_daily(self):
+        """更新基金日行情"""
         daily_table_name = '场内基金日行情'
         nav_table_name = '公募基金净值'
         asset_table_name = '基金规模数据'
@@ -901,6 +868,7 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info(f'{daily_table_name} 更新完成.')
 
     def update_fund_dividend(self):
+        """更新基金分红信息"""
         table_name = '公募基金分红'
         params = self._factor_param[table_name]['输出参数']
         rate = self._factor_param[table_name]['每分钟限速']
@@ -924,6 +892,7 @@ class TushareData(DataSource):
     # us stock funcs
     #######################################
     def get_us_stock(self, date: DateUtils.DateType):
+        """获取美股日行情"""
         table_name = '美股日行情'
         desc = self._factor_param[table_name]['输出参数']
 

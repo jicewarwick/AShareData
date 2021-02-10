@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath('../../AShareData'))
 
 # -- Project information -----------------------------------------------------
 project = 'AShareData'
-copyright = '2020, Ce Ji'
+copyright = '2021, Ce Ji'
 author = 'Ce Ji'
 release = '0.1.0'
 # -- General configuration ---------------------------------------------------
@@ -33,6 +33,7 @@ autodoc_default_options = {
     'member-order': 'bysource',
 }
 autodoc_mock_imports = ["WindPy"]
+autoclass_content = 'both'
 
 # autosummary
 autosummary_generate = True

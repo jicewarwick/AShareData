@@ -36,6 +36,7 @@ class TDXData(DataSource):
         self.api.disconnect()
 
     def update_stock_minute(self):
+        """更新股票分钟行情"""
         table_name = '股票分钟行情'
         db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
@@ -45,6 +46,7 @@ class TDXData(DataSource):
             self.get_stock_minute(date)
 
     def get_stock_minute(self, date: dt.datetime) -> None:
+        """获取 ``date`` 的股票分钟行情"""
         minute_data = self._get_stock_minute(date)
         auction_time = date + dt.timedelta(hours=9, minutes=25)
         auction_db_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=[auction_time])

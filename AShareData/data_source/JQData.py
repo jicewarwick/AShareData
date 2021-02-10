@@ -155,6 +155,7 @@ class JQData(DataSource):
                 pbar.update()
 
     def update_stock_morning_auction_data(self):
+        """更新早盘集合竞价数据"""
         table_name = '股票集合竞价数据'
         db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
@@ -168,6 +169,7 @@ class JQData(DataSource):
 
     @DateUtils.dtlize_input_dates
     def stock_open_auction_data(self, date: DateUtils.DateType):
+        """获取 ``date`` 的早盘集合竞价数据"""
         table_name = '股票集合竞价数据'
         renaming_dict = self._factor_param[table_name]
         date_str = DateUtils.date_type2str(date, '-')

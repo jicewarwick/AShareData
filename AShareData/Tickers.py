@@ -26,8 +26,10 @@ class TickersBase(object):
         return sorted(self.cache.ID.unique().tolist())
 
     @DateUtils.dtlize_input_dates
-    def ticker(self, date: DateUtils.DateType = dt.datetime.today()) -> List[str]:
-        """ return tickers that are alive on `date`"""
+    def ticker(self, date: DateUtils.DateType = None) -> List[str]:
+        """ return tickers that are alive on `date`, `date` default to today"""
+        if date is None:
+            date = dt.datetime.today()
         stock_ticker_df = self.cache.loc[self.cache.DateTime <= date]
         tmp = stock_ticker_df.groupby('ID').tail(1)
         return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
@@ -81,14 +83,7 @@ class FutureTickers(DiscreteTickers):
         super().__init__('期货', db_interface)
 
 
-class OptionTickers(DiscreteTickers):
-    """期权合约代码"""
-
-    def __init__(self, asset_type: str, db_interface: DBInterface = None) -> None:
-        super().__init__(asset_type, db_interface)
-
-
-class ETFOptionTickers(OptionTickers):
+class ETFOptionTickers(DiscreteTickers):
     """期权合约代码"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
@@ -153,7 +148,7 @@ class ETFTickers(ConglomerateTickers):
 
 
 class ExchangeFundTickers(ConglomerateTickers):
-    """场外基金"""
+    """场内基金"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
         super().__init__('证券类型 like "%基金" AND 证券类型 not like "%场外基金"', db_interface)
@@ -249,6 +244,12 @@ class StockTickerSelector(TickerSelector):
 
     @DateUtils.dtlize_input_dates
     def ticker(self, date: DateUtils.DateType, ids: Sequence[str] = None) -> List[str]:
+        """ select stocks that matched selection policy on `date`(amongst `ids`)
+
+        :param date: query date
+        :param ids: tickers to select from
+        :return: list of ticker that satisfy the stock selection policy
+        """
         if ids is None:
             ids = set(self.stock_ticker.ticker(date))
 
