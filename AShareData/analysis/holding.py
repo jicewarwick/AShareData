@@ -8,7 +8,7 @@ from ..config import get_db_interface
 
 class IndustryComparison(object):
     def __init__(self, index: str, industry_provider: str, industry_level: int, db_interface: DBInterface = None):
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         self.data_reader = AShareDataReader(db_interface)
         self.industry_info = self.data_reader.industry(industry_provider, industry_level)
@@ -60,7 +60,7 @@ class IndustryComparison(object):
 
 class BetaComputer(object):
     def __init__(self, benchmark: str, db_interface: DBInterface = None):
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         self.data_reader = AShareDataReader(db_interface)
         self.benchmark = benchmark

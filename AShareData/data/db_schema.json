@@ -667,7 +667,7 @@
 		"ID": "varchar",
 		"最新价": "float"
 	},
-	"持仓记录":{
+	"持仓记录": {
 		"id": "int",
 		"accountName": "str",
 		"DateTime": "datetime",
@@ -687,7 +687,7 @@
 		"tradeVolume": "int",
 		"tradePrice": "float"
 	},
-	"委托记录":{
+	"委托记录": {
 		"id": "int",
 		"accountName": "str",
 		"DateTime": "datetime",
@@ -698,5 +698,10 @@
 		"orderVolume": "int",
 		"orderPrice": "float",
 		"orderStatus": "varchar"
+	},
+	"因子分组收益率": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"收益率": "float"
 	}
 }

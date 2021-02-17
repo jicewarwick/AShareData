@@ -54,7 +54,7 @@ class WindWrapper(object):
 
     @staticmethod
     def _standardize_date(date: DateUtils.DateType = None):
-        if not date:
+        if date is None:
             date = dt.date.today()
         if isinstance(date, (dt.date, dt.datetime)):
             date = date.strftime('%Y-%m-%d')
@@ -199,9 +199,7 @@ class WindData(DataSource):
     # stock funcs
     #######################################
     def get_stock_daily_data(self, date: DateUtils.DateType) -> None:
-        """更新每日行情, 写入数据库, 不返回
-
-        行情信息包括: 开高低收量额
+        """获取 ``date`` 的股票日行情, 包括: 开高低收量额
 
         :param date: 交易日期
         :return: None
@@ -214,6 +212,7 @@ class WindData(DataSource):
         self.db_interface.update_df(price_df, table_name)
 
     def get_stock_rt_price(self):
+        """更新股票最新价, 将替换数据库内原先所有数据"""
         tickers = self.stock_list.ticker(dt.date.today())
         storage = []
         for ticker in utils.chunk_list(tickers, 3000):
@@ -227,6 +226,7 @@ class WindData(DataSource):
         self.db_interface.insert_df(data, '股票最新价')
 
     def update_stock_daily_data(self):
+        """更新股票日行情"""
         table_name = '股票日行情'
         start_date = self._check_db_timestamp(table_name, dt.date(1990, 12, 10))
         dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
@@ -237,6 +237,7 @@ class WindData(DataSource):
                 pbar.update()
 
     def get_stock_minute_data(self, date: dt.datetime):
+        """获取 ``date`` 的股票分钟行情"""
         table_name = '股票分钟行情'
         replace_dict = self._factor_param[table_name]
 
@@ -253,7 +254,7 @@ class WindData(DataSource):
         self.db_interface.insert_df(data, table_name)
 
     def update_minutes_data(self) -> None:
-        """股票分钟行情更新脚本"""
+        """更新股票分钟行情"""
         table_name = '股票分钟行情'
         latest = self._check_db_timestamp(table_name, dt.datetime.today() - dt.timedelta(days=365 * 3))
         date_range = self.calendar.select_dates(latest.date(), dt.date.today(), inclusive=(False, True))
@@ -265,6 +266,7 @@ class WindData(DataSource):
                 pbar.update()
 
     def update_stock_adj_factor(self):
+        """更新股票复权因子"""
         def data_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
             data = self.w.wsd(ticker, 'adjfactor', date, date)
             data.name = '复权因子'
@@ -273,6 +275,7 @@ class WindData(DataSource):
         self.sparse_data_template('复权因子', data_func)
 
     def update_stock_units(self):
+        """更新股本信息"""
         # 流通股本
         def float_a_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
             data = self.w.wsd(ticker, "float_a_shares", date, date, "unit=1")
@@ -341,10 +344,12 @@ class WindData(DataSource):
                                  default_start_date=default_start_date)
 
     def update_industry(self) -> None:
+        """更新行业信息"""
         for provider in constants.INDUSTRY_DATA_PROVIDER:
             self._update_industry(provider)
 
     def update_pause_stock_info(self):
+        """更新股票停牌信息"""
         table_name = '股票停牌'
         start_date = self._check_db_timestamp(table_name, dt.date(1990, 12, 10)) + dt.timedelta(days=1)
         end_date = self.calendar.yesterday()
@@ -370,6 +375,7 @@ class WindData(DataSource):
     # convertible bond funcs
     #######################################
     def update_convertible_bond_daily_data(self):
+        """更新可转债日行情"""
         table_name = '可转债日行情'
         renaming_dict = self._factor_param['股票日行情']
         start_date = self._check_db_timestamp(table_name, dt.datetime(1993, 2, 9))
@@ -390,6 +396,7 @@ class WindData(DataSource):
     # future funcs
     #######################################
     def update_future_daily_data(self):
+        """更新期货日行情"""
         contract_daily_table_name = '期货日行情'
 
         start_date = self.db_interface.get_latest_timestamp(contract_daily_table_name)
@@ -408,6 +415,7 @@ class WindData(DataSource):
     # option funcs
     #######################################
     def get_stock_option_daily_data(self, date: dt.datetime) -> None:
+        """获取 ``date`` 的股票ETF期权和股指期权日行情"""
         contract_daily_table_name = '期权日行情'
 
         tickers = self.etf_option_list.ticker(date) + self.option_list.ticker(date)
@@ -418,6 +426,7 @@ class WindData(DataSource):
         self.db_interface.insert_df(data, contract_daily_table_name)
 
     def update_stock_option_daily_data(self) -> None:
+        """更新股票ETF期权和股指期权日行情"""
         contract_daily_table_name = '期权日行情'
 
         start_date = self._check_db_timestamp(contract_daily_table_name, dt.datetime(2015, 2, 8))
@@ -433,6 +442,7 @@ class WindData(DataSource):
     # index funcs
     #######################################
     def update_target_stock_index_daily(self) -> None:
+        """更新主要股指日行情"""
         table_name = '指数日行情'
 
         start_date = self.db_interface.get_latest_timestamp(table_name)
@@ -530,5 +540,6 @@ class WindData(DataSource):
 
     @classmethod
     def from_config(cls, config_loc: str):
+        """根据 ``config_loc`` 的适配信息生成 ``WindData`` 实例"""
         db_interface = config.generate_db_interface_from_config(config_loc)
         return cls(db_interface)

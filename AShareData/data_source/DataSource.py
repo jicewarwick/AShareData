@@ -12,9 +12,15 @@ class DataSource(object):
     """Data Source Base Class"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         self.db_interface = db_interface
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
     @cached_property
     def calendar(self) -> DateUtils.TradingCalendar:

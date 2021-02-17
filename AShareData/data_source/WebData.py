@@ -23,7 +23,7 @@ class WebDataCrawler(DataSource):
     _ZZ_INDUSTRY_URL = 'http://www.csindex.com.cn/zh-CN/downloads/industry-price-earnings-ratio-detail'
 
     def __init__(self, db_schema_loc: str = None, init: bool = False, db_interface: DBInterface = None) -> None:
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         super().__init__(db_interface)
         if init:

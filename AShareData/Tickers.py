@@ -16,7 +16,7 @@ class TickersBase(object):
     """证券代码基类"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         self.db_interface = db_interface
         self.cache = None
@@ -26,8 +26,10 @@ class TickersBase(object):
         return sorted(self.cache.ID.unique().tolist())
 
     @DateUtils.dtlize_input_dates
-    def ticker(self, date: DateUtils.DateType = dt.datetime.today()) -> List[str]:
-        """ return tickers that are alive on `date`"""
+    def ticker(self, date: DateUtils.DateType = None) -> List[str]:
+        """ return tickers that are alive on `date`, `date` default to today"""
+        if date is None:
+            date = dt.datetime.today()
         stock_ticker_df = self.cache.loc[self.cache.DateTime <= date]
         tmp = stock_ticker_df.groupby('ID').tail(1)
         return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
@@ -43,9 +45,9 @@ class TickersBase(object):
         return info.DateTime.iloc[0]
 
     def new_ticker(self, start_date: dt.datetime, end_date: dt.datetime = None) -> List[str]:
-        if not end_date:
+        if end_date is None:
             end_date = dt.datetime.today()
-        if not start_date:
+        if start_date is None:
             start_date = dt.datetime(1990, 12, 19)
         u_data = self.cache.loc[(start_date <= self.cache.DateTime) & (self.cache.DateTime <= end_date), :]
         tmp = u_data.groupby('ID').tail(1)
@@ -81,14 +83,7 @@ class FutureTickers(DiscreteTickers):
         super().__init__('期货', db_interface)
 
 
-class OptionTickers(DiscreteTickers):
-    """期权合约代码"""
-
-    def __init__(self, asset_type: str, db_interface: DBInterface = None) -> None:
-        super().__init__(asset_type, db_interface)
-
-
-class ETFOptionTickers(OptionTickers):
+class ETFOptionTickers(DiscreteTickers):
     """期权合约代码"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
@@ -153,7 +148,7 @@ class ETFTickers(ConglomerateTickers):
 
 
 class ExchangeFundTickers(ConglomerateTickers):
-    """场外基金"""
+    """场内基金"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
         super().__init__('证券类型 like "%基金" AND 证券类型 not like "%场外基金"', db_interface)
@@ -218,7 +213,7 @@ class StockTickerSelector(TickerSelector):
         :param policy: 选股条件
         """
         super().__init__()
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         self.db_interface = db_interface
         self.stock_ticker = StockTickers(self.db_interface)
@@ -249,15 +244,21 @@ class StockTickerSelector(TickerSelector):
 
     @DateUtils.dtlize_input_dates
     def ticker(self, date: DateUtils.DateType, ids: Sequence[str] = None) -> List[str]:
-        if not ids:
+        """ select stocks that matched selection policy on `date`(amongst `ids`)
+
+        :param date: query date
+        :param ids: tickers to select from
+        :return: list of ticker that satisfy the stock selection policy
+        """
+        if ids is None:
             ids = set(self.stock_ticker.ticker(date))
 
         if self.policy.ignore_new_stock_period or self.policy.select_new_stock_period:
             start_date, end_date = None, None
             if self.policy.ignore_new_stock_period:
-                end_date = self.calendar.offset(date, -self.policy.ignore_new_stock_period.days)
+                end_date = self.calendar.offset(date, -self.policy.ignore_new_stock_period)
             if self.policy.select_new_stock_period:
-                start_date = self.calendar.offset(date, -self.policy.select_new_stock_period.days - 1)
+                start_date = self.calendar.offset(date, -self.policy.select_new_stock_period - 1)
             ids = set(self.stock_ticker.new_ticker(start_date=start_date, end_date=end_date)) & ids
 
         if self.industry_info and self.policy.industry:
@@ -269,6 +270,13 @@ class StockTickerSelector(TickerSelector):
             ids = ids - set(self.paused_stock_selector.get_data(date))
         elif self.policy.select_pause:
             ids = ids & set(self.paused_stock_selector.get_data(date))
+        if self.policy.max_pause_days:
+            pause_days, period_length = self.policy.max_pause_days
+            start_date = self.calendar.offset(date, -period_length)
+            end_date = self.calendar.offset(date, -1)
+            pause_counts = self.paused_stock_selector.get_counts(start_date=start_date, end_date=end_date)
+            pause_counts = pause_counts.loc[pause_counts > pause_days]
+            ids = ids - set(pause_counts.index.get_level_values('ID'))
 
         if self.policy.select_st:
             ids = ids & set(self.risk_warned_stock_selector.get_data(date))
@@ -281,7 +289,7 @@ class StockTickerSelector(TickerSelector):
     def generate_index(self, start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
                        dates: Union[DateUtils.DateType, Sequence[DateUtils.DateType]] = None) -> pd.MultiIndex:
         storage = []
-        if not dates:
+        if dates is None:
             dates = self.calendar.select_dates(start_date, end_date)
         for date in dates:
             ids = self.ticker(date)

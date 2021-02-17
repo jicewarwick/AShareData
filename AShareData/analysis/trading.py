@@ -6,7 +6,7 @@ from ..config import get_db_interface
 
 class TradingAnalysis(object):
     def __init__(self, db_interface: DBInterface = None):
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         self.db_interface = db_interface
         self.data_reader = AShareDataReader(db_interface)

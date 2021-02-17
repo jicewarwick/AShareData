@@ -81,29 +81,13 @@ class TradingCalendarBase(object):
         """return if ``date`` is a trading date"""
         return date in self.calendar
 
-    def _select_dates(self, start_date: dt.datetime = None, end_date: dt.datetime = None,
-                      func: Callable[[dt.datetime, dt.datetime, dt.datetime], bool] = None) -> List[dt.datetime]:
-        i = bisect.bisect_left(self.calendar, start_date)
-        j = bisect.bisect_right(self.calendar, end_date)
-        if self.calendar[j] == end_date:
-            j = j + 1
-
-        if func:
-            storage = []
-            for k in range(i, j):
-                if func(self.calendar[k - 1], self.calendar[k], self.calendar[k + 1]):
-                    storage.append(self.calendar[k])
-            return storage
-        else:
-            return self.calendar[i:j]
-
     @dtlize_input_dates
     def select_dates(self, start_date: DateType = None, end_date: DateType = None, inclusive=(True, True)) \
             -> List[dt.datetime]:
         """Get list of all trading days during[``start_date``, ``end_date``] inclusive"""
-        if not start_date:
+        if start_date is None:
             start_date = self.calendar[0]
-        if not end_date:
+        if end_date is None:
             end_date = dt.datetime.now()
         dates = self._select_dates(start_date, end_date, lambda pre, curr, next_: True)
         if dates and not inclusive[0]:
@@ -111,34 +95,6 @@ class TradingCalendarBase(object):
         if dates and not inclusive[1]:
             dates = dates[:-1]
         return dates
-
-    @dtlize_input_dates
-    def first_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get first trading day of weeks between [``start_date``, ``end_date``]"""
-        return self._select_dates(start_date, end_date,
-                                  lambda pre, curr, next_: pre.isocalendar()[1] != curr.isocalendar()[1])
-
-    @dtlize_input_dates
-    def last_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get last trading day of weeks between [``start_date``, ``end_date``]"""
-        return self._select_dates(start_date, end_date,
-                                  lambda pre, curr, next_: curr.isocalendar()[1] != next_.isocalendar()[1])
-
-    @dtlize_input_dates
-    def first_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get first trading day of months between [``start_date``, ``end_date``]"""
-        return self._select_dates(start_date, end_date, lambda pre, curr, next_: pre.month != curr.month)
-
-    @dtlize_input_dates
-    def last_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get last trading day of months between [``start_date``, ``end_date``]"""
-        return self._select_dates(start_date, end_date,
-                                  lambda pre, curr, next_: curr.month != next_.month)
-
-    @dtlize_input_dates
-    def last_day_of_year(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
-        """Get last trading day of the year between [``start_date``, ``end_date``]"""
-        return self._select_dates(start_date, end_date, lambda pre, curr, next_: curr.year != next_.year)
 
     @dtlize_input_dates
     def offset(self, date: DateType, days: int) -> dt.datetime:
@@ -173,6 +129,50 @@ class TradingCalendarBase(object):
     def yesterday(self) -> dt.datetime:
         return self.offset(dt.date.today(), -1)
 
+    @dtlize_input_dates
+    def first_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+        """Get first trading day of weeks between [``start_date``, ``end_date``]"""
+        return self._select_dates(start_date, end_date,
+                                  lambda pre, curr, next_: pre.isocalendar()[1] != curr.isocalendar()[1])
+
+    @dtlize_input_dates
+    def last_day_of_week(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+        """Get last trading day of weeks between [``start_date``, ``end_date``]"""
+        return self._select_dates(start_date, end_date,
+                                  lambda pre, curr, next_: curr.isocalendar()[1] != next_.isocalendar()[1])
+
+    @dtlize_input_dates
+    def first_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+        """Get first trading day of months between [``start_date``, ``end_date``]"""
+        return self._select_dates(start_date, end_date, lambda pre, curr, next_: pre.month != curr.month)
+
+    @dtlize_input_dates
+    def last_day_of_month(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+        """Get last trading day of months between [``start_date``, ``end_date``]"""
+        return self._select_dates(start_date, end_date,
+                                  lambda pre, curr, next_: curr.month != next_.month)
+
+    @dtlize_input_dates
+    def last_day_of_year(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+        """Get last trading day of the year between [``start_date``, ``end_date``]"""
+        return self._select_dates(start_date, end_date, lambda pre, curr, next_: curr.year != next_.year)
+
+    def _select_dates(self, start_date: dt.datetime = None, end_date: dt.datetime = None,
+                      func: Callable[[dt.datetime, dt.datetime, dt.datetime], bool] = None) -> List[dt.datetime]:
+        i = bisect.bisect_left(self.calendar, start_date)
+        j = bisect.bisect_right(self.calendar, end_date)
+        if self.calendar[j] == end_date:
+            j = j + 1
+
+        if func:
+            storage = []
+            for k in range(i, j):
+                if func(self.calendar[k - 1], self.calendar[k], self.calendar[k + 1]):
+                    storage.append(self.calendar[k])
+            return storage
+        else:
+            return self.calendar[i:j]
+
     def split_to_chunks(self, start_date: DateType, end_date: DateType, chunk_size: int) \
             -> List[Tuple[dt.datetime, dt.datetime]]:
         all_dates = self.select_dates(start_date, end_date)
@@ -188,7 +188,7 @@ class TradingCalendar(TradingCalendarBase):
 
     def __init__(self, db_interface: DBInterface = None):
         super().__init__()
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         calendar_df = db_interface.read_table('交易日历')
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
@@ -199,7 +199,7 @@ class HKTradingCalendar(TradingCalendarBase):
 
     def __init__(self, db_interface: DBInterface = None):
         super().__init__()
-        if not db_interface:
+        if db_interface is None:
             db_interface = get_db_interface()
         calendar_df = db_interface.read_table('港股交易日历')
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
@@ -263,7 +263,7 @@ class ReportingDate(object):
 
         :return: 最新财报的报告期
         """
-        if not date:
+        if date is None:
             date = dt.date.today()
         year = date.year
         if date.month < 5:

@@ -18,7 +18,7 @@ def prepare_engine(config: Dict) -> sa.engine.Engine:
     return sa.create_engine(url)
 
 
-def generate_db_interface_from_config(config_loc: Union[str, Dict]) -> Optional[DBInterface]:
+def generate_db_interface_from_config(config_loc: Union[str, Dict], init: bool = False) -> Optional[DBInterface]:
     if isinstance(config_loc, str):
         with open(config_loc, 'r', encoding='utf-8') as f:
             global_config = json.load(f)
@@ -26,7 +26,7 @@ def generate_db_interface_from_config(config_loc: Union[str, Dict]) -> Optional[
         global_config = config_loc
     if 'mysql' in global_config['db_interface']['driver']:
         engine = prepare_engine(global_config['db_interface'])
-        return MySQLInterface(engine)
+        return MySQLInterface(engine, init=init)
 
 
 def set_global_config(config_loc: str):
@@ -37,13 +37,13 @@ def set_global_config(config_loc: str):
 
 def get_global_config():
     global __config__
-    if not __config__:
+    if __config__ is None:
         raise ValueError('Global configuration not set. Please use "set_global_config" to initialize.')
     return __config__
 
 
 def get_db_interface():
     global __db_interface__
-    if not __db_interface__:
+    if __db_interface__ is None:
         __db_interface__ = generate_db_interface_from_config(get_global_config())
     return __db_interface__

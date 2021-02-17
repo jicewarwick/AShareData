@@ -4,7 +4,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from importlib.resources import open_text
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
@@ -72,17 +72,39 @@ class SecuritySelectionPolicy:
 
 @dataclass
 class StockSelectionPolicy(SecuritySelectionPolicy):
-    """ 股票筛选条件 """
-    industry_provider: str = None  # 股票行业分类标准
-    industry_level: int = None  # 股票行业分类标准
-    industry: str = None  # 股票所在行业
-    ignore_new_stock_period: dt.timedelta = None  # 新股纳入市场收益计算的时间
-    select_new_stock_period: dt.timedelta = None  # 仅选取新上市的股票, 可与 ignore_new_stock_period 搭配使用
-    select_st: bool = False  # 仅选取 风险警告股, 即 PT, ST, SST, *ST, (即将)退市股 等
-    ignore_st: bool = False  # 排除 风险警告股
-    select_pause: bool = False  # 选取停牌股
-    ignore_pause: bool = False  # 排除停牌股
-    ignore_const_limit: bool = False  # 排除一字板股票
+    """ 股票筛选条件
+
+    :param industry_provider: 股票行业分类标准
+    :param industry_level: 股票行业分类标准
+    :param industry: 股票所在行业
+
+    :param ignore_new_stock_period: 新股纳入市场收益计算的时间(交易日天数)
+    :param select_new_stock_period: 仅选取新上市的股票, 可与 ``ignore_new_stock_period`` 搭配使用
+
+    :param select_st: 仅选取 风险警告股, 即 PT, ST, SST, \*ST, (即将)退市股 等
+    :param ignore_st: 排除 风险警告股
+
+    :param select_pause: 选取停牌股
+    :param ignore_pause: 排除停牌股
+    :param max_pause_days: (i, n): 在前n个交易日中最大停牌天数不大于i
+
+    :param ignore_const_limit: 排除一字板股票
+    """
+    industry_provider: str = None
+    industry_level: int = None
+    industry: str = None
+
+    ignore_new_stock_period: int = None
+    select_new_stock_period: int = None
+
+    select_st: bool = False
+    ignore_st: bool = False
+
+    select_pause: bool = False
+    ignore_pause: bool = False
+    max_pause_days: Tuple[int, int] = None
+
+    ignore_const_limit: bool = False
 
     def __post_init__(self):
         if self.industry_provider:
@@ -92,12 +114,19 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
 
 @dataclass
 class StockIndexCompositionPolicy:
-    """ 自建指数信息 """
-    ticker: str = None  # 新建指数入库代码. 建议以`.IND`结尾, 代表自合成指数
-    name: str = None  # 指数名称
-    unit_base: str = None  # 股本指标
-    stock_selection_policy: StockSelectionPolicy = None  # 股票筛选条件
-    start_date: dt.datetime = None  # 指数开始日期
+    """ 自建指数信息
+
+    :param ticker: 新建指数入库代码. 建议以`.IND`结尾, 代表自合成指数
+    :param name: 指数名称
+    :param unit_base: 股本指标
+    :param stock_selection_policy: 股票筛选条件
+    :param start_date: 指数开始日期
+    """
+    ticker: str = None
+    name: str = None
+    unit_base: str = None
+    stock_selection_policy: StockSelectionPolicy = None
+    start_date: dt.datetime = None
 
     def __post_init__(self):
         assert self.unit_base in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本'], '非法股本字段!'
@@ -112,3 +141,23 @@ class TickerSelector(object):
 
     def ticker(self, *args, **kwargs) -> List[str]:
         raise NotImplementedError()
+
+
+def generate_factor_bin_names(factor_name: str, weight: bool = True, industry_neutral: bool = True, bins: int = 10):
+    i = 'I' if industry_neutral else 'N'
+    w = 'W' if weight else 'N'
+    return [f'{factor_name}_{i}{w}_G{it}inG{bins}' for it in range(1, bins + 1)]
+
+
+def decompose_bin_names(factor_bin_name):
+    tmp = factor_bin_name.split('_')
+    composition_info = tmp[1]
+    group_info = tmp[-1].split('in')
+
+    return {
+        'factor_name': tmp[0],
+        'industry_neutral': composition_info[0] == 'I',
+        'cap_weight': composition_info[1] == 'W',
+        'group': group_info[0],
+        'total_group': group_info[-1]
+    }

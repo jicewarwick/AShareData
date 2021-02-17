@@ -31,10 +31,17 @@ class MyTestCase(unittest.TestCase):
 
     def test_industry(self):
         print('')
-        industry_factor = IndustryFactor('中信', 2, self.db_interface)
+        industry_factor = IndustryFactor('中信', 3, self.db_interface)
         print(industry_factor.list_constitutes(dt.datetime(2019, 1, 7), '白酒'))
         print('')
         print(industry_factor.all_industries)
+
+    def test_pause_stocks(self):
+        pause_stock = OnTheRecordFactor('股票停牌', self.db_interface)
+        start_date = dt.datetime(2021, 1, 1)
+        end_date = dt.datetime(2021, 2, 4)
+        print(pause_stock.get_data(date=end_date))
+        print(pause_stock.get_counts(start_date=start_date, end_date=end_date, ids=self.ids + ['000662.SZ']))
 
     def test_latest_accounting_factor(self):
         f = LatestAccountingFactor('期末总股本', self.db_interface)
