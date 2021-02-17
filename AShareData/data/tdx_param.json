@@ -1,0 +1,12 @@
+{
+	"行情数据": {
+		"datetime": "DateTime",
+		"code": "ID",
+		"open": "开盘价",
+		"high": "最高价",
+		"low": "最低价",
+		"close": "收盘价",
+		"vol": "成交量",
+		"amount": "成交额"
+	}
+}

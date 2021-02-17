@@ -3,13 +3,13 @@ import itertools
 import json
 import logging
 import re
+from functools import cached_property
 from itertools import product
 from typing import Callable, Mapping, Sequence, Union
 
 import numpy as np
 import pandas as pd
 import tushare as ts
-from cached_property import cached_property
 from ratelimiter import RateLimiter
 from tqdm import tqdm
 
@@ -171,6 +171,7 @@ class TushareData(DataSource):
         self.db_interface.update_df(list_info, '证券代码')
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
+    # TODO
     def update_index_list(self):
         INDEX_PROVIDER = {'CSI': '中证指数',
                           'SSE': '上交所指数',
@@ -181,7 +182,7 @@ class TushareData(DataSource):
             storage.append(self._pro.index_basic(market=provider))
         df = pd.concat(storage, ignore_index=True)
         ind = df.name.str.endswith('(SH)')
-        sz_names = df.name.loc[ind].str.replace(r'\(SH\)', '')
+        sz_names = df.name.loc[ind].str.replace(r'\(SH\)', '', regex=False)
         df2 = df.loc[~(df.name.isin(sz_names) & (df.market == 'SZSE')) & (~ind), :]
         df3 = df2.loc[df2.ts_code.str.len() < 11, :]
 
@@ -286,7 +287,7 @@ class TushareData(DataSource):
         for exchange in constants.FUTURE_EXCHANGES + constants.STOCK_EXCHANGES:
             storage.append(self._pro.opt_basic(exchange=exchange, fields=list(desc.keys())))
         output = pd.concat(storage)
-        output.opt_code = output.opt_code.str.replace('OP', '')
+        output.opt_code = output.opt_code.str.replace('OP$', '', regex=True)
         output.opt_code = self.format_ticker(output['opt_code'].tolist())
         output.ts_code = self.format_ticker(output['ts_code'].tolist())
 
@@ -416,7 +417,6 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
         return df
 
-    @DateUtils.strlize_input_dates
     def update_stock_names(self, ticker: str = None) -> pd.DataFrame:
         """获取曾用名
 
@@ -568,7 +568,6 @@ class TushareData(DataSource):
 
         logging.getLogger(__name__).info(f'{data_category}信息下载完成.')
 
-    @DateUtils.strlize_input_dates
     def get_financial(self, ticker: str) -> None:
         """ 获取公司的 资产负债表, 现金流量表 和 利润表, 并写入数据库 """
         balance_sheet = '资产负债表'
@@ -598,11 +597,14 @@ class TushareData(DataSource):
 
             df = df.sort_values('update_flag').groupby(['ann_date', 'end_date', 'report_type']).tail(1)
             df = df.drop('update_flag', axis=1).fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
-            df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).drop_duplicates(keep='first').reset_index()
+            df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).sort_index().drop_duplicates(
+                keep='first').reset_index()
             df = df.sort_values('report_type').drop(['ann_date', 'report_type'], axis=1)
             df = df.replace({'comp_type': company_type_desc})
             df = self._standardize_df(df, column_name_dict)
-            df = df.loc[~df.index.duplicated(), :]
+            df = df.loc[~df.index.duplicated(), :].sort_index()
+            df = df.loc[df.index.get_level_values('报告期').month % 3 == 0, :]
+            df = self.append_report_date_cache(df)
             # df.to_excel('processed.xlsx', merge_cells=False, float_format='%.2f')
 
             self.db_interface.delete_id_records(table_name, ticker)
@@ -638,7 +640,23 @@ class TushareData(DataSource):
     def update_financial_data(self):
         table_name = '财报披露计划'
         desc = self._factor_param[table_name]['输出参数']
-        df = self._pro.disclosure_date(end_date='20200930', fields=list(desc.keys()))
+        ref_table = '合并资产负债表'
+        db_timestamp = self.db_interface.get_latest_timestamp(ref_table)
+        update_tickers = self.stock_tickers.new_ticker(db_timestamp)
+
+        report_dates = DateUtils.ReportingDate.get_latest_report_date()
+        for report_date in report_dates:
+            df = self._pro.disclosure_date(end_date=DateUtils.date_type2str(report_date), fields=list(desc.keys()))
+            df.actual_date = df.actual_date.apply(DateUtils.date_type2datetime)
+            df.modify_date = df.modify_date.apply(DateUtils.date_type2datetime)
+            df = df.loc[(df.actual_date > db_timestamp) | (df.modify_date > db_timestamp), :]
+            update_tickers.extend(df.ts_code)
+
+        with tqdm(update_tickers) as pbar:
+            for ticker in update_tickers:
+                pbar.set_description(f'更新{ticker}的财报')
+                self.get_financial(ticker)
+                pbar.update()
 
     # todo: TBD
     def get_financial_index(self, ticker: str, period: str) -> pd.DataFrame:
@@ -758,7 +776,7 @@ class TushareData(DataSource):
         valuation_info = self._pro.index_dailybasic(trade_date=date, fields=basic_fields)
         valuation_info = self._standardize_df(valuation_info, basic_desc)
         data = pd.concat([price_info, valuation_info], axis=1)
-        data = data.loc[data.index.get_level_values('ID').isin(indexes), :]
+        data = data.loc[data.index.get_level_values('IndexCode').isin(indexes), :]
         self.db_interface.insert_df(data, table_name)
 
     def update_index_daily(self):
@@ -969,3 +987,38 @@ class TushareData(DataSource):
             mod_config = json.load(f)
         db_interface = config.generate_db_interface_from_config(config_loc)
         return cls(db_interface=db_interface, tushare_token=mod_config['tushare']['token'])
+
+    @staticmethod
+    def append_report_date_cache(data: pd.DataFrame) -> pd.DataFrame:
+        dates = data.index.get_level_values('DateTime').unique()
+        storage = []
+
+        def deal_data(report_date, offset_str: str):
+            pre_report_date = DateUtils.ReportingDate.offset(report_date, offset_str)
+            pre_record = info.loc[info.index.get_level_values('报告期') == pre_report_date].tail(1)
+            pre_date = None if pre_record.empty else pre_record.index.get_level_values('DateTime')[0]
+            return pre_date
+
+        for date in dates:
+            info = data.loc[data.index.get_level_values('DateTime') <= date, :]
+            newest_entry = info.tail(1)
+            report_date = pd.to_datetime(newest_entry.index.get_level_values('报告期')[0])
+
+            # quarterly
+            q1 = deal_data(report_date, 'q1')
+            q2 = deal_data(report_date, 'q2')
+            q4 = deal_data(report_date, 'q4')
+            q5 = deal_data(report_date, 'q5')
+
+            # yearly
+            y1 = deal_data(report_date, 'y1')
+            y2 = deal_data(report_date, 'y2')
+            y3 = deal_data(report_date, 'y3')
+            y5 = deal_data(report_date, 'y5')
+
+            res = pd.DataFrame([q1, q2, q4, q5, y1, y2, y3, y5]).T.set_index(newest_entry.index)
+            res.columns = ['q1', 'q2', 'q4', 'q5', 'y1', 'y2', 'y3', 'y5']
+            storage.append(res)
+
+        cache = pd.concat(storage)
+        return pd.concat([data, cache], axis=1)

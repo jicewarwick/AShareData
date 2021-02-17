@@ -1,9 +1,9 @@
 import datetime as dt
 import json
+from functools import cached_property
 from typing import Mapping, Optional, Union
 
 import pandas as pd
-from cached_property import cached_property
 from tqdm import tqdm
 
 from .DataSource import DataSource
@@ -90,11 +90,12 @@ class JQData(DataSource):
         auction_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=[auction_time])
         auction_db_data = self._auction_data_to_price_data(auction_data)
 
-        first_minute = date + dt.timedelta(hours=9, minutes=31)
         real_first_minute = date + dt.timedelta(hours=9, minutes=30)
-        first_minute_data = jq.get_price(tickers, start_date=first_minute, end_date=first_minute, frequency='1m',
-                                         fq=None, fill_paused=True)
-        first_minute_data = self._standardize_df(first_minute_data, renaming_dict)
+        first_minute = date + dt.timedelta(hours=9, minutes=31)
+        first_minute_raw = jq.get_price(tickers, start_date=first_minute, end_date=first_minute, frequency='1m',
+                                        fq=None, fill_paused=True)
+        first_minute_raw.time = real_first_minute
+        first_minute_data = self._standardize_df(first_minute_raw, renaming_dict)
         tmp = first_minute_data.loc[:, diff_columns].droplevel('DateTime').fillna(0) - \
               auction_db_data.loc[:, diff_columns].droplevel('DateTime').fillna(0)
         tmp['DateTime'] = real_first_minute
@@ -142,7 +143,7 @@ class JQData(DataSource):
         table_name = '股票分钟行情'
         db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
-        if dt.datetime.now().hour < 17:
+        if dt.datetime.now().hour < 16:
             end_date = self.calendar.yesterday()
         else:
             end_date = dt.datetime.today()
@@ -151,6 +152,18 @@ class JQData(DataSource):
             for date in dates:
                 pbar.set_description(f'更新{date}的{table_name}')
                 self.get_stock_minute(date)
+                pbar.update()
+
+    def update_stock_morning_auction_data(self):
+        table_name = '股票集合竞价数据'
+        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        start_date = self.calendar.offset(db_timestamp.date(), 1)
+        end_date = dt.datetime.today()
+        dates = self.calendar.select_dates(start_date, end_date)
+        with tqdm(dates) as pbar:
+            for date in dates:
+                pbar.set_description(f'更新{date}的{table_name}')
+                self.stock_open_auction_data(date)
                 pbar.update()
 
     @DateUtils.dtlize_input_dates
@@ -163,6 +176,7 @@ class JQData(DataSource):
         data = jq.get_call_auction(tickers, start_date=date_str, end_date=date_str)
         auction_time = dt.datetime.combine(date.date(), dt.time(hour=9, minute=25))
         data.time = auction_time
+        data = data.loc[data.volume > 0, :]
         db_data = self._standardize_df(data, renaming_dict)
         self.db_interface.insert_df(db_data, table_name)
 
@@ -243,14 +257,6 @@ class JQData(DataSource):
         dates = dates[1:]
         for date in dates:
             self.get_stock_option_daily(date)
-
-    @staticmethod
-    def _auction_data_to_price_data(auction_data: pd.DataFrame) -> pd.DataFrame:
-        auction_data['开盘价'] = auction_data['成交价']
-        auction_data['最高价'] = auction_data['成交价']
-        auction_data['最低价'] = auction_data['成交价']
-        auction_data['收盘价'] = auction_data['成交价']
-        return auction_data.drop('成交价', axis=1)
 
     @staticmethod
     def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str]) -> Union[pd.Series, pd.DataFrame]:

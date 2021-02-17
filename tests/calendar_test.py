@@ -1,8 +1,7 @@
 import unittest
 
-from AShareData.DateUtils import *
-from AShareData.DBInterface import MySQLInterface
 from AShareData.config import set_global_config
+from AShareData.DateUtils import *
 
 
 class MyTestCase(unittest.TestCase):
@@ -81,6 +80,16 @@ class MyTestCase(unittest.TestCase):
             print(dates)
 
         func(dt.date(2000, 1, 1), dates=dt.date(2010, 1, 1))
+
+    def test_report_date_offset(self):
+        self.assertEqual(ReportingDate.quarterly_offset(dt.datetime(2020, 3, 31), -1), dt.datetime(2019, 12, 31))
+        self.assertEqual(ReportingDate.quarterly_offset(dt.datetime(2020, 3, 31), -2), dt.datetime(2019, 9, 30))
+        self.assertEqual(ReportingDate.quarterly_offset(dt.datetime(2020, 3, 31), -3), dt.datetime(2019, 6, 30))
+        self.assertEqual(ReportingDate.quarterly_offset(dt.datetime(2020, 3, 31), -4), dt.datetime(2019, 3, 31))
+        self.assertEqual(ReportingDate.quarterly_offset(dt.datetime(2020, 3, 31), -5), dt.datetime(2018, 12, 31))
+
+        self.assertEqual(ReportingDate.offset(dt.datetime(2020, 3, 31), 'q1'), dt.datetime(2019, 12, 31))
+        self.assertEqual(ReportingDate.offset(dt.datetime(2020, 3, 31), 'y1'), dt.datetime(2019, 12, 31))
 
 
 if __name__ == '__main__':

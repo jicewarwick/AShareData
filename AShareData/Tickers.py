@@ -1,13 +1,15 @@
 import datetime as dt
-from typing import Dict, List, Sequence
+from functools import cached_property
+from itertools import product
+from typing import Dict, List, Sequence, Union
 
-from cached_property import cached_property
+import pandas as pd
 
 from . import DateUtils
 from .config import get_db_interface
 from .DBInterface import DBInterface
 from .Factor import CompactFactor, CompactRecordFactor, IndustryFactor, OnTheRecordFactor
-from .utils import StockSelectionPolicy
+from .utils import StockSelectionPolicy, TickerSelector
 
 
 class TickersBase(object):
@@ -39,6 +41,15 @@ class TickersBase(object):
         """ return the list date of a ticker"""
         info = self.cache.loc[self.cache.ID == ticker, :]
         return info.DateTime.iloc[0]
+
+    def new_ticker(self, start_date: dt.datetime, end_date: dt.datetime = None) -> List[str]:
+        if not end_date:
+            end_date = dt.datetime.today()
+        if not start_date:
+            start_date = dt.datetime(1990, 12, 19)
+        u_data = self.cache.loc[(start_date <= self.cache.DateTime) & (self.cache.DateTime <= end_date), :]
+        tmp = u_data.groupby('ID').tail(1)
+        return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
 
 
 class DiscreteTickers(TickersBase):
@@ -198,7 +209,7 @@ class ActiveManagedOTCStockFundTickers(InvestmentStyleFundTickers):
                          db_interface)
 
 
-class StockTickerSelector(object):
+class StockTickerSelector(TickerSelector):
     """股票代码选择器"""
 
     def __init__(self, policy: StockSelectionPolicy, db_interface: DBInterface = None) -> None:
@@ -240,11 +251,17 @@ class StockTickerSelector(object):
     def ticker(self, date: DateUtils.DateType, ids: Sequence[str] = None) -> List[str]:
         if not ids:
             ids = set(self.stock_ticker.ticker(date))
-        if self.policy.ignore_new_stock_period:
-            start_ref_date = self.calendar.offset(date, -self.policy.ignore_new_stock_period.days)
-            ids = set(self.stock_ticker.ticker(start_ref_date)) & ids
+
+        if self.policy.ignore_new_stock_period or self.policy.select_new_stock_period:
+            start_date, end_date = None, None
+            if self.policy.ignore_new_stock_period:
+                end_date = self.calendar.offset(date, -self.policy.ignore_new_stock_period.days)
+            if self.policy.select_new_stock_period:
+                start_date = self.calendar.offset(date, -self.policy.select_new_stock_period.days - 1)
+            ids = set(self.stock_ticker.new_ticker(start_date=start_date, end_date=end_date)) & ids
+
         if self.industry_info and self.policy.industry:
-            ids = ids & set(self.industry_info.list_constitutes(self.policy.industry))
+            ids = ids & set(self.industry_info.list_constitutes(date=date, industry=self.policy.industry))
         if self.policy.ignore_const_limit:
             ids = ids - set(self.const_limit_selector.get_data(date))
 
@@ -258,5 +275,15 @@ class StockTickerSelector(object):
         elif self.policy.ignore_st:
             ids = ids - set(self.risk_warned_stock_selector.get_data(date))
 
-        ids = list(ids)
+        ids = sorted(list(ids))
         return ids
+
+    def generate_index(self, start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
+                       dates: Union[DateUtils.DateType, Sequence[DateUtils.DateType]] = None) -> pd.MultiIndex:
+        storage = []
+        if not dates:
+            dates = self.calendar.select_dates(start_date, end_date)
+        for date in dates:
+            ids = self.ticker(date)
+            storage.extend(list(product([date], ids)))
+        return pd.MultiIndex.from_tuples(storage, names=['DateTime', 'ID'])

@@ -6,7 +6,7 @@ from typing import List, Mapping, Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Column, DateTime, extract, Float, Integer, Table, Text, VARCHAR
+from sqlalchemy import Boolean, Column, DateTime, extract, Float, Integer, Table, Text, VARCHAR, Date
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func, text
@@ -89,6 +89,7 @@ class DBInterface(object):
 class MySQLInterface(DBInterface):
     _type_mapper = {
         'datetime': DateTime,
+        'date': Date,
         'float': Float,
         'double': DOUBLE,
         'str': Text,
@@ -120,6 +121,14 @@ class MySQLInterface(DBInterface):
         self._db_parameters = utils.load_param('db_schema.json', db_schema_loc)
         for special_item in ['资产负债表', '现金流量表', '利润表']:
             tmp_item = self._db_parameters.pop(special_item)
+            tmp_item['q1'] = 'date'
+            tmp_item['q2'] = 'date'
+            tmp_item['q4'] = 'date'
+            tmp_item['q5'] = 'date'
+            tmp_item['y1'] = 'date'
+            tmp_item['y2'] = 'date'
+            tmp_item['y3'] = 'date'
+            tmp_item['y5'] = 'date'
             for prefix in ['合并', '母公司']:
                 self._db_parameters[prefix + special_item] = tmp_item
         for table_name, table_schema in self._db_parameters.items():
@@ -370,8 +379,14 @@ class MySQLInterface(DBInterface):
         if (index_code is not None) and ('IndexCode' in columns):
             q = q.filter(t.columns['IndexCode'] == index_code)
 
-        ret = pd.read_sql(q.statement, con=self.engine, index_col=index_col)
+        ret = pd.read_sql(q.statement, con=self.engine)
         session.close()
+        if index_col:
+            if 'DateTime' in index_col:
+                ret.DateTime = pd.to_datetime(ret.DateTime)
+            if '报告期' in index_col:
+                ret['报告期'] = pd.to_datetime(ret['报告期'])
+            ret = ret.set_index(index_col, drop=True)
 
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]

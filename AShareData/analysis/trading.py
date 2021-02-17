@@ -17,7 +17,7 @@ class TradingAnalysis(object):
         bi_direction_vol = vol_summary.groupby('ID').sum()
 
         date = trading_records.DateTime[0].date()
-        market_vol_info = self.data_reader.volume.get_data(dates=[date])
+        market_vol_info = self.data_reader.stock_volume.get_data(dates=[date])
         market_vol_info.index = market_vol_info.index.droplevel('DateTime')
 
         single_ratio = (single_direction_vol.tradeVolume / market_vol_info).dropna()

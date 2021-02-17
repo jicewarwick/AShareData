@@ -5,11 +5,12 @@ from .analysis.holding import IndustryComparison
 from .analysis.trading import TradingAnalysis
 from .AShareDataReader import AShareDataReader
 from .config import get_db_interface, get_global_config, set_global_config
+from .data_source.TDXData import TDXData
 from .data_source.TushareData import TushareData
 from .data_source.WebData import WebDataCrawler
 from .DateUtils import TradingCalendar
 from .DBInterface import MySQLInterface
-from .FactorCompositor import AccountingDateCacheCompositor, ConstLimitStockFactorCompositor, IndexCompositor
+from .FactorCompositor import ConstLimitStockFactorCompositor, IndexCompositor
 
 ch = logging.StreamHandler()
 ch.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s'))

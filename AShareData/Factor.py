@@ -1,19 +1,15 @@
 import datetime as dt
 import numbers
-import os
-import pickle
-import zipfile
-from functools import partial
-from pathlib import Path
-from typing import List, Sequence, Union
+from functools import cached_property, partial
+from typing import Dict, List, Sequence, Union
 
 import numpy as np
 import pandas as pd
-from cached_property import cached_property
 
 from . import constants, DateUtils, utils
 from .config import get_db_interface
 from .DBInterface import DBInterface
+from .utils import TickerSelector
 
 
 class FactorBase(object):
@@ -29,204 +25,225 @@ class FactorBase(object):
         raise NotImplementedError()
 
     def __and__(self, other):
-        def sub_get_data(self, *args, **kwargs):
-            return self.f1.get_data(*args, **kwargs) & self.f2.get_data(*args, **kwargs)
+        def sub_get_data(self, **kwargs):
+            return self.f1.get_data(**kwargs) & self.f2.get_data(**kwargs)
 
         Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
         return Foo(self, other)
 
     def __invert__(self):
-        def sub_get_data(self, *args, **kwargs):
-            return ~self.f.get_data(*args, **kwargs)
+        def sub_get_data(self, **kwargs):
+            return ~self.f.get_data(**kwargs)
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def __add__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) + other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) + other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) + self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) + self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __sub__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) - other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) - other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) - self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) - self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __mul__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) * other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) * other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) * self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) * self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __truediv__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) / other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) / other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) / self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) / self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __gt__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) > other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) > other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) > self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) > self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __lt__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) < other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) < other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) < self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) < self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __ge__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) >= other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) >= other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) >= self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) >= self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __le__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) <= other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) <= other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) <= self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) <= self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __eq__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) == other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) == other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) == self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) == self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __ne__(self, other):
         if isinstance(other, (numbers.Number, np.number)):
-            def sub_get_data(self, *args, **kwargs):
-                return self.f.get_data(*args, **kwargs) != other
+            def sub_get_data(self, **kwargs):
+                return self.f.get_data(**kwargs) != other
 
             Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
             return Foo(self)
         else:
-            def sub_get_data(self, *args, **kwargs):
-                return self.f1.get_data(*args, **kwargs) != self.f2.get_data(*args, **kwargs)
+            def sub_get_data(self, **kwargs):
+                return self.f1.get_data(**kwargs) != self.f2.get_data(**kwargs)
 
             Foo = type('', (BinaryFactor,), {'get_data': sub_get_data})
             return Foo(self, other)
 
     def __abs__(self):
-        def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).abs()
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).abs()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def __neg__(self):
-        def sub_get_data(self, *args, **kwargs):
-            return -self.f.get_data(*args, **kwargs)
+        def sub_get_data(self, **kwargs):
+            return -self.f.get_data(**kwargs)
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def max(self):
-        def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).unstack().max()
-
-        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
-        return Foo(self)
-
-    def pct_change(self):
-        def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).unstack().pct_change().stack().dropna()
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).unstack().max()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def log(self):
-        def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).log()
+        def sub_get_data(self, **kwargs):
+            return np.log(self.f.get_data(**kwargs))
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def pct_change(self):
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).unstack().pct_change().stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def diff(self):
-        def sub_get_data(self, *args, **kwargs):
-            return self.f.get_data(*args, **kwargs).diff()
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).unstack().diff().stack().dropna()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def shift(self, n: int):
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).unstack().shift(n).stack().dropna()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def diff_shift(self, shift: int):
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).unstack().diff().shift(shift).stack().dropna()
+
+        Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
+        return Foo(self)
+
+    def pct_change_shift(self, shift: int):
+        def sub_get_data(self, **kwargs):
+            return self.f.get_data(**kwargs).unstack().pct_change().shift(shift).stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
         return Foo(self)
 
     def weight(self):
-        def sub_get_data(self, *args, **kwargs):
-            data = self.f.get_data(*args, **kwargs)
+        def sub_get_data(self, **kwargs):
+            data = self.f.get_data(**kwargs)
             return data / data.groupby('DateTime').sum()
 
         Foo = type('', (UnaryFactor,), {'get_data': sub_get_data})
@@ -235,7 +252,7 @@ class FactorBase(object):
     def corr(self, other):
         pass
 
-    def bind_data_params(self, index_code: str = None):
+    def bind_params(self, index_code: str = None):
         self.get_data = partial(self.get_data, index_code=index_code)
         return self
 
@@ -292,7 +309,6 @@ class IndexConstitute(Factor):
     def __init__(self, db_interface: DBInterface = None):
         super().__init__('指数成分股权重', '', db_interface)
 
-    @DateUtils.dtlize_input_dates
     def get_data(self, index_ticker: str, date: DateUtils.DateType):
         date_str = DateUtils.date_type2str(date, '-')
         stm = f'DateTime = (SELECT MAX(DateTime) FROM `{self.table_name}` WHERE DateTime <= "{date_str}" AND IndexCode = "{index_ticker}")'
@@ -332,12 +348,13 @@ class CompactFactor(NonFinancialFactor):
 
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                 ids: Union[Sequence[str], str] = None) -> pd.DataFrame:
+                 ids: Union[Sequence[str], str] = None, ticker_selector: TickerSelector = None) -> pd.DataFrame:
         """
         :param start_date: start date
         :param end_date: end date
         :param dates: selected dates
         :param ids: query stocks
+        :param ticker_selector: TickerSelector that specifies criteria
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
         if isinstance(dates, dt.datetime):
@@ -366,6 +383,9 @@ class CompactFactor(NonFinancialFactor):
             df = df.loc[dates, :]
         ret = df.stack()
         ret.index.names = ['DateTime', 'ID']
+        if ticker_selector:
+            index = ticker_selector.generate_index(dates=dates)
+            ret = ret.reindex(index)
         return ret
 
 
@@ -392,7 +412,6 @@ class IndustryFactor(CompactFactor):
 
             self.data = self.data.map(new_translation)
 
-    @DateUtils.dtlize_input_dates
     def list_constitutes(self, date: DateUtils.DateType, industry: str) -> List[str]:
         """
         获取行业内的股票构成
@@ -418,8 +437,7 @@ class OnTheRecordFactor(NonFinancialFactor):
         super().__init__(factor_name, db_interface=db_interface)
         self.factor_name = factor_name
 
-    @DateUtils.dtlize_input_dates
-    def get_data(self, date: DateUtils.DateType) -> List:
+    def get_data(self, date: DateUtils.DateType, **kwargs) -> List:
         """
         :param date: selected dates
         :return: list of IDs on the record
@@ -434,13 +452,12 @@ class CompactRecordFactor(NonFinancialFactor):
         self.base_factor = compact_factor
         self.factor_name = factor_name
 
-    @DateUtils.dtlize_input_dates
-    def get_data(self, date: DateUtils.DateType) -> List:
+    def get_data(self, date: DateUtils.DateType, **kwargs) -> List:
         """
         :param date: selected dates
         :return: list of IDs on the record
         """
-        tmp = self.base_factor.get_data(dates=[date]).stack()
+        tmp = self.base_factor.get_data(dates=[date])
         return tmp.loc[tmp].index.get_level_values('ID').tolist()
 
 
@@ -452,28 +469,28 @@ class ContinuousFactor(NonFinancialFactor):
     def __init__(self, table_name: str, factor_name: str, db_interface: DBInterface = None):
         super().__init__(table_name, factor_name, db_interface)
 
-    # @DateUtils.dtlize_input_dates
     def get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                 ids: Sequence[str] = None, index_code: str = None,
-                 unstack: bool = False) -> Union[pd.Series, pd.DataFrame]:
+                 ids: Sequence[str] = None, ticker_selector: TickerSelector = None,
+                 index_code: str = None, **kwargs) -> Union[pd.Series, pd.DataFrame]:
         """
         :param start_date: start date
         :param end_date: end date
         :param dates: selected dates
         :param ids: query stocks
+        :param ticker_selector: TickerSelector that specifies criteria
         :param index_code: query index
-        :param unstack: if unstack data from long to wide
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
 
         df = self.db_interface.read_table(self.table_name, columns=self.factor_name,
                                           start_date=start_date, end_date=end_date,
                                           dates=dates, ids=ids, index_code=index_code)
-        df.columns = [self.factor_name]
 
-        if isinstance(df.index, pd.MultiIndex) & unstack:
-            df = df.unstack()
+        if ticker_selector:
+            index = ticker_selector.generate_index(dates=dates)
+            df = df.reindex(index)
+
         return df
 
 
@@ -483,7 +500,6 @@ class AccountingFactor(Factor):
     """
 
     fields = {}
-    date_cache = {}
 
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         if len(self.fields) == 0:
@@ -494,64 +510,105 @@ class AccountingFactor(Factor):
                     self.fields[key] = statement_type
         assert factor_name in self.fields.keys(), f'{factor_name} 非财报关键字'
 
-        if len(self.date_cache) == 0:
-            cache_loc = os.path.join(Path.home(), '.AShareData', constants.ACCOUNTING_DATE_CACHE_NAME)
-            if os.path.exists(cache_loc):
-                with zipfile.ZipFile(cache_loc, 'r', compression=zipfile.ZIP_DEFLATED) as zf:
-                    with zf.open('cache.pkl') as f:
-                        self.date_cache = pickle.load(f)
-            else:
-                raise RuntimeError('You must build cache first to use accounting factors!')
-
         table_name = self.fields[factor_name]
         super().__init__(f'合并{table_name}', factor_name, db_interface)
+        self.calendar = DateUtils.TradingCalendar(self.db_interface)
         self.report_month = None
         self.buffer_length = 365 * 2
+        self.offset_strs = None
 
-    @DateUtils.dtlize_input_dates
     def get_data(self, dates: Sequence[dt.datetime] = None,
                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                 ids: Sequence[str] = None) -> Union[pd.Series, pd.DataFrame]:
+                 ids: Sequence[str] = None, ticker_selector: TickerSelector = None) -> Union[pd.Series, pd.DataFrame]:
         """
         :param start_date: start date
         :param end_date: end date
         :param dates: selected dates
         :param ids: query stocks
+        :param ticker_selector: TickerSelector that specifies criteria
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
         buffer = dt.timedelta(days=self.buffer_length)
         if dates:
-            start_date = min(dates)
-            end_date = max(end_date)
-        buffer_start = start_date - buffer
+            db_start_date, db_end_date = min(dates), max(dates)
+        else:
+            db_start_date, db_end_date = start_date, end_date
+            dates = self.calendar.select_dates(start_date, end_date)
+        buffer_start = db_start_date - buffer
 
-        data = self.db_interface.read_table(self.table_name, self.factor_name,
+        db_columns = [self.factor_name]
+        if self.offset_strs:
+            db_columns.extend(self.offset_strs)
+        data = self.db_interface.read_table(self.table_name, columns=db_columns,
                                             start_date=buffer_start, end_date=end_date, report_month=self.report_month,
                                             ids=ids)
+        if isinstance(data, pd.Series):
+            data = data.to_frame()
         tickers = data.index.get_level_values('ID').unique().tolist()
         storage = []
         for ticker in tickers:
-            start_index = self.date_cache['cache_date'].bisect_left((ticker, start_date)) - 1
-            end_index = self.date_cache['cache_date'].bisect_left((ticker, end_date))
-            for index in range(start_index, end_index):
-                # index = start_index
-                cache_index, date_cache = self.date_cache['cache_date'].peekitem(index)
-                val = self.func(data, date_cache)
-                pd_index = pd.MultiIndex.from_product([[cache_index[1]], [cache_index[0]]], names=['DateTime', 'ID'])
-                storage.append(pd.Series(val, index=pd_index))
+            ticker_data = data.loc[(slice(None), ticker, slice(None)), :]
+            related_dates = self.latest_ts(dates, ticker_data.index.get_level_values('DateTime').tolist())
+            relevant_rec = ticker_data.loc[ticker_data.index.get_level_values('DateTime').isin(related_dates.values())]
+            relevant_rec = relevant_rec.groupby('DateTime').tail(1)
 
-        buffer_start = data.index.get_level_values('DateTime').min()
-        full_dates = self.calendar.select_dates(buffer_start, end_date)
-        intermediate_dates = self.calendar.select_dates(start_date, end_date)
+            pre_data = self.gather_data(ticker_data, relevant_rec, self.offset_strs)
+            calc_data = self.func(pre_data)
+            calc_data.index = calc_data.index.get_level_values('DateTime')
 
-        df = pd.concat(storage).unstack().reindex(full_dates).ffill().reindex(intermediate_dates)
-        if dates:
-            df = df.reindex(dates)
-        return df
+            res_index = pd.MultiIndex.from_product([list(related_dates.keys()), [ticker]], names=('DateTime', 'ID'))
+            val = calc_data.loc[related_dates.values()].values
+            content = pd.DataFrame(val, index=res_index)
+            storage.append(content)
+
+        ret = pd.concat(storage)
+        if ret.shape[1] == 1:
+            ret = ret.iloc[:, 0]
+            ret.name = self.factor_name
+
+        if ticker_selector:
+            index = ticker_selector.generate_index(dates=dates)
+            ret = ret.reindex(index)
+        return ret
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def func(data: pd.DataFrame) -> np.float:
         raise NotImplementedError()
+
+    @staticmethod
+    def latest_ts(dates: Sequence[dt.datetime], pd_dates: Sequence[dt.datetime]) -> Dict[dt.datetime, dt.datetime]:
+        ret = {}
+        i = 0
+        pd_len = len(pd_dates)
+        for date in dates:
+            while i <= pd_len - 2:
+                if pd_dates[i] <= date < pd_dates[i + 1]:
+                    ret[date] = pd_dates[i]
+                    break
+                if i == pd_len - 2:
+                    ret[date] = pd_dates[i]
+                    break
+                i += 1
+        return ret
+
+    def gather_data(self, ticker_data: pd.DataFrame, relevant_rec: pd.DataFrame,
+                    offset_strs: List[str]) -> pd.DataFrame:
+        if not offset_strs:
+            relevant_rec.columns = ['q0']
+            return relevant_rec
+        storage = [self.loc_pre_data(ticker_data, relevant_rec, offset_str).iloc[:, 0].values for offset_str in
+                   offset_strs]
+        storage.append(relevant_rec.iloc[:, 0].values)
+        col_names = offset_strs + ['q0']
+        return pd.DataFrame(np.stack(storage, axis=1), index=relevant_rec.index, columns=col_names)
+
+    @staticmethod
+    def loc_pre_data(ticker_data: pd.DataFrame, relevant_rec: pd.DataFrame, offset_str: str) -> pd.DataFrame:
+        pre_date = [DateUtils.ReportingDate.offset(it, offset_str) for it in relevant_rec.index.get_level_values('报告期')]
+        ticker = ticker_data.index.get_level_values('ID')[0]
+        pre_index = pd.MultiIndex.from_arrays([relevant_rec[offset_str], [ticker] * relevant_rec.shape[0], pre_date])
+        pre_data = ticker_data.reindex(pre_index)
+        return pre_data
 
 
 class QuarterlyFactor(AccountingFactor):
@@ -564,15 +621,15 @@ class QuarterlyFactor(AccountingFactor):
         self.func = self.balance_sheet_func if self.table_name == '合并资产负债表' else self.cash_flow_or_profit_func
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def balance_sheet_func(data: pd.DataFrame) -> np.float:
         raise NotImplementedError()
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
         raise NotImplementedError()
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
+    def func(data: pd.DataFrame) -> np.float:
         pass
 
 
@@ -583,8 +640,8 @@ class LatestAccountingFactor(AccountingFactor):
         super().__init__(factor_name, db_interface)
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        return data.loc[date_cache.q0]
+    def func(data: pd.DataFrame) -> np.float:
+        return data.q0
 
 
 class LatestQuarterAccountingFactor(QuarterlyFactor):
@@ -592,16 +649,16 @@ class LatestQuarterAccountingFactor(QuarterlyFactor):
 
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
+        self.offset_strs = ['q1'] if self.table_name == '合并资产负债表' else ['q1', 'q5']
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        val = (data.loc[date_cache.q0] - data.loc[date_cache.q1]) / \
-              (data.loc[date_cache.q4] - data.loc[date_cache.q5]) - 1
+    def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
+        val = (data.q0 - data.q1) / (data.q4 - data.q5) - 1
         return val
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        val = data.loc[date_cache.q0] / data.loc[date_cache.q1] - 1
+    def balance_sheet_func(data: pd.DataFrame) -> np.float:
+        val = data.q0 / data.q1 - 1
         return val
 
 
@@ -613,10 +670,11 @@ class YearlyReportAccountingFactor(AccountingFactor):
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
         self.report_month = 12
+        self.offset_strs = ['y1']
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        return data.loc[date_cache.y1]
+    def func(data: pd.DataFrame) -> np.float:
+        return data.y1
 
 
 class QOQAccountingFactor(QuarterlyFactor):
@@ -624,16 +682,16 @@ class QOQAccountingFactor(QuarterlyFactor):
 
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
+        self.offset_strs = ['q1'] if self.table_name == '合并资产负债表' else ['q1', 'q2']
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        val = (data.loc[date_cache.q0] - data.loc[date_cache.q1]) / \
-              (data.loc[date_cache.q1] - data.loc[date_cache.q2]) - 1
+    def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
+        val = (data.q0 - data.q1) / (data.q1 - data.q2) - 1
         return val
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        val = data.loc[date_cache.q0] / data.loc[date_cache.q1] - 1
+    def balance_sheet_func(data: pd.DataFrame) -> np.float:
+        val = data.q0 / data.q1 - 1
         return val
 
 
@@ -642,10 +700,11 @@ class YOYPeriodAccountingFactor(AccountingFactor):
 
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
+        self.offset_strs = ['q1', 'q4']
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        val = data.loc[date_cache.q0] / data.loc[date_cache.q4] - 1
+    def func(data: pd.DataFrame) -> np.float:
+        val = data.q0 / data.q4 - 1
         return val
 
 
@@ -654,16 +713,16 @@ class YOYQuarterAccountingFactor(QuarterlyFactor):
 
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
+        self.offset_strs = ['q4'] if self.table_name == '合并资产负债表' else ['q1', 'q4', 'q5']
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        val = (data.loc[date_cache.q0] - data.loc[date_cache.q1]) / \
-              (data.loc[date_cache.q4] - data.loc[date_cache.q5]) - 1
+    def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
+        val = (data.q0 - data.q1) / (data.q4 - data.q5) - 1
         return val
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        val = data.loc[date_cache.q0] / data.loc[date_cache.q4] - 1
+    def balance_sheet_func(data: pd.DataFrame) -> np.float:
+        val = data.q0 / data.q4 - 1
         return val
 
 
@@ -672,10 +731,11 @@ class TTMAccountingFactor(AccountingFactor):
 
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
+        self.offset_strs = ['q4', 'y1']
 
     @staticmethod
-    def func(data: pd.DataFrame, date_cache: utils.DateCache) -> np.float:
-        val = data.loc[date_cache.q0] - data.loc[date_cache.q4] + data.loc[date_cache.y1]
+    def func(data: pd.DataFrame) -> np.float:
+        val = data.q0 - data.q4 + data.y1
         return val
 
 
@@ -686,3 +746,48 @@ class CachedFactor(FactorBase):
 
     def get_data(self, *args, **kwargs):
         return self.data
+
+
+class BetaFactor(FactorBase):
+    def __init__(self, market_ret: FactorBase = None, rf_rate: FactorBase = None, db_interface: DBInterface = None):
+        super().__init__('Beta')
+        if not db_interface:
+            db_interface = get_db_interface()
+        stock_ret = ContinuousFactor('股票日行情', '收盘价', db_interface) * CompactFactor('复权因子', db_interface)
+        self.stock_ret = stock_ret.pct_change()
+        if not market_ret:
+            market_ret = ContinuousFactor('指数日行情', '收盘点位', db_interface).pct_change()
+            market_ret.bind_params(index_code='000300.SH')
+        self.market_ret = market_ret
+        if not rf_rate:
+            self.rf_rate = ContinuousFactor('shibor利率数据', '3个月', db_interface)
+        self.calendar = DateUtils.TradingCalendar(db_interface)
+
+    def get_data(self, dates: Sequence[dt.datetime],
+                 ids: Union[str, Sequence[str]] = None, ticker_selector: TickerSelector = None,
+                 look_back_period: int = 60, min_trading_days: int = 40) -> pd.Series:
+        storage = []
+        for date in dates:
+            if ticker_selector:
+                ids = ticker_selector.ticker(date)
+            start_date = self.calendar.offset(date, -look_back_period - 1)
+            end_date = self.calendar.offset(date, -1)
+            stock_data = self.stock_ret.get_data(ids=ids, start_date=start_date, end_date=end_date).reset_index()
+            market_data = self.market_ret.get_data(start_date=start_date, end_date=end_date).droplevel(
+                'IndexCode').reset_index()
+            rf_data = self.rf_rate.get_data(start_date=start_date, end_date=end_date).reset_index()
+            combined_data = pd.merge(stock_data, market_data, on='DateTime')
+            combined_data = pd.merge(combined_data, rf_data, on='DateTime')
+            combined_data.iloc[:, 2] = combined_data.iloc[:, 2] - combined_data.iloc[:, -1] / 36500
+            combined_data.iloc[:, 3] = combined_data.iloc[:, 3] - combined_data.iloc[:, -1] / 36500
+
+            for ID, group in combined_data.groupby('ID'):
+                if group.shape[0] < min_trading_days:
+                    beta = np.nan
+                else:
+                    cov_matrix = np.cov(group.iloc[:, 2], group.iloc[:, 3])
+                    beta = cov_matrix[0, 1] / cov_matrix[1, 1]
+                data = pd.Series(beta, index=pd.MultiIndex.from_tuples([(date, ID)], names=('DateTime', 'ID')))
+                storage.append(data)
+
+        return pd.concat(storage).sort_index()
