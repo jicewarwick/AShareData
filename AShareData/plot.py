@@ -7,19 +7,6 @@ from AShareData.FactorCompositor import *
 plt.rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体 SimHei为黑体
 plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
 
-config_loc = './config.json'
-set_global_config(config_loc)
-
-data_reader = AShareDataReader()
-
-factor_name = 'Beta'
-weight = True
-industry_neutral = True
-bins = 5
-start_date = None
-end_date = None
-db_interface = None
-
 
 def plot_factor_return(factor_name: str, weight: bool = True, industry_neutral: bool = True, bins: int = 5,
                        start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
@@ -50,3 +37,18 @@ def plot_factor_return(factor_name: str, weight: bool = True, industry_neutral: 
     axes[1].legend()
 
     return fig
+
+
+if __name__ == '__main__':
+    config_loc = './config.json'
+    set_global_config(config_loc)
+
+    data_reader = AShareDataReader()
+
+    factor_name = 'Beta'
+    weight = True
+    industry_neutral = True
+    bins = 5
+    start_date = None
+    end_date = None
+    db_interface = None

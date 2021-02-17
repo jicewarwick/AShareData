@@ -1,15 +1,13 @@
 import alphalens
 import pandas as pd
+from jqfactor_analyzer import FactorAnalyzer
 from statsmodels.stats import descriptivestats
-import datetime as dt
 
 from . import AShareDataReader, DateUtils
 from .config import get_db_interface
 from .DBInterface import DBInterface
 from .Tickers import StockTickerSelector
 from .utils import StockSelectionPolicy
-
-from jqfactor_analyzer import FactorAnalyzer
 
 
 class ASharePortfolioAnalysis(object):
@@ -27,11 +25,12 @@ class ASharePortfolioAnalysis(object):
         pass
 
     def size_portfolio(self, start_date: DateUtils.DateType, end_date: DateUtils.DateType) -> pd.DataFrame:
-        policy = StockSelectionPolicy(ignore_new_stock_period=dt.timedelta(days=360), ignore_st=True)
+        policy = StockSelectionPolicy(ignore_new_stock_period=360, ignore_st=True)
         selector = StockTickerSelector(policy)
         dates = self.data_reader.calendar.last_day_of_month(start_date, end_date)
         hfq_price = self.data_reader.hfq_close.get_data(dates, ticker_selector=selector).dropna().unstack()
-        market_size = self.data_reader.stock_free_floating_market_cap.get_data(dates=dates, ticker_selector=selector).dropna()
+        market_size = self.data_reader.stock_free_floating_market_cap.get_data(dates=dates,
+                                                                               ticker_selector=selector).dropna()
 
         factor_data = alphalens.utils.get_clean_factor_and_forward_returns(market_size, hfq_price, quantiles=10)
 

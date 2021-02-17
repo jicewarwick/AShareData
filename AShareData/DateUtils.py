@@ -211,6 +211,7 @@ class ReportingDate(object):
     def yoy_date(date: DateType) -> dt.datetime:
         """
         返回去年同期的报告期
+
         :param date: 报告期
         :return: 去年同期的报告期
         """
@@ -220,7 +221,8 @@ class ReportingDate(object):
     @dtlize_input_dates
     def yearly_offset(date: DateType, delta: int = 1) -> dt.datetime:
         """
-        返回后``delta``年的年报的报告期
+        返回``delta``年后的年报报告期
+
         :param date: 报告期
         :param delta: 时长（年）
         :return: 前``delta``个年报的报告期
@@ -231,10 +233,11 @@ class ReportingDate(object):
     @dtlize_input_dates
     def quarterly_offset(date: DateType, delta: int = 1) -> dt.datetime:
         """
-        返回前``delta``个季度后的报告期
+        返回 ``delta`` 个季度后的报告期
+
         :param date: 报告期
         :param delta: 时长（季度）
-        :return: ``delta``个季度后的报告期
+        :return: ``delta`` 个季度后的报告期
         """
         rep = date.year * 12 + date.month + delta * 3 - 1
         month = rep % 12 + 1
@@ -243,6 +246,12 @@ class ReportingDate(object):
 
     @classmethod
     def offset(cls, report_date, offset_str: str):
+        """报告期偏移
+
+        :param report_date: 基准报告期
+        :param offset_str: 偏移量：如``q3``， ``y1``
+        :return: 偏移后的报告期
+        """
         delta = -int(offset_str[1:])
         if offset_str[0] == 'q':
             return cls.quarterly_offset(report_date, delta)
@@ -254,6 +263,7 @@ class ReportingDate(object):
     @staticmethod
     def get_latest_report_date(date: Union[dt.date, dt.datetime] = None) -> List[dt.datetime]:
         """
+        获取最新报告期
 
         上市公司季报披露时间:
         一季报：4月1日——4月30日。

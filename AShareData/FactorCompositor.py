@@ -180,6 +180,18 @@ class IndexCompositor(FactorCompositor):
 
 @dataclass
 class FactorPortfolioPolicy:
+    """
+    因子收益率
+
+    :param name: 名称
+    :param bins: 分层数
+    :param weight: 权重，默认为 ``None`` （等权）
+    :param stock_selection_policy: 股票选取范围
+    :param factor: 因子
+    :param factor_need_shift: 因子是否需要延迟一个周期以避免未来函数
+    :param industry: 行业分类因子，默认为 ``None`` （不进行行业中性）
+    :param start_date: 开始日期
+    """
     name: str = None
     bins: Sequence[int] = None
     weight: Factor = None

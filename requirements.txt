@@ -6,7 +6,6 @@ ratelimiter
 requests
 scipy
 setuptools
-sortedcontainers
 sqlalchemy
 statsmodels
 tqdm

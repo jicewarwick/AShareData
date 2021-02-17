@@ -61,5 +61,3 @@ Factor class:
 .. autoclass:: AShareData.Factor.TTMAccountingFactor
     :members:
 
-
-

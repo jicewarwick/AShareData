@@ -45,6 +45,9 @@ Tickers
 
 股票筛选器
 ------------------
+.. autoclass:: AShareData.utils.StockSelectionPolicy
+    :members:
+
 .. autoclass:: AShareData.Tickers.StockTickerSelector
     :members:
 

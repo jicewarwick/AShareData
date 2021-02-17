@@ -24,6 +24,7 @@ Components
     DataSource
     Tickers
     Factor
+    FactorCompositor
     DateUtils
     DataReader
 
