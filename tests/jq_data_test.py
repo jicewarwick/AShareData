@@ -9,7 +9,7 @@ class MyTestCase(unittest.TestCase):
         self.jq_data = JQData()
 
     def test_jq_login(self):
-        self.jq_data.update_convertable_bond_list()
+        pass
 
 
 if __name__ == '__main__':

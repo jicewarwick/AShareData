@@ -112,7 +112,7 @@ class MyTestCase(unittest.TestCase):
         look_back_period: int = 60
         min_trading_days: int = 40
 
-        policy = StockSelectionPolicy(ignore_new_stock_period=dt.timedelta(days=365), ignore_st=True)
+        policy = StockSelectionPolicy(ignore_new_stock_period=365, ignore_st=True)
         ticker_selector = StockTickerSelector(policy)
 
         beta_factor = BetaFactor(db_interface=self.db_interface)
