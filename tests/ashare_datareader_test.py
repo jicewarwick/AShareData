@@ -28,12 +28,12 @@ class MyTestCase(unittest.TestCase):
 
     def test_get_sec_name(self):
         start_date = dt.date(2018, 5, 10)
-        print(self.db.sec_name.get_data(dates=[start_date]))
+        print(self.db.sec_name.get_data(dates=start_date))
 
     def test_industry(self):
         start_date = dt.date(2018, 5, 10)
-        print(self.db.industry('中信', 3).get_data(dates=[start_date]))
-        print(self.db.industry('中证', 3).get_data(dates=[start_date]))
+        print(self.db.industry('中信', 3).get_data(dates=start_date))
+        print(self.db.industry('中证', 3).get_data(dates=start_date))
 
     def test_index_constitute(self):
         print(self.db.index_constitute.get_data('000300.SH', '20201130'))

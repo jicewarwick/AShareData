@@ -87,7 +87,7 @@ class JQData(DataSource):
         tickers = [self.windcode2jqcode(it) for it in tickers]
 
         auction_time = date + dt.timedelta(hours=9, minutes=25)
-        auction_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=[auction_time])
+        auction_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=auction_time)
         auction_db_data = self._auction_data_to_price_data(auction_data)
 
         real_first_minute = date + dt.timedelta(hours=9, minutes=30)

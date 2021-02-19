@@ -25,9 +25,9 @@ class MyTestCase(unittest.TestCase):
 
     def test_compact_factor(self):
         compact_factor = CompactFactor('证券名称', self.db_interface)
-        print(compact_factor.get_data(dates=[dt.datetime(2015, 5, 15)]))
+        print(compact_factor.get_data(dates=dt.datetime(2015, 5, 15)))
         policy = StockSelectionPolicy(select_st=True)
-        print(compact_factor.get_data(dates=[dt.datetime(2015, 5, 15)], ticker_selector=StockTickerSelector(policy)))
+        print(compact_factor.get_data(dates=dt.datetime(2015, 5, 15), ticker_selector=StockTickerSelector(policy)))
 
     def test_industry(self):
         print('')

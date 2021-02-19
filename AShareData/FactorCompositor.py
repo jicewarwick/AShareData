@@ -53,7 +53,7 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
         start_date = self._check_db_timestamp(self.table_name, dt.date(1999, 5, 4))
         end_date = self._check_db_timestamp(price_table_name, dt.date(1990, 12, 10))
 
-        pre_data = self.db_interface.read_table(price_table_name, ['最高价', '最低价'], dates=[start_date])
+        pre_data = self.db_interface.read_table(price_table_name, ['最高价', '最低价'], dates=start_date)
         dates = self.calendar.select_dates(start_date, end_date)
         pre_date = dates[0]
         dates = dates[1:]
@@ -61,7 +61,7 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
         with tqdm(dates) as pbar:
             pbar.set_description('更新股票一字板')
             for date in dates:
-                data = self.db_interface.read_table(price_table_name, ['最高价', '最低价'], dates=[date])
+                data = self.db_interface.read_table(price_table_name, ['最高价', '最低价'], dates=date)
                 no_price_move_tickers = data.loc[data['最高价'] == data['最低价']].index.get_level_values('ID').tolist()
                 if no_price_move_tickers:
                     target_stocks = list(set(no_price_move_tickers) - set(self.paused_stock_selector.ticker(date)))
@@ -227,9 +227,9 @@ class FactorPortfolio(FactorCompositor):
 
                 pct_return = self.data_reader.stock_return.get_data(start_date=pre_date, end_date=date, ids=ids)
                 factor_date = pre_date if self.policy.factor_need_shift else date
-                factor_data = self.policy.factor.get_data(dates=[factor_date])
-                industry = self.policy.industry.get_data(dates=[date])
-                cap = self.policy.weight.get_data(dates=[pre_date])
+                factor_data = self.policy.factor.get_data(dates=factor_date)
+                industry = self.policy.industry.get_data(dates=date)
+                cap = self.policy.weight.get_data(dates=pre_date)
 
                 storage = [pct_return.droplevel('DateTime'), factor_data.droplevel('DateTime'),
                            industry.droplevel('DateTime'), cap.droplevel('DateTime')]

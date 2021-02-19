@@ -36,7 +36,7 @@ class IndustryComparison(object):
     def portfolio_weight(self, holding: pd.Series):
         date = holding.index.get_level_values('DateTime').unique()[0]
 
-        price_info = self.data_reader.stock_close.get_data(dates=[date])
+        price_info = self.data_reader.stock_close.get_data(dates=date)
         price_info.name = 'close'
         tmp = pd.concat([holding, price_info], axis=1).dropna()
         cap = tmp['quantity'] * tmp['close']

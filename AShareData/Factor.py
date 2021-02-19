@@ -468,7 +468,7 @@ class OnTheRecordFactor(NonFinancialFactor):
         :param date: selected dates
         :return: list of IDs on the record
         """
-        tmp = self.db_interface.read_table(self.table_name, dates=[date])
+        tmp = self.db_interface.read_table(self.table_name, dates=date)
         return tmp.index.get_level_values('ID').tolist()
 
     def get_counts(self, start_date: DateUtils.DateType, end_date: DateUtils.DateType,
@@ -493,7 +493,7 @@ class CompactRecordFactor(NonFinancialFactor):
         :param date: selected dates
         :return: list of IDs on the record
         """
-        tmp = self.base_factor.get_data(dates=[date])
+        tmp = self.base_factor.get_data(dates=date)
         return tmp.loc[tmp].index.get_level_values('ID').tolist()
 
 

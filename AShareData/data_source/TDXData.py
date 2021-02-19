@@ -49,7 +49,7 @@ class TDXData(DataSource):
         """获取 ``date`` 的股票分钟行情"""
         minute_data = self._get_stock_minute(date)
         auction_time = date + dt.timedelta(hours=9, minutes=25)
-        auction_db_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=[auction_time])
+        auction_db_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=auction_time)
         df = self.left_shift_minute_data(minute_data=minute_data, auction_db_data=auction_db_data)
 
         self.db_interface.insert_df(df, '股票分钟行情')
