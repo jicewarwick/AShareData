@@ -1,4 +1,6 @@
+import datetime as dt
 from functools import cached_property, lru_cache
+from typing import Sequence
 
 import numpy as np
 
@@ -222,6 +224,26 @@ class AShareDataReader(object):
         f = ContinuousFactor('shibor利率数据', '1年', self.db_interface)
         f.set_factor_name('1年shibor')
         return f
+
+    def weighted_return(self, date: dt.datetime, ids: Sequence[str], weight_base: CompactFactor = None,
+                        pre_date: dt.datetime = None) -> float:
+        if pre_date is None:
+            pre_date = self.calendar.offset(date, -1)
+        pre_close_data = self.stock_close.get_data(dates=pre_date, ids=ids)
+        pre_adj = self.adj_factor.get_data(dates=pre_date, ids=ids)
+
+        hfq_close = self.hfq_close.get_data(dates=date, ids=ids)
+        stock_return = hfq_close.values / (pre_close_data * pre_adj).values - 1
+
+        if weight_base is None:
+            daily_ret = stock_return.mean()
+        else:
+            pre_units = weight_base.get_data(dates=pre_date, ids=ids)
+            cap = pre_units * pre_close_data
+            weight = cap / cap.sum()
+            daily_ret = stock_return.dot(weight.T.values)
+
+        return daily_ret
 
     @staticmethod
     def exponential_weight(n: int, half_life: int):

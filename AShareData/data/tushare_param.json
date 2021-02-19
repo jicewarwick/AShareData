@@ -1881,9 +1881,6 @@
 			"roa_dp": "总资产净利率(杜邦分析)",
 			"roic_yearly": "年化投入资本回报率",
 			"total_fa_trun": "固定资产合计周转率",
-			"q_opincome": "经营活动单季度净收益",
-			"q_dtprofit": "扣除非经常损益后的单季度净利润",
-			"q_adminexp_to_gr": "管理费用／营业总收入(单季度)",
 			"rd_exp": "研发费用",
 			"update_flag": "更新标识"
 		}

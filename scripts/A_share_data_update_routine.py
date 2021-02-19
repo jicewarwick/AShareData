@@ -1,6 +1,7 @@
 import sys
 
-from AShareData import ConstLimitStockFactorCompositor, JQData, set_global_config, TDXData, TushareData, WindData
+from AShareData import ConstLimitStockFactorCompositor, IndexUpdater, JQData, set_global_config, TDXData, TushareData, \
+    WindData
 
 if __name__ == '__main__':
     set_global_config(sys.argv[1])
@@ -43,3 +44,4 @@ if __name__ == '__main__':
         tdx_data.update_stock_minute()
 
     ConstLimitStockFactorCompositor().update()
+    IndexUpdater().update()

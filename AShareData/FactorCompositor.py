@@ -149,33 +149,32 @@ class IndexCompositor(FactorCompositor):
 
         with tqdm(dates) as pbar:
             for date in dates:
+                pbar.set_description(f'{date}')
                 ids = self.stock_ticker_selector.ticker(date)
 
-                daily_ret = self._compute_ret(date, ids)
+                daily_ret = self.data_reader.weighted_return(date=date, ids=ids, weight_base=self.units_factor)
                 index = pd.MultiIndex.from_tuples([(date, self.policy.ticker)], names=['DateTime', 'ID'])
                 ret = pd.Series(daily_ret, index=index, name='收益率')
 
-                # write to db
                 self.db_interface.update_df(ret, self.table_name)
                 pbar.update()
 
-    def _compute_ret(self, date: dt.datetime, ids: Sequence[str]):
-        # pre data
-        pre_date = self.calendar.offset(date, -1)
-        pre_units = self.units_factor.get_data(dates=pre_date, ids=ids)
-        pre_close_data = self.data_reader.stock_close.get_data(dates=pre_date, ids=ids)
-        pre_adj = self.data_reader.adj_factor.get_data(dates=pre_date, ids=ids)
 
-        # data
-        close_data = self.data_reader.stock_close.get_data(dates=date, ids=ids)
-        adj = self.data_reader.adj_factor.get_data(dates=date, ids=ids)
+class IndexUpdater(object):
+    def __init__(self, config_loc=None, db_interface: DBInterface = None):
+        super().__init__()
+        self.db_interface = db_interface
+        records = utils.load_excel('自编指数配置.xlsx', config_loc)
+        self.policies = {}
+        for record in records:
+            self.policies[record['name']] = utils.StockIndexCompositionPolicy.from_dict(record)
 
-        # computation
-        stock_daily_ret = (close_data * adj).values / (pre_close_data * pre_adj).values - 1
-        weight = pre_units * pre_close_data
-        weight = weight / weight.sum(axis=1).values[0]
-        daily_ret = stock_daily_ret.dot(weight.T.values)[0][0]
-        return daily_ret
+    def update(self):
+        with tqdm(self.policies) as pbar:
+            for policy in self.policies.values():
+                pbar.set_description(f'更新{policy.name}')
+                IndexCompositor(policy, db_interface=self.db_interface).update()
+                pbar.update()
 
 
 @dataclass

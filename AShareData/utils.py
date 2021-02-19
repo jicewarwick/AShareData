@@ -3,7 +3,7 @@ import json
 import sys
 import tempfile
 from dataclasses import dataclass
-from importlib.resources import open_text
+from importlib.resources import open_text, read_binary
 from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
@@ -38,6 +38,17 @@ def load_param(default_loc: str, param_json_loc: str = None) -> Dict[str, Any]:
     with f:
         param = json.load(f)
         return param
+
+
+def load_excel(default_loc: str, param_json_loc: str = None) -> List[Dict[str, Any]]:
+    if param_json_loc is None:
+        f = read_binary('AShareData.data', default_loc)
+        df = pd.read_excel(f)
+    else:
+        df = pd.read_excel(param_json_loc)
+    for col in df.columns:
+        df[col] = df[col].where(df[col].notnull(), other=None)
+    return df.to_dict('records')
 
 
 def chunk_list(l: list, n: int):
@@ -107,9 +118,14 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
     ignore_const_limit: bool = False
 
     def __post_init__(self):
+        if self.ignore_new_stock_period:
+            self.ignore_new_stock_period = int(self.ignore_new_stock_period)
+        if self.select_new_stock_period:
+            self.select_new_stock_period = int(self.select_new_stock_period)
         if self.industry_provider:
             assert self.industry_provider in constants.INDUSTRY_DATA_PROVIDER, '非法行业分类机构!'
             assert self.industry_level <= constants.INDUSTRY_LEVEL[self.industry_provider], '非法行业分类级别!'
+            self.industry_level = int(self.industry_level)
 
 
 @dataclass
@@ -130,6 +146,17 @@ class StockIndexCompositionPolicy:
 
     def __post_init__(self):
         assert self.unit_base in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本'], '非法股本字段!'
+
+    @classmethod
+    def from_dict(cls, info: Dict):
+        info = info.copy()
+        ticker = info.pop('ticker')
+        name = info.pop('name')
+        unit_base = info.pop('unit_base')
+        start_date = info.pop('start_date')
+        stock_selection_policy = StockSelectionPolicy(**info)
+        return cls(ticker=ticker, name=name, unit_base=unit_base, stock_selection_policy=stock_selection_policy,
+                   start_date=start_date)
 
 
 class TickerSelector(object):
