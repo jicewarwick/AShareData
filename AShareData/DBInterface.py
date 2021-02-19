@@ -6,7 +6,7 @@ from typing import List, Mapping, Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Column, DateTime, extract, Float, Integer, Table, Text, VARCHAR, Date
+from sqlalchemy import Boolean, Column, Date, DateTime, extract, Float, Integer, Table, Text, VARCHAR
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func, text
@@ -80,6 +80,9 @@ class DBInterface(object):
         raise NotImplementedError()
 
     def get_column_max(self, table_name: str, column: str):
+        raise NotImplementedError()
+
+    def delete_datetime_records(self, table_name: str, datetime: dt.datetime):
         raise NotImplementedError()
 
     def delete_id_records(self, table_name: str, ticker: str):
@@ -402,6 +405,13 @@ class MySQLInterface(DBInterface):
         primary_key = [it.name for it in table.primary_key]
         if primary_key:
             return primary_key
+
+    def delete_datetime_records(self, table_name: str, datetime: dt.datetime):
+        table_name = table_name.lower()
+        t = self.meta.tables[table_name]
+        stmt = t.delete().where(t.c.DateTime == datetime)
+        conn = self.engine.connect()
+        conn.execute(stmt)
 
     def delete_id_records(self, table_name: str, ticker: str):
         table_name = table_name.lower()
