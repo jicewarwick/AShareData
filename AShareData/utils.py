@@ -92,8 +92,9 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
     :param ignore_new_stock_period: 新股纳入市场收益计算的时间(交易日天数)
     :param select_new_stock_period: 仅选取新上市的股票, 可与 ``ignore_new_stock_period`` 搭配使用
 
-    :param select_st: 仅选取 风险警告股, 即 PT, ST, SST, \*ST, (即将)退市股 等
     :param ignore_st: 排除 风险警告股
+    :param select_st: 仅选取 风险警告股, 即 PT, ST, SST, \*ST, (即将)退市股 等
+    :param st_defer_period: 新ST纳入计算的时间(交易日天数), 配合 ``select_st``使用
 
     :param select_pause: 选取停牌股
     :param ignore_pause: 排除停牌股
@@ -108,8 +109,9 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
     ignore_new_stock_period: int = None
     select_new_stock_period: int = None
 
-    select_st: bool = False
     ignore_st: bool = False
+    select_st: bool = False
+    st_defer_period: int = 10
 
     select_pause: bool = False
     ignore_pause: bool = False
@@ -126,6 +128,7 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
             assert self.industry_provider in constants.INDUSTRY_DATA_PROVIDER, '非法行业分类机构!'
             assert self.industry_level <= constants.INDUSTRY_LEVEL[self.industry_provider], '非法行业分类级别!'
             self.industry_level = int(self.industry_level)
+        assert not (self.ignore_st & self.select_st), '不能同时选择ST股票和忽略ST股票'
 
 
 @dataclass

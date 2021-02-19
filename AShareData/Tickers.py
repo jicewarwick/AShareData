@@ -280,7 +280,10 @@ class StockTickerSelector(TickerSelector):
 
         if self.policy.select_st:
             ids = ids & set(self.risk_warned_stock_selector.get_data(date))
-        elif self.policy.ignore_st:
+            if self.policy.st_defer_period:
+                start_date = self.calendar.offset(date, -self.policy.st_defer_period - 1)
+                ids = ids & set(self.risk_warned_stock_selector.get_data(start_date))
+        if self.policy.ignore_st:
             ids = ids - set(self.risk_warned_stock_selector.get_data(date))
 
         ids = sorted(list(ids))
