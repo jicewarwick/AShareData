@@ -267,6 +267,7 @@ class WindData(DataSource):
 
     def update_stock_adj_factor(self):
         """更新股票复权因子"""
+
         def data_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
             data = self.w.wsd(ticker, 'adjfactor', date, date)
             data.name = '复权因子'
@@ -276,6 +277,7 @@ class WindData(DataSource):
 
     def update_stock_units(self):
         """更新股本信息"""
+
         # 流通股本
         def float_a_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
             data = self.w.wsd(ticker, "float_a_shares", date, date, "unit=1")
@@ -367,7 +369,8 @@ class WindData(DataSource):
                 data.rename(renaming_dict, axis=1, inplace=True)
                 ind1 = (data['停牌类型'] == '盘中停牌') & (data['停牌原因'].str.startswith('股票价格'))
                 ind2 = (data['停牌原因'].str.startswith('盘中'))
-                data = data.loc[(~ind1) & (~ind2), :]
+                ind3 = (data['停牌类型'] == '上午停牌') & (data['停牌类型'] == '下午停牌')
+                data = data.loc[(~ind1) & (~ind2) & (~ind3), :]
                 self.db_interface.insert_df(data, table_name)
                 pbar.update()
 
