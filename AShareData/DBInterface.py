@@ -331,7 +331,7 @@ class MySQLInterface(DBInterface):
                    start_date: dt.datetime = None, end_date: dt.datetime = None,
                    dates: Union[Sequence[dt.datetime], dt.datetime] = None,
                    report_period: dt.datetime = None, report_month: int = None,
-                   ids: Sequence[str] = None, index_code: str = None,
+                   ids: Union[str, Sequence[str]] = None, index_code: str = None,
                    text_statement: str = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
@@ -377,7 +377,10 @@ class MySQLInterface(DBInterface):
         if text_statement:
             q = q.filter(text(text_statement))
         if (ids is not None) and ('ID' in columns):
-            q = q.filter(t.columns['ID'].in_(ids))
+            if isinstance(ids, str):
+                q = q.filter(t.columns['ID'] == ids)
+            else:
+                q = q.filter(t.columns['ID'].in_(ids))
         if (index_code is not None) and ('IndexCode' in columns):
             q = q.filter(t.columns['IndexCode'] == index_code)
 
