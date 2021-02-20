@@ -22,6 +22,9 @@ Index Compositor
 .. autoclass:: AShareData.FactorCompositor.IndexCompositor
     :members:
 
+.. autoclass:: AShareData.FactorCompositor.IndexUpdater
+    :members:
+
 Factor Portfolio Return
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: AShareData.FactorCompositor.FactorPortfolioPolicy

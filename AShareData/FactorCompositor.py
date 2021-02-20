@@ -152,16 +152,22 @@ class IndexCompositor(FactorCompositor):
                 pbar.set_description(f'{date}')
                 ids = self.stock_ticker_selector.ticker(date)
 
-                daily_ret = self.data_reader.weighted_return(date=date, ids=ids, weight_base=self.units_factor)
-                index = pd.MultiIndex.from_tuples([(date, self.policy.ticker)], names=['DateTime', 'ID'])
-                ret = pd.Series(daily_ret, index=index, name='收益率')
+                if ids:
+                    daily_ret = self.data_reader.weighted_return(date=date, ids=ids, weight_base=self.units_factor)
+                    index = pd.MultiIndex.from_tuples([(date, self.policy.ticker)], names=['DateTime', 'ID'])
+                    ret = pd.Series(daily_ret, index=index, name='收益率')
 
-                self.db_interface.update_df(ret, self.table_name)
+                    self.db_interface.update_df(ret, self.table_name)
                 pbar.update()
 
 
 class IndexUpdater(object):
     def __init__(self, config_loc=None, db_interface: DBInterface = None):
+        """ 指数更新器
+
+        :param config_loc: 配置文件路径. 默认指数位于 ``./data/自编指数配置.xlsx``. 自定义配置可参考此文件
+        :param db_interface: DBInterface
+        """
         super().__init__()
         self.db_interface = db_interface
         records = utils.load_excel('自编指数配置.xlsx', config_loc)
