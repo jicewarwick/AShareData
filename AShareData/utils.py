@@ -148,7 +148,8 @@ class StockIndexCompositionPolicy:
     start_date: dt.datetime = None
 
     def __post_init__(self):
-        assert self.unit_base in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本'], '非法股本字段!'
+        if self.unit_base:
+            assert self.unit_base in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本'], '非法股本字段!'
 
     @classmethod
     def from_dict(cls, info: Dict):

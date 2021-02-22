@@ -135,7 +135,9 @@ class IndexCompositor(FactorCompositor):
         super().__init__(db_interface)
         self.table_name = '自合成指数'
         self.policy = index_composition_policy
-        self.units_factor = CompactFactor(index_composition_policy.unit_base, self.db_interface)
+        self.units_factor = None
+        if index_composition_policy.unit_base:
+            self.units_factor = CompactFactor(index_composition_policy.unit_base, self.db_interface)
         self.stock_ticker_selector = StockTickerSelector(self.policy.stock_selection_policy, self.db_interface)
 
     def update(self):
@@ -145,7 +147,7 @@ class IndexCompositor(FactorCompositor):
         start_date = self._check_db_timestamp(self.table_name, self.policy.start_date,
                                               column_condition=('ID', self.policy.ticker))
         end_date = self.db_interface.get_latest_timestamp(price_table)
-        dates = self.calendar.select_dates(start_date, end_date)
+        dates = self.calendar.select_dates(start_date, end_date, inclusive=(False, True))
 
         with tqdm(dates) as pbar:
             for date in dates:
