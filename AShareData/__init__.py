@@ -5,6 +5,7 @@ from .analysis.holding import IndustryComparison
 from .analysis.trading import TradingAnalysis
 from .AShareDataReader import AShareDataReader
 from .config import get_db_interface, get_global_config, set_global_config
+from .data_source.JQData import JQData
 from .data_source.TDXData import TDXData
 from .data_source.TushareData import TushareData
 from .data_source.WebData import WebDataCrawler
@@ -26,11 +27,3 @@ if wind_spec:
     logging.getLogger(__name__).info('WindPy found')
 else:
     logging.getLogger(__name__).debug('WindPy not found!!')
-
-jq_spec = importlib.util.find_spec("jqdatasdk")
-if jq_spec:
-    from .data_source.JQData import JQData
-
-    logging.getLogger(__name__).info('JQData found')
-else:
-    logging.getLogger(__name__).debug('JQData not found!!')

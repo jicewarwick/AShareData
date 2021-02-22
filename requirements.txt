@@ -1,4 +1,7 @@
 alphalens
+empyrical
+jqdatasdk
+matplotlib
 numpy
 pandas
 pytdx
