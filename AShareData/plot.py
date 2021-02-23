@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib.axes import Axes
 
-from AShareData.config import *
-from AShareData.Factor import *
-from AShareData.FactorCompositor import *
+from AShareData import DateUtils, utils
+from AShareData.config import get_db_interface
+from AShareData.DBInterface import DBInterface
+from AShareData.Factor import ContinuousFactor
 
-plt.rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体 SimHei为黑体
-plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
 
 
 def plot_factor_return(factor_name: str, weight: bool = True, industry_neutral: bool = True, bins: int = 5,
@@ -39,16 +42,16 @@ def plot_factor_return(factor_name: str, weight: bool = True, industry_neutral: 
     return fig
 
 
-if __name__ == '__main__':
-    config_loc = './config.json'
-    set_global_config(config_loc)
+def plot_index(index_factor: ContinuousFactor, benchmark_factor: ContinuousFactor = None,
+               start_date=None, end_date=None) -> Axes:
+    data = index_factor.get_data(start_date=start_date, end_date=end_date)
+    if benchmark_factor:
+        benchmark_data = benchmark_factor.get_data(start_date=start_date, end_date=end_date)
+        data = pd.concat([data, benchmark_data])
+    data = data.unstack()
+    val = (data + 1).cumprod()
 
-    data_reader = AShareDataReader()
-
-    factor_name = 'Beta'
-    weight = True
-    industry_neutral = True
-    bins = 5
-    start_date = None
-    end_date = None
-    db_interface = None
+    axes = val.plot()
+    axes.set_xlim(left=val.index[0], right=val.index[-1])
+    axes.grid(True)
+    return axes
