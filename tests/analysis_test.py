@@ -1,0 +1,31 @@
+import unittest
+
+from AShareData import set_global_config
+from AShareData.analysis.holding import *
+# from AShareData.analysis.trading import *
+from AShareData.analysis.return_analysis import *
+from AShareData.Factor import ContinuousFactor
+
+
+class MyTestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        set_global_config('config.json')
+        self.target = ContinuousFactor('自合成指数', '收益率')
+        self.target.bind_params(ids='ST.IND')
+        self.benchmark = ContinuousFactor('自合成指数', '收益率')
+        self.benchmark.bind_params(ids='全市场.IND')
+        self.start = dt.datetime(2012, 1, 1)
+        self.end = dt.datetime(2020, 1, 1)
+
+    def test_max_drawdown(self):
+        returns = self.target.get_data(start_date=self.start, end_date=self.end).unstack().iloc[:, 0]
+        print(locate_max_drawdown(returns))
+        returns = self.benchmark.get_data().unstack().iloc[:, 0]
+        print(locate_max_drawdown(returns))
+
+    def test_aggregate_return(self):
+        print(aggregate_returns(target=self.target, convert_to='monthly', benchmark_factor=self.benchmark))
+
+
+if __name__ == '__main__':
+    unittest.main()
