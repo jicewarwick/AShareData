@@ -274,8 +274,11 @@ class FactorBase(object):
     def corr(self, other):
         pass
 
-    def bind_params(self, index_code: str = None):
-        self._get_data = partial(self._get_data, index_code=index_code)
+    def bind_params(self, ids: Union[str, Sequence[str]] = None, index_code: str = None):
+        if ids:
+            self._get_data = partial(self._get_data, ids=ids)
+        if index_code:
+            self._get_data = partial(self._get_data, index_code=index_code)
         return self
 
 
