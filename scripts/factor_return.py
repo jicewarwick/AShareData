@@ -22,7 +22,7 @@ if __name__ == '__main__':
     policy.industry = data_reader.industry('申万', 1)
     policy.weight = data_reader.stock_free_floating_market_cap
 
-    policy.name = data_reader.beta.factor_name
+    policy.name = data_reader.beta.name
     policy.factor = data_reader.beta
 
     sub_port = FactorPortfolio(factor_portfolio_policy=policy)

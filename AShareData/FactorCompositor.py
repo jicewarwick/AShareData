@@ -214,10 +214,10 @@ class FactorPortfolio(FactorCompositor):
         super().__init__(db_interface)
         self.policy = factor_portfolio_policy
         self.stock_ticker_selector = StockTickerSelector(factor_portfolio_policy.stock_selection_policy, db_interface)
-        self.factor_name = self.policy.factor.display_factor_name
-        self.ret_name = self.data_reader.stock_return.display_factor_name
-        self.industry_category = self.policy.industry.display_factor_name
-        self.cap_name = self.policy.weight.display_factor_name
+        self.factor_name = self.policy.factor.name
+        self.ret_name = self.data_reader.stock_return.name
+        self.industry_category = self.policy.industry.name
+        self.cap_name = self.policy.weight.name
 
     def update(self):
         table_name = '因子分组收益率'

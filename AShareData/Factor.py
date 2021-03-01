@@ -15,17 +15,18 @@ from .utils import TickerSelector
 class FactorBase(object):
     def __init__(self, factor_name: str = None):
         super().__init__()
-        self.factor_name = factor_name
-        self.display_factor_name = factor_name
+        self._factor_name = factor_name
+        self.name = factor_name
 
     def set_factor_name(self, name):
-        self.display_factor_name = name
+        self.name = name
+        return self
 
     def get_data(self, *args, **kwargs) -> Union[pd.Series, List]:
         """获取数据"""
         s = self._get_data(*args, **kwargs)
-        if self.display_factor_name and isinstance(s, pd.Series):
-            s.name = self.display_factor_name
+        if self.name and isinstance(s, pd.Series):
+            s.name = self.name
         return s
 
     def _get_data(self, *args, **kwargs) -> pd.Series:
@@ -429,7 +430,7 @@ class IndustryFactor(CompactFactor):
         assert 0 < level <= constants.INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
         table_name = f'{provider}行业'
         super().__init__(table_name, db_interface)
-        self.display_factor_name = f'{provider}{level}级行业'
+        self.name = f'{provider}{level}级行业'
 
         if level != constants.INDUSTRY_LEVEL[provider]:
             translation = utils.load_param('industry.json')
@@ -487,7 +488,7 @@ class OnTheRecordFactor(NonFinancialFactor):
 
 class CompactRecordFactor(NonFinancialFactor):
     def __init__(self, compact_factor: CompactFactor, factor_name: str):
-        super().__init__(compact_factor.table_name, compact_factor.factor_name, compact_factor.db_interface)
+        super().__init__(compact_factor.table_name, compact_factor._factor_name, compact_factor.db_interface)
         self.base_factor = compact_factor
         self.factor_name = factor_name
 
@@ -522,7 +523,7 @@ class ContinuousFactor(NonFinancialFactor):
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
 
-        df = self.db_interface.read_table(self.table_name, columns=self.factor_name,
+        df = self.db_interface.read_table(self.table_name, columns=self._factor_name,
                                           start_date=start_date, end_date=end_date,
                                           dates=dates, ids=ids, index_code=index_code)
 
@@ -575,7 +576,7 @@ class AccountingFactor(Factor):
             dates = self.calendar.select_dates(start_date, end_date)
         buffer_start = db_start_date - buffer
 
-        db_columns = [self.factor_name]
+        db_columns = [self._factor_name]
         if self.offset_strs:
             db_columns.extend(self.offset_strs)
         data = self.db_interface.read_table(self.table_name, columns=db_columns,
@@ -603,7 +604,7 @@ class AccountingFactor(Factor):
         ret = pd.concat(storage)
         if ret.shape[1] == 1:
             ret = ret.iloc[:, 0]
-            ret.name = self.factor_name
+            ret.name = self._factor_name
 
         if ticker_selector:
             index = ticker_selector.generate_index(dates=dates)
@@ -658,7 +659,7 @@ class QuarterlyFactor(AccountingFactor):
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
         self.func = self.balance_sheet_func if self.table_name == '合并资产负债表' else self.cash_flow_or_profit_func
-        self.display_factor_name = f'季度{self.factor_name}'
+        self.name = f'季度{self._factor_name}'
 
     @staticmethod
     def balance_sheet_func(data: pd.DataFrame) -> np.float:
@@ -678,7 +679,7 @@ class LatestAccountingFactor(AccountingFactor):
 
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
-        self.display_factor_name = f'最新{self.factor_name}'
+        self.name = f'最新{self._factor_name}'
 
     @staticmethod
     def func(data: pd.DataFrame) -> np.float:
@@ -691,7 +692,7 @@ class LatestQuarterAccountingFactor(QuarterlyFactor):
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
         self.offset_strs = ['q1'] if self.table_name == '合并资产负债表' else ['q1', 'q5']
-        self.display_factor_name = f'最新季度{self.factor_name}'
+        self.name = f'最新季度{self._factor_name}'
 
     @staticmethod
     def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
@@ -713,7 +714,7 @@ class YearlyReportAccountingFactor(AccountingFactor):
         super().__init__(factor_name, db_interface)
         self.report_month = 12
         self.offset_strs = ['y1']
-        self.display_factor_name = f'最新年报{self.factor_name}'
+        self.name = f'最新年报{self._factor_name}'
 
     @staticmethod
     def func(data: pd.DataFrame) -> np.float:
@@ -726,7 +727,7 @@ class QOQAccountingFactor(QuarterlyFactor):
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
         self.offset_strs = ['q1'] if self.table_name == '合并资产负债表' else ['q1', 'q2']
-        self.display_factor_name = f'{self.factor_name}环比'
+        self.name = f'{self._factor_name}环比'
 
     @staticmethod
     def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
@@ -745,7 +746,7 @@ class YOYPeriodAccountingFactor(AccountingFactor):
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
         self.offset_strs = ['q1', 'q4']
-        self.display_factor_name = f'{self.factor_name}同比'
+        self.name = f'{self._factor_name}同比'
 
     @staticmethod
     def func(data: pd.DataFrame) -> np.float:
@@ -759,7 +760,7 @@ class YOYQuarterAccountingFactor(QuarterlyFactor):
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
         self.offset_strs = ['q4'] if self.table_name == '合并资产负债表' else ['q1', 'q4', 'q5']
-        self.display_factor_name = f'年度{self.factor_name}增长率'
+        self.name = f'年度{self._factor_name}增长率'
 
     @staticmethod
     def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
@@ -778,7 +779,7 @@ class TTMAccountingFactor(AccountingFactor):
     def __init__(self, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name, db_interface)
         self.offset_strs = ['q4', 'y1']
-        self.display_factor_name = f'{self.factor_name}TTM'
+        self.name = f'{self._factor_name}TTM'
 
     @staticmethod
     def func(data: pd.DataFrame) -> np.float:

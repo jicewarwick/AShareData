@@ -82,58 +82,42 @@ class AShareDataReader(object):
     @cached_property
     def stock_market_cap(self) -> BinaryFactor:
         """股票总市值"""
-        f = self.total_share * self.stock_close
-        f.set_factor_name('股票市值')
-        return f
+        return (self.total_share * self.stock_close).set_factor_name('股票市值')
 
     @cached_property
     def stock_free_floating_market_cap(self) -> BinaryFactor:
         """股票自由流通市值"""
-        f = self.free_floating_share * self.stock_close
-        f.set_factor_name('自由流通市值')
-        return f
+        return (self.free_floating_share * self.stock_close).set_factor_name('自由流通市值')
 
     @cached_property
     def log_cap(self) -> UnaryFactor:
         """股票市值对数"""
-        f = self.stock_market_cap.log()
-        f.set_factor_name('市值对数')
-        return f
+        return self.stock_market_cap.log().set_factor_name('市值对数')
 
     @cached_property
     def hfq_close(self) -> BinaryFactor:
         """股票后复权收盘价"""
-        f = self.adj_factor * self.stock_close
-        f.set_factor_name('后复权收盘价')
-        return f
+        return (self.adj_factor * self.stock_close).set_factor_name('后复权收盘价')
 
     @cached_property
     def stock_return(self) -> UnaryFactor:
         """股票收益率"""
-        f = self.hfq_close.pct_change()
-        f.set_factor_name('股票收益率')
-        return f
+        return self.hfq_close.pct_change().set_factor_name('股票收益率')
 
     @cached_property
     def forward_return(self) -> UnaryFactor:
         """股票前瞻收益率"""
-        f = self.hfq_close.pct_change_shift(-1)
-        f.set_factor_name('股票前瞻收益率')
-        return f
+        return self.hfq_close.pct_change_shift(-1).set_factor_name('股票前瞻收益率')
 
     @cached_property
     def log_return(self) -> UnaryFactor:
         """股票对数收益率"""
-        f = self.hfq_close.log().diff()
-        f.set_factor_name('股票对数收益')
-        return f
+        return self.hfq_close.log().diff().set_factor_name('股票对数收益')
 
     @cached_property
     def forward_log_return(self) -> UnaryFactor:
         """股票前瞻对数收益率"""
-        f = self.hfq_close.log().diff_shift(-1)
-        f.set_factor_name('股票前瞻对数收益')
-        return f
+        return self.hfq_close.log().diff_shift(-1).set_factor_name('股票前瞻对数收益')
 
     @cached_property
     def index_close(self) -> ContinuousFactor:
@@ -143,16 +127,12 @@ class AShareDataReader(object):
     @cached_property
     def index_return(self) -> UnaryFactor:
         """指数收益率"""
-        f = self.index_close.pct_change()
-        f.set_factor_name('指数收益率')
-        return f
+        return self.index_close.pct_change().set_factor_name('指数收益率')
 
     @cached_property
     def index_log_return(self) -> UnaryFactor:
         """指数对数收益率"""
-        f = self.index_close.log().diff()
-        f.set_factor_name('指数对数收益率')
-        return f
+        return self.index_close.log().diff().set_factor_name('指数对数收益率')
 
     @cached_property
     def index_constitute(self) -> IndexConstitute:
@@ -172,37 +152,27 @@ class AShareDataReader(object):
     @cached_property
     def book_val(self) -> LatestAccountingFactor:
         """Book value"""
-        f = LatestAccountingFactor('股东权益合计(不含少数股东权益)', self.db_interface)
-        f.set_factor_name('股东权益')
-        return f
+        return LatestAccountingFactor('股东权益合计(不含少数股东权益)', self.db_interface).set_factor_name('股东权益')
 
     @cached_property
     def earning_ttm(self) -> TTMAccountingFactor:
         """Earning Trailing Twelve Month"""
-        f = TTMAccountingFactor('净利润(不含少数股东损益)', self.db_interface)
-        f.set_factor_name('净利润TTM')
-        return f
+        return TTMAccountingFactor('净利润(不含少数股东损益)', self.db_interface).set_factor_name('净利润TTM')
 
     @cached_property
     def bm(self) -> BinaryFactor:
         """Book to Market"""
-        f = self.book_val / self.stock_market_cap
-        f.set_factor_name('BM')
-        return f
+        return (self.book_val / self.stock_market_cap).set_factor_name('BM')
 
     @cached_property
     def pe_ttm(self) -> BinaryFactor:
         """Price to Earning Trailing Twelve Month"""
-        f = self.stock_market_cap / self.earning_ttm
-        f.set_factor_name('PE_TTM')
-        return f
+        return (self.stock_market_cap / self.earning_ttm).set_factor_name('PE_TTM')
 
     @cached_property
     def overnight_shibor(self) -> ContinuousFactor:
         """隔夜shibor"""
-        f = ContinuousFactor('shibor利率数据', '隔夜', self.db_interface)
-        f.set_factor_name('隔夜shibor')
-        return f
+        return ContinuousFactor('shibor利率数据', '隔夜', self.db_interface).set_factor_name('隔夜shibor')
 
     @cached_property
     def three_month_shibor(self) -> ContinuousFactor:
@@ -214,16 +184,12 @@ class AShareDataReader(object):
     @cached_property
     def six_month_shibor(self) -> ContinuousFactor:
         """6月期shibor"""
-        f = ContinuousFactor('shibor利率数据', '6个月', self.db_interface)
-        f.set_factor_name('6个月shibor')
-        return f
+        return ContinuousFactor('shibor利率数据', '6个月', self.db_interface).set_factor_name('6个月shibor')
 
     @cached_property
     def one_year_shibor(self) -> ContinuousFactor:
         """一年期shibor"""
-        f = ContinuousFactor('shibor利率数据', '1年', self.db_interface)
-        f.set_factor_name('1年shibor')
-        return f
+        return ContinuousFactor('shibor利率数据', '1年', self.db_interface).set_factor_name('1年shibor')
 
     def weighted_return(self, date: dt.datetime, ids: Sequence[str], weight_base: CompactFactor = None,
                         pre_date: dt.datetime = None) -> float:
