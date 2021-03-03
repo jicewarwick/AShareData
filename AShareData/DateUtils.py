@@ -188,9 +188,8 @@ class TradingCalendar(TradingCalendarBase):
 
     def __init__(self, db_interface: DBInterface = None):
         super().__init__()
-        if db_interface is None:
-            db_interface = get_db_interface()
-        calendar_df = db_interface.read_table('交易日历')
+        self.db_interface = db_interface if db_interface else get_db_interface()
+        calendar_df = self.db_interface.read_table('交易日历')
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
 
 
@@ -199,9 +198,8 @@ class HKTradingCalendar(TradingCalendarBase):
 
     def __init__(self, db_interface: DBInterface = None):
         super().__init__()
-        if db_interface is None:
-            db_interface = get_db_interface()
-        calendar_df = db_interface.read_table('港股交易日历')
+        self.db_interface = db_interface if db_interface else get_db_interface()
+        calendar_df = self.db_interface.read_table('港股交易日历')
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
 
 

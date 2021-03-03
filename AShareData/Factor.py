@@ -312,10 +312,7 @@ class Factor(FactorBase):
     def __init__(self, table_name: str, factor_name: str, db_interface: DBInterface = None):
         super().__init__(factor_name)
         self.table_name = table_name
-
-        if db_interface is None:
-            db_interface = get_db_interface()
-        self.db_interface = db_interface
+        self.db_interface = db_interface if db_interface else get_db_interface()
 
     def _get_data(self, *args, **kwargs):
         """获取数据"""
@@ -450,7 +447,7 @@ class IndustryFactor(CompactFactor):
         """
         date_data = self.get_data(dates=date)
         data = date_data.loc[date_data == industry]
-        return data.index.get_level_values('ID')
+        return data.index.get_level_values('ID').tolist()
 
     @cached_property
     def all_industries(self) -> List[str]:

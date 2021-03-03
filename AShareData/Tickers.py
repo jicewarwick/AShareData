@@ -16,9 +16,7 @@ class TickersBase(object):
     """证券代码基类"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
-        if db_interface is None:
-            db_interface = get_db_interface()
-        self.db_interface = db_interface
+        self.db_interface = db_interface if db_interface else get_db_interface()
         self.cache = None
 
     def all_ticker(self) -> List[str]:
@@ -213,9 +211,7 @@ class StockTickerSelector(TickerSelector):
         :param policy: 选股条件
         """
         super().__init__()
-        if db_interface is None:
-            db_interface = get_db_interface()
-        self.db_interface = db_interface
+        self.db_interface = db_interface if db_interface else get_db_interface()
         self.stock_ticker = StockTickers(self.db_interface)
         self.policy = policy
 
