@@ -1,3 +1,5 @@
+from typing import Sequence, Union
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.axes import Axes
@@ -42,16 +44,19 @@ def plot_factor_return(factor_name: str, weight: bool = True, industry_neutral: 
     return fig
 
 
-def plot_index(index_factor: ContinuousFactor, benchmark_factor: ContinuousFactor = None,
-               start_date=None, end_date=None) -> Axes:
-    data = index_factor.get_data(start_date=start_date, end_date=end_date)
-    if benchmark_factor:
-        benchmark_data = benchmark_factor.get_data(start_date=start_date, end_date=end_date)
-        data = pd.concat([data, benchmark_data])
-    data = data.unstack()
+def plot_indexes(indexes: Union[ContinuousFactor, Sequence[ContinuousFactor]], start_date=None, end_date=None,
+                 ax: Axes = None) -> Axes:
+    if isinstance(indexes, ContinuousFactor):
+        indexes = [indexes]
+    storage = []
+    for it in indexes:
+        storage.append(it.get_data(start_date=start_date, end_date=end_date))
+    data = pd.concat(storage).unstack()
     val = (data + 1).cumprod()
 
-    axes = val.plot()
-    axes.set_xlim(left=val.index[0], right=val.index[-1])
-    axes.grid(True)
-    return axes
+    if ax is None:
+        _, ax = plt.subplots(1, 1)
+    val.plot(ax=ax)
+    ax.set_xlim(left=val.index[0], right=val.index[-1])
+    ax.grid(True)
+    return ax
