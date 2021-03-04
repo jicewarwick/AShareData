@@ -141,7 +141,7 @@ class JQData(DataSource):
 
     def update_stock_minute(self):
         table_name = '股票分钟行情'
-        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
         if dt.datetime.now().hour < 16:
             end_date = self.calendar.yesterday()
@@ -157,7 +157,7 @@ class JQData(DataSource):
     def update_stock_morning_auction_data(self):
         """更新早盘集合竞价数据"""
         table_name = '股票集合竞价数据'
-        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
         end_date = dt.datetime.today()
         dates = self.calendar.select_dates(start_date, end_date)
@@ -194,7 +194,7 @@ class JQData(DataSource):
 
     def update_stock_daily(self):
         table_name = '股票日行情'
-        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
         dates = self.calendar.select_dates(db_timestamp, dt.date.today())
         dates = dates[1:]
         for date in dates:
@@ -217,7 +217,7 @@ class JQData(DataSource):
 
     def update_future_daily(self):
         table_name = '期货日行情'
-        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
         dates = self.calendar.select_dates(db_timestamp, dt.date.today())
         dates = dates[1:]
         for date in dates:
@@ -254,7 +254,7 @@ class JQData(DataSource):
 
     def update_stock_option_daily(self):
         table_name = '期权日行情'
-        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
         dates = self.calendar.select_dates(db_timestamp, dt.date.today())
         dates = dates[1:]
         for date in dates:

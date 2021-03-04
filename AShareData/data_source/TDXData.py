@@ -38,7 +38,7 @@ class TDXData(DataSource):
     def update_stock_minute(self):
         """更新股票分钟行情"""
         table_name = '股票分钟行情'
-        db_timestamp = self._check_db_timestamp(table_name, dt.datetime(2015, 1, 1))
+        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
         end_date = dt.datetime.today()
         dates = self.calendar.select_dates(start_date, end_date)

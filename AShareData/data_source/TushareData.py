@@ -471,7 +471,7 @@ class TushareData(DataSource):
         """更新股票停牌信息"""
         table_name = '股票停牌'
         renaming_dict = self._factor_param[table_name]['输出参数']
-        start_date = self._check_db_timestamp(table_name, dt.date(1990, 12, 10)) + dt.timedelta(days=1)
+        start_date = self.db_interface.get_latest_timestamp(table_name, dt.date(1990, 12, 10)) + dt.timedelta(days=1)
         end_date = self.calendar.yesterday()
 
         df = self._pro.suspend_d(start_date=DateUtils.date_type2str(start_date),
@@ -670,7 +670,7 @@ class TushareData(DataSource):
     def update_hs_holding(self) -> None:
         """ 沪深港股通持股明细 """
         data_category = '沪深港股通持股明细'
-        start_date = self._check_db_timestamp(data_category, START_DATE['ggt'])
+        start_date = self.db_interface.get_latest_timestamp(data_category, START_DATE['ggt'])
         dates = self.calendar.select_dates(start_date, dt.date.today())
 
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
@@ -688,7 +688,7 @@ class TushareData(DataSource):
         table_name = '港股日行情'
 
         hk_cal = DateUtils.HKTradingCalendar(self.db_interface)
-        start_date = self._check_db_timestamp(table_name, START_DATE['hk_daily'])
+        start_date = self.db_interface.get_latest_timestamp(table_name, START_DATE['hk_daily'])
         end_date = hk_cal.yesterday()
         dates = hk_cal.select_dates(start_date=start_date, end_date=end_date, inclusive=(False, True))
 
@@ -747,7 +747,7 @@ class TushareData(DataSource):
 
     def update_index_daily(self):
         table_name = '指数日行情'
-        start_date = self._check_db_timestamp(table_name, START_DATE['index_daily'])
+        start_date = self.db_interface.get_latest_timestamp(table_name, START_DATE['index_daily'])
         dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
         rate = self._factor_param[table_name]['每分钟限速']
@@ -825,7 +825,7 @@ class TushareData(DataSource):
         nav_params = self._factor_param[nav_table_name]['输出参数']
         share_params = self._factor_param[asset_table_name]['输出参数']
 
-        start_date = self._check_db_timestamp(daily_table_name, START_DATE['fund_daily'])
+        start_date = self.db_interface.get_latest_timestamp(daily_table_name, START_DATE['fund_daily'])
         start_date = self.calendar.offset(start_date, -4)
         end_date = dt.date.today()
         dates = self.calendar.select_dates(start_date, end_date)
@@ -873,7 +873,7 @@ class TushareData(DataSource):
         params = self._factor_param[table_name]['输出参数']
         rate = self._factor_param[table_name]['每分钟限速']
 
-        start_date = self._check_db_timestamp(table_name, dt.date(1998, 4, 6))
+        start_date = self.db_interface.get_latest_timestamp(table_name, dt.date(1998, 4, 6))
         start_date = self.calendar.offset(start_date, -5)
         end_date = dt.date.today()
         dates = self.calendar.select_dates(start_date, end_date)

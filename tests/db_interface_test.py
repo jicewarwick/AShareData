@@ -1,4 +1,5 @@
 import unittest
+import datetime as dt
 
 from AShareData.config import get_db_interface, set_global_config
 from AShareData.DateUtils import date_type2datetime
@@ -26,6 +27,9 @@ class MyTestCase(unittest.TestCase):
     def test_db_timestamp(self):
         table_name = '合并资产负债表'
         print(self.db_interface.get_latest_timestamp(table_name))
+        table_name = '模型因子日收益率'
+        print(self.db_interface.get_latest_timestamp(table_name))
+        print(self.db_interface.get_latest_timestamp(table_name, default_ts=dt.datetime(2021, 3, 4)))
 
 
 if __name__ == '__main__':

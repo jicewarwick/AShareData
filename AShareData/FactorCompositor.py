@@ -50,8 +50,8 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
     def update(self):
         price_table_name = '股票日行情'
 
-        start_date = self._check_db_timestamp(self.table_name, dt.date(1999, 5, 4))
-        end_date = self._check_db_timestamp(price_table_name, dt.date(1990, 12, 10))
+        start_date = self.db_interface.get_latest_timestamp(self.table_name, dt.date(1999, 5, 4))
+        end_date = self.db_interface.get_latest_timestamp(price_table_name, dt.date(1990, 12, 10))
 
         pre_data = self.db_interface.read_table(price_table_name, ['最高价', '最低价'], dates=start_date)
         dates = self.calendar.select_dates(start_date, end_date)
@@ -144,8 +144,8 @@ class IndexCompositor(FactorCompositor):
         """ 更新市场收益率 """
         price_table = '股票日行情'
 
-        start_date = self._check_db_timestamp(self.table_name, self.policy.start_date,
-                                              column_condition=('ID', self.policy.ticker))
+        start_date = self.db_interface.get_latest_timestamp(self.table_name, self.policy.start_date,
+                                                            column_condition=('ID', self.policy.ticker))
         end_date = self.db_interface.get_latest_timestamp(price_table)
         dates = self.calendar.select_dates(start_date, end_date, inclusive=(False, True))
 
@@ -222,8 +222,8 @@ class FactorPortfolio(FactorCompositor):
     def update(self):
         table_name = '因子分组收益率'
         identifying_ticker = f'{self.factor_name}_NN_G1inG5'
-        start_date = self._check_db_timestamp(table_name, self.policy.start_date,
-                                              column_condition=('ID', identifying_ticker))
+        start_date = self.db_interface.get_latest_timestamp(table_name, self.policy.start_date,
+                                                            column_condition=('ID', identifying_ticker))
         end_date = self.db_interface.get_latest_timestamp('股票日行情')
         dates = self.calendar.select_dates(start_date, end_date, inclusive=(False, True))
 

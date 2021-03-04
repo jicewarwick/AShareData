@@ -228,7 +228,7 @@ class WindData(DataSource):
     def update_stock_daily_data(self):
         """更新股票日行情"""
         table_name = '股票日行情'
-        start_date = self._check_db_timestamp(table_name, dt.date(1990, 12, 10))
+        start_date = self.db_interface.get_latest_timestamp(table_name, dt.date(1990, 12, 10))
         dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
         with tqdm(dates) as pbar:
             for date in dates:
@@ -256,7 +256,7 @@ class WindData(DataSource):
     def update_minutes_data(self) -> None:
         """更新股票分钟行情"""
         table_name = '股票分钟行情'
-        latest = self._check_db_timestamp(table_name, dt.datetime.today() - dt.timedelta(days=365 * 3))
+        latest = self.db_interface.get_latest_timestamp(table_name, dt.datetime.today() - dt.timedelta(days=365 * 3))
         date_range = self.calendar.select_dates(latest.date(), dt.date.today(), inclusive=(False, True))
 
         with tqdm(date_range) as pbar:
@@ -353,7 +353,7 @@ class WindData(DataSource):
     def update_pause_stock_info(self):
         """更新股票停牌信息"""
         table_name = '股票停牌'
-        start_date = self._check_db_timestamp(table_name, dt.date(1990, 12, 10)) + dt.timedelta(days=1)
+        start_date = self.db_interface.get_latest_timestamp(table_name, dt.date(1990, 12, 10)) + dt.timedelta(days=1)
         end_date = self.calendar.yesterday()
         chunks = self.calendar.split_to_chunks(start_date, end_date, 20)
 
@@ -381,7 +381,7 @@ class WindData(DataSource):
         """更新可转债日行情"""
         table_name = '可转债日行情'
         renaming_dict = self._factor_param['股票日行情']
-        start_date = self._check_db_timestamp(table_name, dt.datetime(1993, 2, 9))
+        start_date = self.db_interface.get_latest_timestamp(table_name, dt.datetime(1993, 2, 9))
         dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
         with tqdm(dates) as pbar:
@@ -432,7 +432,7 @@ class WindData(DataSource):
         """更新股票ETF期权和股指期权日行情"""
         contract_daily_table_name = '期权日行情'
 
-        start_date = self._check_db_timestamp(contract_daily_table_name, dt.datetime(2015, 2, 8))
+        start_date = self.db_interface.get_latest_timestamp(contract_daily_table_name, dt.datetime(2015, 2, 8))
         dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
         with tqdm(dates) as pbar:

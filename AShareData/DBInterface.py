@@ -44,7 +44,8 @@ class DBInterface(object):
         """Update new information from df to table ``table_name``"""
         raise NotImplementedError()
 
-    def get_latest_timestamp(self, table_name: str, column_condition: (str, str) = None) -> Optional[dt.datetime]:
+    def get_latest_timestamp(self, table_name: str, default_ts: dt.datetime = None,
+                             column_condition: (str, str) = None) -> Optional[dt.datetime]:
         """Get the latest timestamp from records in ``table_name``"""
         raise NotImplementedError()
 
@@ -231,11 +232,13 @@ class MySQLInterface(DBInterface):
             new_info = compute_diff(df, existing_data)
             self.update_df(new_info, table_name)
 
-    def get_latest_timestamp(self, table_name: str, column_condition: (str, str) = None) -> Optional[dt.datetime]:
+    def get_latest_timestamp(self, table_name: str, default_ts: dt.datetime = None,
+                             column_condition: (str, str) = None) -> Optional[dt.datetime]:
         """
         返回数据库表中最新的时间戳
 
         :param table_name: 表名
+        :param default_ts: 当无匹配对象时返回的默认值
         :param column_condition: 列条件Tuple: (列名, 符合条件的列内容)
         :return: 最新时间
         """
@@ -250,6 +253,8 @@ class MySQLInterface(DBInterface):
             session.close()
             if isinstance(ret, dt.date):
                 ret = dt.datetime.combine(ret, dt.time())
+            elif ret is None:
+                ret = default_ts
             return ret
 
     def get_column_min(self, table_name: str, column: str):
