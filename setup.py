@@ -33,11 +33,11 @@ setup(
                       'requests',
                       ],
     package_data={
-        'json': ['data/*.json'],
+        'json': ['data/*'],
     },
     entry_points={
         'console_scripts': [
-            'sample=A_share_data_update_routine:main',
+            'sample=update_routine:main',
         ],
     },
     project_urls={
