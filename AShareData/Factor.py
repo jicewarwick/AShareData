@@ -554,7 +554,7 @@ class AccountingFactor(Factor):
         self.buffer_length = 365 * 2
         self.offset_strs = None
 
-    def _get_data(self, dates: Sequence[dt.datetime] = None,
+    def _get_data(self, dates: Union[dt.datetime, Sequence[dt.datetime]] = None,
                   start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
                   ids: Sequence[str] = None, ticker_selector: TickerSelector = None) -> Union[pd.Series, pd.DataFrame]:
         """
@@ -567,6 +567,8 @@ class AccountingFactor(Factor):
         """
         buffer = dt.timedelta(days=self.buffer_length)
         if dates:
+            if isinstance(dates, dt.datetime):
+                dates = [dates]
             db_start_date, db_end_date = min(dates), max(dates)
         else:
             db_start_date, db_end_date = start_date, end_date
