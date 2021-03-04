@@ -1,6 +1,7 @@
 import datetime as dt
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import pandas as pd
 
 from AShareData import AShareDataReader, TradingCalendar, utils
@@ -63,12 +64,13 @@ class IndexHighlighter(object):
         print(data.loc[data.index[-1], :].T.sort_values(ascending=False) * 100)
 
     def plot_index(self, period: int, n: int, ax: plt.Axes = None):
-        plot_data = self.featured_data(period, n)
+        plot_data = self.featured_data(period, n) * 100
         if ax is None:
             _, ax = plt.subplots(1, 1)
         plot_data.plot(ax=ax)
         ax.set_xlim(left=plot_data.index[0], right=plot_data.index[-1])
         ax.grid(True)
+        ax.yaxis.set_major_formatter(mtick.PercentFormatter())
         return ax
 
     def summary(self):
