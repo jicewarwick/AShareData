@@ -557,10 +557,6 @@ class TushareData(DataSource):
             if df.empty:  # 000508 无数据
                 return
             df = df.dropna(subset=['ann_date', 'f_ann_date', 'end_date'])  # 000166 申万宏源 早期数据无时间戳
-            # tmp = df.sort_values('end_date', ascending=False).rename(column_name_dict, axis=1)
-            # tmp = tmp.fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
-            # tmp.to_excel('raw.xlsx', index=False, freeze_panes=(1, 5))
-
             df = df.sort_values('update_flag').groupby(['ann_date', 'end_date', 'report_type']).tail(1)
             df = df.drop('update_flag', axis=1).fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
             df = df.set_index(['ann_date', 'f_ann_date', 'report_type']).sort_index().drop_duplicates(
@@ -571,7 +567,6 @@ class TushareData(DataSource):
             df = df.loc[~df.index.duplicated(), :].sort_index()
             df = df.loc[df.index.get_level_values('报告期').month % 3 == 0, :]
             df = self.append_report_date_cache(df)
-            # df.to_excel('processed.xlsx', merge_cells=False, float_format='%.2f')
 
             self.db_interface.delete_id_records(table_name, ticker)
             try:
@@ -622,21 +617,27 @@ class TushareData(DataSource):
             for ticker in update_tickers:
                 pbar.set_description(f'更新{ticker}的财报')
                 self.get_financial(ticker)
+                # self.get_financial_index(ticker)
                 pbar.update()
 
-    # todo: TBD
-    def get_financial_index(self, ticker: str, period: str) -> pd.DataFrame:
-        """ 获取财务指标, 返回pd.DataFrame, 未入库(WARNING: UNSTABLE API)
+    def get_financial_index(self, ticker: str) -> pd.DataFrame:
+        """ 获取财务指标
 
         :param ticker: 证券代码(000001.SZ)
-        :param period: 报告期截止日(20001231)
         :return: 财务指标
         """
-        data_category = '财务指标数据'
+        data_category = '财务指标'
         column_desc = self._factor_param[data_category]['输出参数']
 
-        df = self._pro.fina_indicator(ts_code=ticker, period=period, fields=list(column_desc.keys()))
-        df = self._standardize_df(df, column_desc)
+        df = self._pro.fina_indicator(ts_code=ticker, fields=list(column_desc.keys()))
+        df = df.dropna(subset=['ann_date', 'end_date'])
+        df = df.sort_values('update_flag').groupby(['ann_date', 'end_date']).tail(1)
+        df = df.drop('update_flag', axis=1).fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
+        df = self._standardize_df(df, column_desc).sort_index()
+        df = df.loc[df.index.get_level_values('报告期').month % 3 == 0, :]
+        df = self.append_report_date_cache(df)
+        self.db_interface.delete_id_records(data_category, ticker)
+        self.db_interface.insert_df(df, data_category)
         return df
 
     def get_hs_constitute(self) -> None:

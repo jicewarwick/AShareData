@@ -15,7 +15,7 @@ STOCK_INDEX_ETFS = {'中小板': '159902.SZ', '创业板': '159915.SZ', '50ETF':
                     '500ETF': '510500.SH'}
 
 # financial statements
-FINANCIAL_STATEMENTS_TYPE = ['资产负债表', '利润表', '现金流量表']
+FINANCIAL_STATEMENTS_TYPE = ['资产负债表', '利润表', '现金流量表', '财务指标']
 
 # industry constants
 INDUSTRY_DATA_PROVIDER = ['中信', '申万', '中证', 'Wind']

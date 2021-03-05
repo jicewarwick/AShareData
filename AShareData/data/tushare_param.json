@@ -1842,7 +1842,7 @@
 			"hold_amount": "持有数量"
 		}
 	},
-	"财务指标数据": {
+	"财务指标": {
 		"输入参数": {
 			"ts_code": "ID",
 			"ann_date": "公告日期",
@@ -1859,25 +1859,14 @@
 			"valuechange_income": "价值变动净收益",
 			"interst_income": "利息费用",
 			"ebit": "息税前利润",
-			"current_exint": "无息流动负债",
-			"noncurrent_exint": "无息非流动负债",
 			"interestdebt": "带息债务",
-			"netdebt": "净债务",
 			"tangible_asset": "有形资产",
 			"networking_capital": "营运流动资本",
-			"expense_of_sales": "销售期间费用率",
-			"adminexp_of_gr": "管理费用/营业总收入",
 			"roe": "净资产收益率",
 			"roe_waa": "加权平均净资产收益率",
 			"roa": "总资产报酬率",
 			"roic": "投入资本回报率",
 			"roe_avg": "平均净资产收益率(增发条件)",
-			"opincome_of_ebt": "经营活动净收益/利润总额",
-			"ocf_to_opincome": "经营活动产生的现金流量净额/经营活动净收益",
-			"capitalized_to_da": "资本支出/折旧和摊销",
-			"dp_assets_to_eqt": "权益乘数(杜邦分析)",
-			"ebit_to_interest": "已获利息倍数(EBIT/利息费用)",
-			"longdebt_to_workingcapital": "长期债务与营运资金比率",
 			"roa_dp": "总资产净利率(杜邦分析)",
 			"roic_yearly": "年化投入资本回报率",
 			"total_fa_trun": "固定资产合计周转率",
