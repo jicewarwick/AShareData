@@ -5,7 +5,7 @@ import logging
 import re
 from functools import cached_property
 from itertools import product
-from typing import Callable, Mapping, Sequence, Union
+from typing import Callable, Mapping, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -620,7 +620,7 @@ class TushareData(DataSource):
                 # self.get_financial_index(ticker)
                 pbar.update()
 
-    def get_financial_index(self, ticker: str) -> pd.DataFrame:
+    def get_financial_index(self, ticker: str) -> Optional[pd.DataFrame]:
         """ 获取财务指标
 
         :param ticker: 证券代码(000001.SZ)
@@ -630,6 +630,8 @@ class TushareData(DataSource):
         column_desc = self._factor_param[data_category]['输出参数']
 
         df = self._pro.fina_indicator(ts_code=ticker, fields=list(column_desc.keys()))
+        if df.empty:
+            return
         df = df.dropna(subset=['ann_date', 'end_date'])
         df = df.sort_values('update_flag').groupby(['ann_date', 'end_date']).tail(1)
         df = df.drop('update_flag', axis=1).fillna(np.nan).replace(0, np.nan).dropna(how='all', axis=1)
