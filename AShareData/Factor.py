@@ -1,12 +1,12 @@
 import datetime as dt
 import numbers
 from functools import cached_property, partial
-from typing import Dict, List, Sequence, Union
+from typing import List, Sequence, Union
 
 import numpy as np
 import pandas as pd
 
-from . import constants, DateUtils, utils
+from . import algo, constants, DateUtils, utils
 from .config import get_db_interface
 from .DBInterface import DBInterface
 from .utils import TickerSelector
@@ -587,7 +587,8 @@ class AccountingFactor(Factor):
         storage = []
         for ticker in tickers:
             ticker_data = data.loc[(slice(None), ticker, slice(None)), :]
-            related_dates = self.latest_ts(dates, ticker_data.index.get_level_values('DateTime').tolist())
+            related_dates = algo.get_less_or_equal_of_a_in_b(a=dates,
+                                                             b=ticker_data.index.get_level_values('DateTime').tolist())
             relevant_rec = ticker_data.loc[ticker_data.index.get_level_values('DateTime').isin(related_dates.values())]
             relevant_rec = relevant_rec.groupby('DateTime').tail(1)
 
@@ -613,22 +614,6 @@ class AccountingFactor(Factor):
     @staticmethod
     def func(data: pd.DataFrame) -> np.float:
         raise NotImplementedError()
-
-    @staticmethod
-    def latest_ts(dates: Sequence[dt.datetime], pd_dates: Sequence[dt.datetime]) -> Dict[dt.datetime, dt.datetime]:
-        ret = {}
-        i = 0
-        pd_len = len(pd_dates)
-        for date in dates:
-            while i <= pd_len - 2:
-                if pd_dates[i] <= date < pd_dates[i + 1]:
-                    ret[date] = pd_dates[i]
-                    break
-                if i == pd_len - 2:
-                    ret[date] = pd_dates[i]
-                    break
-                i += 1
-        return ret
 
     def gather_data(self, ticker_data: pd.DataFrame, relevant_rec: pd.DataFrame,
                     offset_strs: List[str]) -> pd.DataFrame:

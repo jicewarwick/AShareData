@@ -8,7 +8,7 @@ import WindPy
 from tqdm import tqdm
 
 from .DataSource import DataSource
-from .. import config, constants, DateUtils, utils
+from .. import algo, config, constants, DateUtils, utils
 from ..DBInterface import DBInterface
 from ..Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
     StockTickers
@@ -215,7 +215,7 @@ class WindData(DataSource):
         """更新股票最新价, 将替换数据库内原先所有数据"""
         tickers = self.stock_list.ticker(dt.date.today())
         storage = []
-        for ticker in utils.chunk_list(tickers, 3000):
+        for ticker in algo.chunk_list(tickers, 3000):
             storage.append(self.w.wsq(ticker, 'rt_latest'))
         data = pd.concat(storage)
         data.index.names = ['ID']
@@ -244,7 +244,7 @@ class WindData(DataSource):
         start_time = dt.datetime.combine(date.date(), dt.time(hour=8))
         end_time = dt.datetime.combine(date.date(), dt.time(hour=16))
         storage = []
-        for section in utils.chunk_list(self.stock_list.ticker(date), 100):
+        for section in algo.chunk_list(self.stock_list.ticker(date), 100):
             partial_data = self.w.wsi(section, "open,high,low,close,volume,amt", start_time, end_time, "")
             storage.append(partial_data.dropna())
         data = pd.concat(storage)

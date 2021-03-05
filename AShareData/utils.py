@@ -1,6 +1,5 @@
 import datetime as dt
 import json
-import re
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -52,11 +51,6 @@ def load_excel(default_loc: str, param_json_loc: str = None) -> List[Dict[str, A
     return df.to_dict('records')
 
 
-def chunk_list(l: list, n: int):
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
-
-
 def format_stock_ticker(ticker: Union[str, int]) -> str:
     if isinstance(ticker, str):
         ticker = int(ticker)
@@ -76,16 +70,6 @@ def full_czc_ticker(ticker: str) -> str:
     c = 1 if ticker[1].isnumeric() else 2
     ticker = ticker[:c] + '2' + ticker[c:]
     return ticker
-
-
-def sort_nicely(l):
-    """ Sort the given list in the way that humans expect.
-    """
-    l = l.copy()
-    convert = lambda text: int(text) if text.isdigit() else text
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    l.sort(key=alphanum_key)
-    return l
 
 
 class SecuritySelectionPolicy:
