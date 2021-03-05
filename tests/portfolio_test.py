@@ -1,7 +1,7 @@
 import datetime as dt
 import unittest
 
-from AShareData import set_global_config, TradingCalendar
+from AShareData import AShareDataReader, set_global_config, TradingCalendar
 from AShareData.PortfolioAnalysis import ASharePortfolioAnalysis, CrossSectionalPortfolioAnalysis
 from AShareData.Tickers import StockTickerSelector
 from AShareData.utils import StockSelectionPolicy
@@ -19,19 +19,40 @@ class MyTestCase(unittest.TestCase):
         price = self.data_reader.get_factor('股票日行情', '收盘价', start_date=start_date, end_date=end_date)
         self.portfolio_analysis.summary_statistics(price)
 
-    def test_cross_sectional_portfolio_analysis(self):
+
+class CrossSectionTesting(unittest.TestCase):
+    def setUp(self):
+        set_global_config('config.json')
+        self.data_reader = AShareDataReader()
         forward_return = self.data_reader.forward_return
         factors = self.data_reader.log_cap
         ticker_selector = StockTickerSelector(StockSelectionPolicy())
-        industry = None,
-        market_cap = None
-        start_date = dt.datetime(2019, 1, 1)
+        market_cap = self.data_reader.stock_free_floating_market_cap
+        start_date = dt.datetime(2020, 8, 1)
         end_date = dt.datetime(2021, 2, 1)
         dates = TradingCalendar().first_day_of_month(start_date, end_date)
 
-        p = CrossSectionalPortfolioAnalysis(forward_return, factors=factors, dates=dates,
-                                            ticker_selector=ticker_selector)
-        self = p
+        self.t = CrossSectionalPortfolioAnalysis(forward_return, factors=factors, dates=dates, market_cap=market_cap,
+                                                 ticker_selector=ticker_selector)
+        self.t.cache()
+
+    def test_single_sort(self):
+        self.t.single_factor_sorting('BM')
+        self.t.returns_results(cap_weighted=True)
+        self.t.returns_results(cap_weighted=False)
+        self.t.summary_statistics('BM')
+
+    def test_independent_double_sort(self):
+        self.t.two_factor_sorting(factor_names=('BM', '市值对数'), quantile=10, separate_neg_vals=True, independent=True)
+        self.t.returns_results(cap_weighted=True)
+        self.t.returns_results(cap_weighted=False)
+        self.t.summary_statistics('BM')
+
+    def test_dependent_double_sort(self):
+        self.t.two_factor_sorting(factor_names=('BM', '市值对数'), quantile=10, separate_neg_vals=True, independent=False)
+        self.t.returns_results(cap_weighted=True)
+        self.t.returns_results(cap_weighted=False)
+        self.t.summary_statistics('BM')
 
 
 if __name__ == '__main__':
