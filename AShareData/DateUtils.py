@@ -126,6 +126,12 @@ class TradingCalendarBase(object):
 
         return j - i
 
+    def today(self) -> dt.datetime:
+        t = dt.datetime.combine(dt.date.today(), dt.time())
+        if not self.is_trading_date(t):
+            t = self.offset(t, -1)
+        return t
+
     def yesterday(self) -> dt.datetime:
         return self.offset(dt.date.today(), -1)
 

@@ -480,7 +480,7 @@ class WindData(DataSource):
         start_series = start_series.loc[ind, :]
         end_series = end_series.loc[ind, :]
 
-        if start_series.dtype == 'float64':
+        if start_series.dtype == 'float64' or start_series.dtype == 'int64':
             ind = np.abs(start_series.values - end_series.values) > 0.0001
             ind = ind | start_series.isnull().values | end_series.isnull().values
             ind = ind & (start_series.values != 0)
@@ -534,7 +534,7 @@ class WindData(DataSource):
             ticker = self.stock_list.all_ticker()
         current_data = self.db_interface.read_table(table_name).groupby('ID').tail(1)
         current_data = current_data.loc[current_data.index.get_level_values('ID').isin(ticker), :]
-        end_date = self.calendar.yesterday()
+        end_date = self.calendar.today()
         new_data = data_func(ticker=ticker, date=end_date)
         new_data.name = table_name
 
