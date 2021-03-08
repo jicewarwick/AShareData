@@ -468,6 +468,7 @@ class WindData(DataSource):
                             desc: str = '', default_start_date: Union[Dict, DateUtils.DateType] = None):
         start_ticker = [] if start_series.empty else start_series.index.get_level_values('ID')
         all_ticker = sorted(list(set(start_ticker) | set(end_series.index.get_level_values('ID'))))
+        start_ts = None if start_series.empty else start_series.index.get_level_values('DateTime').max()
 
         tmp = start_series.reset_index().set_index('ID').reindex(all_ticker)
         start_series = tmp.reset_index().set_index(['DateTime', 'ID']).iloc[:, 0]
@@ -488,6 +489,10 @@ class WindData(DataSource):
             ind = (start_series.values != end_series.values)
         start_series = start_series.loc[ind]
         end_series = end_series.loc[ind, :]
+
+        if start_ts and self.calendar.days_count(start_ts, end_series.index.get_level_values('DateTime')[0]) == 1:
+            self.db_interface.insert_df(end_series, end_series.name)
+            return
 
         with tqdm(start_series) as pbar:
             for i in range(start_series.shape[0]):

@@ -12,8 +12,6 @@ from ..utils import StockSelectionPolicy
 
 
 class FamaFrench3FactorModel(FinancialModel):
-    __metaclass__ = object
-
     def __init__(self, db_interface: DBInterface = None):
         super().__init__('Fama French 3 factor model', ['FF3_RM', 'FF3_SMB', 'FF3_HML'])
         self.db_interface = db_interface if db_interface else get_db_interface()
