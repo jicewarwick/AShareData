@@ -120,6 +120,14 @@ class MyTestCase(unittest.TestCase):
         print(beta_factor.get_data(dates, ticker_selector=ticker_selector, look_back_period=look_back_period,
                                    min_trading_days=min_trading_days))
 
+    def test_interest_rate(self):
+        print('')
+        interest_rate = InterestRateFactor('shibor利率数据', '6个月', self.db_interface).set_factor_name('6个月shibor')
+        start_date = dt.datetime(2021, 1, 1)
+        end_date = dt.datetime(2021, 3, 1)
+        data = interest_rate.get_data(start_date=start_date, end_date=end_date)
+        print(data)
+
 
 if __name__ == '__main__':
     unittest.main()

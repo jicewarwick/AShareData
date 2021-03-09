@@ -8,7 +8,7 @@ from . import DateUtils
 from .config import generate_db_interface_from_config, get_db_interface
 from .DBInterface import DBInterface
 from .Factor import BetaFactor, BinaryFactor, CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, \
-    LatestAccountingFactor, OnTheRecordFactor, TTMAccountingFactor, UnaryFactor
+    InterestRateFactor, LatestAccountingFactor, OnTheRecordFactor, TTMAccountingFactor, UnaryFactor
 from .Tickers import StockTickers
 
 
@@ -168,26 +168,24 @@ class AShareDataReader(object):
         return (self.stock_market_cap / self.earning_ttm).set_factor_name('PE_TTM')
 
     @cached_property
-    def overnight_shibor(self) -> ContinuousFactor:
+    def overnight_shibor(self) -> InterestRateFactor:
         """隔夜shibor"""
-        return ContinuousFactor('shibor利率数据', '隔夜', self.db_interface).set_factor_name('隔夜shibor')
+        return InterestRateFactor('shibor利率数据', '隔夜', self.db_interface).set_factor_name('隔夜shibor')
 
     @cached_property
-    def three_month_shibor(self) -> ContinuousFactor:
+    def three_month_shibor(self) -> InterestRateFactor:
         """三月期shibor"""
-        f = ContinuousFactor('shibor利率数据', '3个月', self.db_interface)
-        f.set_factor_name('3个月shibor')
-        return f
+        return InterestRateFactor('shibor利率数据', '3个月', self.db_interface).set_factor_name('3个月shibor')
 
     @cached_property
-    def six_month_shibor(self) -> ContinuousFactor:
+    def six_month_shibor(self) -> InterestRateFactor:
         """6月期shibor"""
-        return ContinuousFactor('shibor利率数据', '6个月', self.db_interface).set_factor_name('6个月shibor')
+        return InterestRateFactor('shibor利率数据', '6个月', self.db_interface).set_factor_name('6个月shibor')
 
     @cached_property
-    def one_year_shibor(self) -> ContinuousFactor:
+    def one_year_shibor(self) -> InterestRateFactor:
         """一年期shibor"""
-        return ContinuousFactor('shibor利率数据', '1年', self.db_interface).set_factor_name('1年shibor')
+        return InterestRateFactor('shibor利率数据', '1年', self.db_interface).set_factor_name('1年shibor')
 
     def weighted_return(self, date: dt.datetime, ids: Sequence[str], weight_base: CompactFactor = None,
                         pre_date: dt.datetime = None) -> float:

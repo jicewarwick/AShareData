@@ -531,6 +531,35 @@ class ContinuousFactor(NonFinancialFactor):
         return df
 
 
+class InterestRateFactor(ContinuousFactor):
+    def __init__(self, table_name: str, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(table_name, factor_name, db_interface)
+        self.calendar = DateUtils.TradingCalendar(self.db_interface)
+
+    def _get_data(self, *args, **kwargs) -> pd.Series:
+        data = super()._get_data(*args, **kwargs)
+        dates = data.index.get_level_values('DateTime').tolist()
+        after_date = pd.Timestamp(self.calendar.offset(data.index.get_level_values('DateTime')[-1], 1))
+        days = [(it[1] - it[0]).days for it in zip(dates, dates[1:] + [after_date])]
+        data = data / 365 * days
+        return data
+
+
+class PriceFactor(FactorBase):
+    def __init__(self, factor: FactorBase, db_interface: DBInterface = None):
+        super().__init__(factor.name)
+        self.factor = factor
+        self.db_interface = db_interface if db_interface else get_db_interface()
+        self.calendar = DateUtils.TradingCalendar(self.db_interface)
+
+    def _get_data(self, *args, **kwargs) -> pd.Series:
+        return self.factor.get_data(*args, **kwargs)
+
+    def get_return_data(self, *args, **kwargs):
+        data = self.factor._get_data(*args, **kwargs)
+
+
+
 class AccountingFactor(Factor):
     """
     财报数据
@@ -781,7 +810,7 @@ class CachedFactor(FactorBase):
 
 
 class BetaFactor(FactorBase):
-    def __init__(self, market_ret: FactorBase = None, rf_rate: FactorBase = None, db_interface: DBInterface = None):
+    def __init__(self, market_ret: FactorBase = None, rf_rate: InterestRateFactor = None, db_interface: DBInterface = None):
         """ Stock Beta
 
         :param market_ret: 市场收益
@@ -798,7 +827,7 @@ class BetaFactor(FactorBase):
             market_ret.bind_params(index_code='000300.SH')
         self.market_ret = market_ret
         if rf_rate is None:
-            self.rf_rate = ContinuousFactor('shibor利率数据', '3个月', db_interface)
+            self.rf_rate = InterestRateFactor('shibor利率数据', '3个月', db_interface)
         self.calendar = DateUtils.TradingCalendar(db_interface)
 
     def _get_data(self, dates: Sequence[dt.datetime],
@@ -816,8 +845,8 @@ class BetaFactor(FactorBase):
             rf_data = self.rf_rate.get_data(start_date=start_date, end_date=end_date).reset_index()
             combined_data = pd.merge(stock_data, market_data, on='DateTime')
             combined_data = pd.merge(combined_data, rf_data, on='DateTime')
-            combined_data.iloc[:, 2] = combined_data.iloc[:, 2] - combined_data.iloc[:, -1] / 36500
-            combined_data.iloc[:, 3] = combined_data.iloc[:, 3] - combined_data.iloc[:, -1] / 36500
+            combined_data.iloc[:, 2] = combined_data.iloc[:, 2] - combined_data.iloc[:, -1]
+            combined_data.iloc[:, 3] = combined_data.iloc[:, 3] - combined_data.iloc[:, -1]
 
             for ID, group in combined_data.groupby('ID'):
                 if group.shape[0] < min_trading_days:
