@@ -1,8 +1,9 @@
-import datetime as dt
 import unittest
 
-from AShareData import AShareDataReader, set_global_config, TradingCalendar
-from AShareData.PortfolioAnalysis import ASharePortfolioAnalysis, CrossSectionalPortfolioAnalysis
+from AShareData import set_global_config, TradingCalendar
+from AShareData.analysis.holding import *
+from AShareData.model.FamaFrench3FactorModel import FamaFrench3FactorModel
+from AShareData.PortfolioAnalysis import *
 from AShareData.Tickers import StockTickerSelector
 from AShareData.utils import StockSelectionPolicy
 
@@ -53,6 +54,24 @@ class CrossSectionTesting(unittest.TestCase):
         self.t.returns_results(cap_weighted=True)
         self.t.returns_results(cap_weighted=False)
         self.t.summary_statistics('BM')
+
+
+class PortfolioExposureTest(unittest.TestCase):
+    def setUp(self):
+        set_global_config('config.json')
+
+    @staticmethod
+    def test_case():
+        date = dt.datetime(2021, 3, 8)
+        model = FamaFrench3FactorModel()
+        data_reader = AShareDataReader()
+        rf_rate = data_reader.three_month_shibor
+        exposure = ASharePortfolioExposure(model=model, rf_rate=rf_rate, date=date)
+        ticker = '000002.SZ'
+        fh = FundHolding()
+        portfolio_weight = fh.portfolio_stock_weight(date, 'ALL')
+        exposure.get_stock_exposure(ticker)
+        exposure.get_portfolio_exposure(portfolio_weight)
 
 
 if __name__ == '__main__':

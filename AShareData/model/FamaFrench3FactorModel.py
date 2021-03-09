@@ -1,4 +1,5 @@
 import datetime as dt
+from typing import Sequence, Union
 
 import pandas as pd
 from tqdm import tqdm
@@ -62,6 +63,9 @@ class FamaFrench3FactorModel(FinancialModel):
         index = pd.MultiIndex.from_product([[date], self.factor_names], names=('DateTime', 'ID'))
         factor_df = pd.Series([market_return, smb, hml], index=index, name='收益率')
         return factor_df
+
+    def get_factor_return(self, dates: Union[dt.datetime, Sequence[dt.datetime]]):
+        return self.db_interface.read_table(self.db_table_name, dates=dates, ids=self.factor_names)
 
     def compute_factor_loading(self):
         pass
