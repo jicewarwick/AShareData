@@ -55,3 +55,30 @@ class IndustryComparison(object):
         holding['DateTime'] = date
         holding.set_index(['DateTime', 'ID'], inplace=True)
         return holding
+
+
+class FundHolding(object):
+    def __init__(self, db_interface: DBInterface = None):
+        self.db_interface = db_interface if db_interface else get_db_interface()
+        self.data_reader = AShareDataReader(self.db_interface)
+
+    def get_holding(self, date: dt.datetime, fund: str = None) -> pd.DataFrame:
+        sql = None
+        if fund and fund != 'ALL':
+            sql = f'accountName = "{fund}"'
+        data = self.db_interface.read_table('持仓记录', dates=date, text_statement=sql)
+        if fund:
+            data = data.groupby(['DateTime', 'windCode'])['quantity'].sum()
+            data.index.names = ['DateTime', 'ID']
+        return data
+
+    def portfolio_stock_weight(self, date: dt.datetime, fund: str = None):
+        holding = self.get_holding(date, fund)
+
+        price_info = self.data_reader.stock_close.get_data(dates=date)
+        price_info.name = 'close'
+        tmp = pd.concat([holding, price_info], axis=1).dropna()
+        cap = tmp['quantity'] * tmp['close']
+        ratio = cap / cap.sum()
+        ratio.name = 'weight'
+        return ratio.loc[ratio > 0]

@@ -26,6 +26,14 @@ class MyTestCase(unittest.TestCase):
     def test_aggregate_return(self):
         print(aggregate_returns(target=self.target, convert_to='monthly', benchmark_factor=self.benchmark))
 
+    @staticmethod
+    def test_holding():
+        h = FundHolding()
+        date = dt.datetime(2021, 3, 8)
+        print(h.get_holding(date))
+        print(h.get_holding(date, fund='指增1号 - 东财 - 普通户'))
+        print(h.get_holding(date, fund='ALL'))
+
 
 if __name__ == '__main__':
     unittest.main()
