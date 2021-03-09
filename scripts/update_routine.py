@@ -2,6 +2,7 @@ import sys
 
 from AShareData import ConstLimitStockFactorCompositor, IndexUpdater, JQData, set_global_config, TDXData, TushareData, \
     WindData
+from AShareData.model.FamaFrench3FactorModel import FamaFrench3FactorModel
 
 if __name__ == '__main__':
     set_global_config(sys.argv[1])
@@ -45,3 +46,4 @@ if __name__ == '__main__':
 
     ConstLimitStockFactorCompositor().update()
     IndexUpdater().update()
+    FamaFrench3FactorModel().update_daily_factor_return()
