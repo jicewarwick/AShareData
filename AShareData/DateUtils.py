@@ -82,19 +82,40 @@ class TradingCalendarBase(object):
         return date in self.calendar
 
     @dtlize_input_dates
-    def select_dates(self, start_date: DateType = None, end_date: DateType = None, inclusive=(True, True)) \
-            -> List[dt.datetime]:
-        """Get list of all trading days during[``start_date``, ``end_date``] inclusive"""
+    def select_dates(self, start_date: DateType = None, end_date: DateType = None,
+                     inclusive=(True, True), period: str = None) -> List[dt.datetime]:
+        """ Get list of all trading days between ``start_date`` and ``end_date``
+
+        :param start_date: start date
+        :param end_date: end date
+        :param inclusive: when select daily trading dates, if the return list include the start date and end date in the parameter
+        :param period: valid for {'d', 'wb', 'we', 'mb', 'me', 'yb', 'ye'} where 'd', 'w', 'm', 'y' stands for day, week, month and year. 'b' and 'e' stands for beginning and the end
+        :return:
+        """
         if start_date is None:
             start_date = self.calendar[0]
         if end_date is None:
             end_date = dt.datetime.now()
-        dates = self._select_dates(start_date, end_date, lambda pre, curr, next_: True)
-        if dates and not inclusive[0]:
-            dates = dates[1:]
-        if dates and not inclusive[1]:
-            dates = dates[:-1]
-        return dates
+
+        if period is None or period.lower() == 'd':
+            dates = self._select_dates(start_date, end_date, lambda pre, curr, next_: True)
+            if dates and not inclusive[0]:
+                dates = dates[1:]
+            if dates and not inclusive[1]:
+                dates = dates[:-1]
+            return dates
+        elif period.lower() == 'wb':
+            return self.first_day_of_week(start_date, end_date)
+        elif period.lower() == 'we':
+            return self.last_day_of_week(start_date, end_date)
+        elif period.lower() == 'mb':
+            return self.first_day_of_month(start_date, end_date)
+        elif period.lower() == 'me':
+            return self.last_day_of_month(start_date, end_date)
+        elif period.lower() == 'yb':
+            return self.first_day_of_year(start_date, end_date)
+        elif period.lower() == 'ye':
+            return self.last_day_of_year(start_date, end_date)
 
     @dtlize_input_dates
     def offset(self, date: DateType, days: int) -> dt.datetime:
@@ -157,6 +178,11 @@ class TradingCalendarBase(object):
         """Get last trading day of months between [``start_date``, ``end_date``]"""
         return self._select_dates(start_date, end_date,
                                   lambda pre, curr, next_: curr.month != next_.month)
+
+    @dtlize_input_dates
+    def first_day_of_year(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
+        """Get first trading day of the year between [``start_date``, ``end_date``]"""
+        return self._select_dates(start_date, end_date, lambda pre, curr, next_: pre.year != curr.year)
 
     @dtlize_input_dates
     def last_day_of_year(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
