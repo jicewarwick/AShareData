@@ -1,7 +1,6 @@
 import pandas as pd
 
-from AShareData import AShareDataReader, DateUtils
-from AShareData.config import get_db_interface, set_global_config
+from AShareData import AShareDataReader, DateUtils, get_db_interface, set_global_config
 
 if __name__ == '__main__':
     config_loc = './config.json'

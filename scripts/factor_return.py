@@ -1,9 +1,8 @@
 import datetime as dt
 import sys
 
-from AShareData.AShareDataReader import AShareDataReader
-from AShareData.config import set_global_config
-from AShareData.FactorCompositor import FactorPortfolio, FactorPortfolioPolicy
+from AShareData import AShareDataReader, set_global_config
+from AShareData.factor_compositor import FactorPortfolio, FactorPortfolioPolicy
 from AShareData.utils import StockSelectionPolicy
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@ import sys
 import datetime as dt
 
 from AShareData import IndexHighlighter, set_global_config
-from AShareData.model.FamaFrench3FactorModel import FamaFrench3FactorModel
+from AShareData.model import FamaFrench3FactorModel
 
 if __name__ == '__main__':
     set_global_config(sys.argv[1])

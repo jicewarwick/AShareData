@@ -1,18 +1,16 @@
 import importlib.util
 import logging
 
-from .analysis.holding import IndustryComparison
-from .analysis.trading import TradingAnalysis
+from .analysis import IndustryComparison, TradingAnalysis
 from .AShareDataReader import AShareDataReader
-from .config import get_db_interface, get_global_config, set_global_config
-from .data_source.JQData import JQData
-from .data_source.TDXData import TDXData
-from .data_source.TushareData import TushareData
-from .data_source.WebData import WebDataCrawler
+from .config import generate_db_interface_from_config, get_db_interface, get_global_config, set_global_config
+from .data_source import JQData, TDXData, TushareData, WebDataCrawler
 from .DateUtils import TradingCalendar
 from .DBInterface import MySQLInterface
-from .FactorCompositor import ConstLimitStockFactorCompositor, IndexCompositor, IndexUpdater
-from .tools.tools import IndexHighlighter, MajorIndustryConstitutes
+from .factor_compositor import ConstLimitStockFactorCompositor, IndexCompositor, IndexUpdater, \
+    NegativeBookEquityListingCompositor
+from .model import FamaFrench3FactorModel
+from .tools import IndexHighlighter, MajorIndustryConstitutes
 
 ch = logging.StreamHandler()
 ch.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s'))
@@ -21,10 +19,5 @@ logger = logging.getLogger(__name__)
 logger.addHandler(ch)
 logger.setLevel(logging.INFO)
 
-wind_spec = importlib.util.find_spec("WindPy")
-if wind_spec:
-    from .data_source.WindData import WindData
-
-    logging.getLogger(__name__).info('WindPy found')
-else:
-    logging.getLogger(__name__).debug('WindPy not found!!')
+if importlib.util.find_spec("WindPy"):
+    from .data_source import WindData

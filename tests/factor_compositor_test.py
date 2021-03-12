@@ -1,8 +1,9 @@
+import datetime as dt
 import unittest
 
 import AShareData.DateUtils
 from AShareData.config import set_global_config
-from AShareData.FactorCompositor import *
+from AShareData.factor_compositor import *
 
 
 class MyTestCase(unittest.TestCase):

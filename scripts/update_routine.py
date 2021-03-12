@@ -1,8 +1,8 @@
 import sys
 
 from AShareData import ConstLimitStockFactorCompositor, IndexUpdater, JQData, set_global_config, TDXData, TushareData, \
-    WindData
-from AShareData.model.FamaFrench3FactorModel import FamaFrench3FactorModel
+    WindData, NegativeBookEquityListingCompositor
+from AShareData.model import FamaFrench3FactorModel
 
 if __name__ == '__main__':
     set_global_config(sys.argv[1])
@@ -42,6 +42,7 @@ if __name__ == '__main__':
         jq_data.update_stock_morning_auction_data()
 
     ConstLimitStockFactorCompositor().update()
+    NegativeBookEquityListingCompositor().update()
     IndexUpdater().update()
     FamaFrench3FactorModel().update_daily_factor_return()
 
