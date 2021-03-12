@@ -139,6 +139,7 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
     :param max_pause_days: (i, n): 在前n个交易日中最大停牌天数不大于i
 
     :param ignore_const_limit: 排除一字板股票
+    :param ignore_negative_book_value_stock: 排除净资产为负的股票
     """
     industry_provider: str = None
     industry_level: int = None
@@ -156,6 +157,7 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
     max_pause_days: Tuple[int, int] = None
 
     ignore_const_limit: bool = False
+    ignore_negative_book_value_stock = False
 
     def __post_init__(self):
         if self.ignore_new_stock_period:

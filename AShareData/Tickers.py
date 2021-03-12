@@ -236,6 +236,10 @@ class StockTickerSelector(TickerSelector):
         return CompactRecordFactor(tmp, '风险警示股')
 
     @cached_property
+    def negative_book_value_stock_selector(self):
+        return CompactFactor('负净资产股票', self.db_interface)
+
+    @cached_property
     def industry_info(self):
         if self.policy.industry:
             return IndustryFactor(self.policy.industry_provider, self.policy.industry_level, self.db_interface)
@@ -283,6 +287,10 @@ class StockTickerSelector(TickerSelector):
                 ids = ids & set(self.risk_warned_stock_selector.get_data(start_date))
         if self.policy.ignore_st:
             ids = ids - set(self.risk_warned_stock_selector.get_data(date))
+
+        if self.policy.ignore_negative_book_value_stock:
+            data = self.negative_book_value_stock_selector.get_data(dates=date)
+            ids = ids - set(data.loc[data == True].index.get_level_values('ID').tolist())
 
         ids = sorted(list(ids))
         return ids
