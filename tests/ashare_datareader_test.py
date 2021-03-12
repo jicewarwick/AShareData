@@ -43,10 +43,8 @@ class MyTestCase(unittest.TestCase):
         print(self.db.stock_market_cap.get_data(dates=self.dates, ids=self.ids))
         print(self.db.pe_ttm.get_data(dates=self.dates, ids=self.ids))
 
-    def test_weighted_ret(self):
-        print(self.db.weighted_return(date=self.end_date, ids=self.ids))
-        print(self.db.weighted_return(date=self.end_date, ids=self.ids, pre_date=self.start_date))
-        print(self.db.weighted_return(date=self.end_date, ids=self.ids, weight_base=self.db.free_floating_share))
+    def test_cap_weight(self):
+        print(self.db.free_floating_cap_weight.get_data(dates=[self.start_date, self.end_date], ids=self.ids))
 
 
 if __name__ == '__main__':

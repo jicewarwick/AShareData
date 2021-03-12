@@ -275,6 +275,26 @@ class FactorBase(object):
     def corr(self, other):
         pass
 
+    def mean(self, along: str = 'DateTime'):
+        assert along in ['DateTime', 'ID'], 'along can only be DateTime or ID'
+
+        def sub_get_data(self, **kwargs):
+            data = self.f.get_data(**kwargs)
+            return data.groupby(along).mean()
+
+        Foo = type('', (UnaryFactor,), {'_get_data': sub_get_data})
+        return Foo(self)
+
+    def sum(self, along: str = 'DateTime'):
+        assert along in ['DateTime', 'ID'], 'along can only be DateTime or ID'
+
+        def sub_get_data(self, **kwargs):
+            data = self.f.get_data(**kwargs)
+            return data.groupby(along).sum()
+
+        Foo = type('', (UnaryFactor,), {'_get_data': sub_get_data})
+        return Foo(self)
+
     def bind_params(self, ids: Union[str, Sequence[str]] = None, index_code: str = None):
         if ids:
             self._get_data = partial(self._get_data, ids=ids)
@@ -545,6 +565,7 @@ class InterestRateFactor(ContinuousFactor):
         return data
 
 
+# TODO
 class PriceFactor(FactorBase):
     def __init__(self, factor: FactorBase, db_interface: DBInterface = None):
         super().__init__(factor.name)
@@ -557,7 +578,6 @@ class PriceFactor(FactorBase):
 
     def get_return_data(self, *args, **kwargs):
         data = self.factor._get_data(*args, **kwargs)
-
 
 
 class AccountingFactor(Factor):
@@ -810,7 +830,8 @@ class CachedFactor(FactorBase):
 
 
 class BetaFactor(FactorBase):
-    def __init__(self, market_ret: FactorBase = None, rf_rate: InterestRateFactor = None, db_interface: DBInterface = None):
+    def __init__(self, market_ret: FactorBase = None, rf_rate: InterestRateFactor = None,
+                 db_interface: DBInterface = None):
         """ Stock Beta
 
         :param market_ret: 市场收益

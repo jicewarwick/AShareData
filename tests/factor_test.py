@@ -128,6 +128,12 @@ class MyTestCase(unittest.TestCase):
         data = interest_rate.get_data(start_date=start_date, end_date=end_date)
         print(data)
 
+    def test_mean_and_average(self):
+        print(self.close.mean('DateTime').get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
+        print(self.close.mean('ID').get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
+        print(self.close.sum('DateTime').get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
+        print(self.close.sum('ID').get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
+
 
 if __name__ == '__main__':
     unittest.main()
