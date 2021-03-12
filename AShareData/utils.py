@@ -157,7 +157,7 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
     max_pause_days: Tuple[int, int] = None
 
     ignore_const_limit: bool = False
-    ignore_negative_book_value_stock = False
+    ignore_negative_book_value_stock: bool = False
 
     def __post_init__(self):
         if self.ignore_new_stock_period:

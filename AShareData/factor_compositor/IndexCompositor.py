@@ -35,12 +35,11 @@ class IndexCompositor(FactorCompositor):
                 ids = self.stock_ticker_selector.ticker(date)
 
                 if ids:
+                    t_dates = [(self.calendar.offset(date, -1)), date]
                     if self.weight:
-                        pre_date = self.calendar.offset(date, -1)
-                        rets = (self.data_reader.forward_return * self.weight).sum() \
-                            .get_data(dates=[pre_date, date], ids=ids)
+                        rets = (self.data_reader.forward_return * self.weight).sum().get_data(dates=t_dates, ids=ids)
                     else:
-                        rets = self.data_reader.stock_return.mean(along='DateTime').get_data(date=date, ids=ids)
+                        rets = self.data_reader.stock_return.mean(along='DateTime').get_data(dates=t_dates, ids=ids)
                     index = pd.MultiIndex.from_tuples([(date, self.policy.ticker)], names=['DateTime', 'ID'])
                     ret = pd.Series(rets.values[0], index=index, name='收益率')
 
