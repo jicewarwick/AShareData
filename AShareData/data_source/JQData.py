@@ -6,7 +6,7 @@ from typing import Mapping, Optional, Union
 import pandas as pd
 from tqdm import tqdm
 
-from .DataSource import DataSource
+from .DataSource import DataSource, MinutesDataFunctionMixin
 from .. import config, DateUtils, utils
 from ..DBInterface import DBInterface
 from ..Tickers import ETFOptionTickers, FutureTickers, IndexOptionTickers, StockTickers
@@ -15,7 +15,7 @@ with utils.NullPrinter():
     import jqdatasdk as jq
 
 
-class JQData(DataSource):
+class JQData(DataSource, MinutesDataFunctionMixin):
     def __init__(self, db_interface: DBInterface = None, mobile: str = None, password: str = None):
         if db_interface is None:
             db_interface = config.get_db_interface()

@@ -25,6 +25,8 @@ class DataSource(object):
         """交易日历"""
         return DateUtils.TradingCalendar(self.db_interface)
 
+
+class MinutesDataFunctionMixin(object):
     @staticmethod
     def _auction_data_to_price_data(auction_data: pd.DataFrame) -> pd.DataFrame:
         auction_data['开盘价'] = auction_data['成交价']

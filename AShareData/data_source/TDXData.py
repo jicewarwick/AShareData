@@ -5,14 +5,14 @@ import pandas as pd
 from pytdx.hq import TdxHq_API
 from tqdm import tqdm
 
-from .DataSource import DataSource
+from .DataSource import DataSource, MinutesDataFunctionMixin
 from .. import utils
 from ..config import get_global_config
 from ..DBInterface import DBInterface
 from ..Tickers import StockTickers
 
 
-class TDXData(DataSource):
+class TDXData(DataSource, MinutesDataFunctionMixin):
     def __init__(self, db_interface: DBInterface = None, host: str = None, port: int = None):
         super().__init__(db_interface)
         if host is None:
