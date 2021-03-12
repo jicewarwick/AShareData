@@ -64,7 +64,7 @@ class FamaFrench3FactorModel(FinancialModel):
         factor_df = pd.Series([market_return, smb, hml], index=index, name='收益率')
         return factor_df
 
-    def get_factor_return(self, dates: Union[dt.datetime, Sequence[dt.datetime]]):
+    def get_factor_return(self, dates: Union[dt.datetime, Sequence[dt.datetime]] = None):
         return self.db_interface.read_table(self.db_table_name, dates=dates, ids=self.factor_names)
 
     def compute_factor_loading(self):

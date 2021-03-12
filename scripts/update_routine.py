@@ -41,9 +41,9 @@ if __name__ == '__main__':
     with JQData() as jq_data:
         jq_data.update_stock_morning_auction_data()
 
-    with TDXData() as tdx_data:
-        tdx_data.update_stock_minute()
-
     ConstLimitStockFactorCompositor().update()
     IndexUpdater().update()
     FamaFrench3FactorModel().update_daily_factor_return()
+
+    with TDXData() as tdx_data:
+        tdx_data.update_stock_minute()
