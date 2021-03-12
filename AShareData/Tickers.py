@@ -46,7 +46,7 @@ class TickersBase(object):
         if end_date is None:
             end_date = dt.datetime.today()
         if start_date is None:
-            start_date = dt.datetime(1990, 12, 19)
+            start_date = dt.datetime(1990, 12, 10)
         u_data = self.cache.loc[(start_date <= self.cache.DateTime) & (self.cache.DateTime <= end_date), :]
         tmp = u_data.groupby('ID').tail(1)
         return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
@@ -230,6 +230,8 @@ class StockTickerSelector(TickerSelector):
     @cached_property
     def risk_warned_stock_selector(self):
         tmp = CompactFactor('证券名称', self.db_interface)
+        ids = tmp.data.index.get_level_values('ID')
+        tmp.data = tmp.data.loc[ids.str.endswith('.SH') | ids.str.endswith('.SZ')]
         tmp.data = tmp.data.map(lambda x: 'PT' in x or 'ST' in x or '退' in x)
         return CompactRecordFactor(tmp, '风险警示股')
 
