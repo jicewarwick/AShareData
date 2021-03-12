@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass
 from typing import Sequence
 
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -85,6 +86,32 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
                 pbar.update()
 
 
+class NegativeBookEquityListingCompositor(FactorCompositor):
+    def __init__(self, db_interface: DBInterface = None):
+        """标识负净资产股票
+
+        :param db_interface: DBInterface
+        """
+        super().__init__(db_interface)
+        self.table_name = '负净资产股票'
+
+    def update(self):
+        data = self.db_interface.read_table('合并资产负债表', '股东权益合计(不含少数股东权益)')
+        storage = []
+        for _, group in data.groupby('ID'):
+            if any(group < 0):
+                tmp = group.groupby('DateTime').tail(1) < 0
+                t = tmp.iloc[tmp.argmax():].droplevel('报告期')
+                t2 = t[np.concatenate(([True], t.values[:-1] != t.values[1:]))]
+                if any(t2):
+                    storage.append(t2)
+
+        ret = pd.concat(storage)
+        ret.name = '负净资产股票'
+        self.db_interface.purge_table(self.table_name)
+        self.db_interface.insert_df(ret, self.table_name)
+
+
 class FundAdjFactorCompositor(FactorCompositor):
     def __init__(self, db_interface: DBInterface = None):
         """
@@ -135,9 +162,10 @@ class IndexCompositor(FactorCompositor):
         super().__init__(db_interface)
         self.table_name = '自合成指数'
         self.policy = index_composition_policy
-        self.units_factor = None
+        self.weight = None
         if index_composition_policy.unit_base:
-            self.units_factor = CompactFactor(index_composition_policy.unit_base, self.db_interface)
+            self.weight = (CompactFactor(index_composition_policy.unit_base, self.db_interface)
+                           * self.data_reader.stock_close).weight()
         self.stock_ticker_selector = StockTickerSelector(self.policy.stock_selection_policy, self.db_interface)
 
     def update(self):
@@ -155,9 +183,14 @@ class IndexCompositor(FactorCompositor):
                 ids = self.stock_ticker_selector.ticker(date)
 
                 if ids:
-                    daily_ret = self.data_reader.weighted_return(date=date, ids=ids, weight_base=self.units_factor)
+                    if self.weight:
+                        pre_date = self.calendar.offset(date, -1)
+                        rets = (self.data_reader.forward_return * self.weight).sum() \
+                            .get_data(dates=[pre_date, date], ids=ids)
+                    else:
+                        rets = self.data_reader.stock_return.mean(along='DateTime').get_data(date=date, ids=ids)
                     index = pd.MultiIndex.from_tuples([(date, self.policy.ticker)], names=['DateTime', 'ID'])
-                    ret = pd.Series(daily_ret, index=index, name='收益率')
+                    ret = pd.Series(rets.values[0], index=index, name='收益率')
 
                     self.db_interface.update_df(ret, self.table_name)
                 pbar.update()

@@ -721,6 +721,11 @@
 		"ID": "varchar",
 		"最新价": "float"
 	},
+	"负净资产股票": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"负净资产股票": "boolean"
+	},
 	"持仓记录": {
 		"id": "int",
 		"accountName": "str",
