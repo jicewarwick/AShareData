@@ -166,6 +166,11 @@ class AShareDataReader(object):
         return (self.book_val / self.stock_market_cap).set_factor_name('BM')
 
     @cached_property
+    def bm_after_close(self) -> BinaryFactor:
+        """After market Book to Market value"""
+        return (self.book_val.shift(-1) / self.stock_market_cap).set_factor_name('BM')
+
+    @cached_property
     def pe_ttm(self) -> BinaryFactor:
         """Price to Earning Trailing Twelve Month"""
         return (self.stock_market_cap / self.earning_ttm).set_factor_name('PE_TTM')
