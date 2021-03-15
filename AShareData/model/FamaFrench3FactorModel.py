@@ -29,7 +29,7 @@ class FamaFrench3FactorModel(FinancialModel):
         self.start_date = dt.datetime(2010, 1, 3)
         self.hml_threshold = [0, 0.3, 0.7, 1]
         self.smb_threshold = [0, 0.5, 1]
-        self.db_table_name = '模型因子日收益率'
+        self.db_table_name = '模型因子收益率'
 
     def get_factor_return(self, dates: Union[dt.datetime, Sequence[dt.datetime]] = None):
         return self.db_interface.read_table(self.db_table_name, dates=dates, ids=self.factor_names)
@@ -44,35 +44,57 @@ class FamaFrench3FactorCompositor(FactorCompositor):
         self.model = model
 
     def update(self):
-        pass
+        self.update_daily_rebalanced_portfolio()
+        self.update_monthly_rebalanced_portfolio_return()
 
-    def update_daily(self):
-        pass
-
-    def update_monthly(self):
-        pass
-
-    def update_daily_factor_return(self):
+    def update_monthly_rebalanced_portfolio_return(self):
+        eg_factor_name = f'{self.model.factor_names[0]}_MD'
         start_date = self.db_interface.get_latest_timestamp(self.model.db_table_name, self.model.start_date,
-                                                            column_condition=('ID', self.model.factor_names[0]))
+                                                            column_condition=('ID', eg_factor_name))
+        end_date = self.db_interface.get_latest_timestamp('股票日行情')
+        dates = self.data_reader.calendar.select_dates(start_date, end_date, inclusive=(False, True))
+
+        with tqdm(dates) as pbar:
+            for date in dates:
+                pbar.set_description(f'更新 {self.model.model_name} 因子收益率: {date}')
+                rebalance_date = self.calendar.pre_month_end(date.year, date.month)
+
+                pre_date = self.data_reader.calendar.offset(date, -1)
+                factor_df = self.compute_factor_return(rebalance_date, pre_date, date, 'M', 'D')
+                self.db_interface.insert_df(factor_df, self.model.db_table_name)
+
+                next_date = self.data_reader.calendar.offset(date, -1)
+                if next_date.month != date.month:
+                    factor_df = self.compute_factor_return(rebalance_date, rebalance_date, date, 'M', 'M')
+                    month_beg_date = self.calendar.month_begin(date.year, date.month)
+                    factor_df.index = pd.MultiIndex.from_product(
+                        [[month_beg_date], factor_df.index.get_level_values('ID')], names=('DateTime', 'ID'))
+                    self.db_interface.insert_df(factor_df, self.model.db_table_name)
+                pbar.update()
+
+    def update_daily_rebalanced_portfolio(self):
+        eg_factor_name = f'{self.model.factor_names[0]}_DD'
+        start_date = self.db_interface.get_latest_timestamp(self.model.db_table_name, self.model.start_date,
+                                                            column_condition=('ID', eg_factor_name))
         end_date = self.db_interface.get_latest_timestamp('股票日行情')
         dates = self.data_reader.calendar.select_dates(start_date, end_date, inclusive=(False, True))
 
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'更新 {self.model.model_name} 因子日收益率: {date}')
-                factor_df = self.compute_daily_factor_return(date)
+                pre_date = self.data_reader.calendar.offset(date, -1)
+                factor_df = self.compute_factor_return(pre_date, pre_date, date, 'D', 'D')
                 self.db_interface.insert_df(factor_df, self.model.db_table_name)
                 pbar.update()
 
-    def compute_daily_factor_return(self, date) -> pd.Series:
+    def compute_factor_return(self, balance_date: dt.datetime, pre_date: dt.datetime, date: dt.datetime,
+                              rebalance_marker: str, period_marker: str) -> pd.Series:
         def cap_weighted_return(x):
             return x[returns.name].dot(x[cap.name]) / x[cap.name].sum()
 
-        pre_date = self.data_reader.calendar.offset(date, -1)
         tickers = self.model.ticker_selector.ticker(date)
-        bm = self.model.bm.get_data(ids=tickers, dates=pre_date)
-        cap = self.model.cap.get_data(ids=tickers, dates=pre_date)
+        bm = self.model.bm.get_data(ids=tickers, dates=balance_date)
+        cap = self.model.cap.get_data(ids=tickers, dates=balance_date)
         returns = self.model.returns.get_data(ids=tickers, dates=[pre_date, date])
         df = pd.concat([returns, bm, cap], axis=1).dropna()
         df['G_SMB'] = pd.qcut(df[self.model.cap.name], self.model.smb_threshold, labels=['small', 'big'])
@@ -83,6 +105,7 @@ class FamaFrench3FactorCompositor(FactorCompositor):
         tmp = rets.groupby('G_HML').mean()
         hml = tmp.loc['high'] - tmp.loc['low']
         market_return = cap_weighted_return(df)
-        index = pd.MultiIndex.from_product([[date], self.model.factor_names], names=('DateTime', 'ID'))
+        factor_names = [f'{self.model.factor_names}_{rebalance_marker}{period_marker}']
+        index = pd.MultiIndex.from_product([[date], factor_names], names=('DateTime', 'ID'))
         factor_df = pd.Series([market_return, smb, hml], index=index, name='收益率')
         return factor_df

@@ -763,7 +763,7 @@
 		"ID": "varchar",
 		"收益率": "float"
 	},
-	"模型因子日收益率": {
+	"模型因子收益率": {
 		"DateTime": "date",
 		"ID": "varchar",
 		"收益率": "float"
