@@ -72,6 +72,19 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(self.calendar.offset(start_date, 0), dt.datetime(2020, 11, 2))
         self.assertEqual(self.calendar.offset(start_date, -1), dt.datetime(2020, 10, 30))
 
+    def test_begin_and_end(self):
+        self.assertEqual(self.calendar.month_begin(2021, 3), dt.datetime(2021, 3, 1))
+        self.assertEqual(self.calendar.month_begin(2021, 1), dt.datetime(2021, 1, 4))
+        self.assertEqual(self.calendar.month_begin(2020, 10), dt.datetime(2020, 10, 9))
+
+        self.assertEqual(self.calendar.month_end(2021, 3), dt.datetime(2021, 3, 31))
+        self.assertEqual(self.calendar.month_end(2021, 1), dt.datetime(2021, 1, 29))
+        self.assertEqual(self.calendar.month_end(2020, 1), dt.datetime(2020, 1, 23))
+
+        self.assertEqual(self.calendar.pre_month_end(2021, 4), dt.datetime(2021, 3, 31))
+        self.assertEqual(self.calendar.pre_month_end(2021, 2), dt.datetime(2021, 1, 29))
+        self.assertEqual(self.calendar.pre_month_end(2020, 2), dt.datetime(2020, 1, 23))
+
     @staticmethod
     def test_format_dt():
         @dtlize_input_dates

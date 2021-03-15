@@ -179,6 +179,29 @@ class TradingCalendarBase(object):
         return self._select_dates(start_date, end_date,
                                   lambda pre, curr, next_: curr.month != next_.month)
 
+    def month_begin(self, year: int, month: int):
+        """Get the first trading date of month (year, month)"""
+        anchor = dt.datetime(year, month, 1)
+        i = bisect.bisect_left(self.calendar, anchor)
+        return self.calendar[i]
+
+    def pre_month_end(self, year: int, month: int):
+        """Get the last month's last trading date"""
+        anchor = dt.datetime(year, month, 1)
+        i = bisect.bisect_left(self.calendar, anchor)
+        return self.calendar[i - 1]
+
+    def month_end(self, year: int, month: int):
+        """Get the last trading date of month (year, month)"""
+        if month == 12:
+            year += 1
+            month = 1
+        else:
+            month += 1
+        anchor = dt.datetime(year, month, 1)
+        i = bisect.bisect_left(self.calendar, anchor)
+        return self.calendar[i - 1]
+
     @dtlize_input_dates
     def first_day_of_year(self, start_date: DateType = None, end_date: DateType = None) -> List[dt.datetime]:
         """Get first trading day of the year between [``start_date``, ``end_date``]"""
