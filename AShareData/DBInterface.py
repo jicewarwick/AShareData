@@ -437,3 +437,13 @@ def compute_diff(input_data: pd.Series, db_data: pd.Series) -> Optional[pd.Serie
     combined_data = pd.concat([db_data.droplevel('DateTime'), input_data.droplevel('DateTime')], axis=1, sort=True)
     stocks = combined_data.iloc[:, 0] != combined_data.iloc[:, 1]
     return input_data.loc[slice(None), stocks, :]
+
+
+def clean_compact_table(table_name: str, db_interface: DBInterface):
+    data = db_interface.read_table(table_name)
+    storage = []
+    for _, group in data.groupby('ID'):
+        storage.append(group.loc[group != group.shift()])
+    new_data = pd.concat(storage)
+    db_interface.purge_table(table_name)
+    db_interface.insert_df(new_data, table_name)
