@@ -609,7 +609,8 @@ class TushareData(DataSource):
         for report_date in report_dates:
             df = self._pro.disclosure_date(end_date=DateUtils.date_type2str(report_date), fields=list(desc.keys()))
             df.actual_date = df.actual_date.apply(DateUtils.date_type2datetime)
-            df.modify_date = df.modify_date.apply(DateUtils.date_type2datetime)
+            tmp = df.modify_date.str.split(',').apply(lambda x: x[-1] if x else None)
+            df.modify_date = tmp.apply(DateUtils.date_type2datetime)
             df = df.loc[(df.actual_date > db_timestamp) | (df.modify_date > db_timestamp), :]
             update_tickers.extend(df.ts_code)
 

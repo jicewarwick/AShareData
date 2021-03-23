@@ -482,13 +482,16 @@ class WindData(DataSource):
         end_series = end_series.loc[ind, :]
 
         if start_series.dtype == 'float64' or start_series.dtype == 'int64':
-            ind = np.abs(start_series.values - end_series.values) > 0.0001
+            ind = np.abs(start_series.values - end_series.values) > 0.001
             ind = ind | start_series.isnull().values | end_series.isnull().values
             ind = ind & (start_series.values != 0)
         else:
             ind = (start_series.values != end_series.values)
         start_series = start_series.loc[ind]
         end_series = end_series.loc[ind, :]
+
+        if end_series.empty:
+            return
 
         if start_ts and self.calendar.days_count(start_ts, end_series.index.get_level_values('DateTime')[0]) == 1:
             self.db_interface.insert_df(end_series, end_series.name)
