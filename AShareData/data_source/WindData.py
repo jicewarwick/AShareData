@@ -157,15 +157,11 @@ class WindData(DataSource):
         self._factor_param = utils.load_param('wind_param.json', param_json_loc)
         self.w = WindWrapper()
 
-    def __enter__(self):
+    def login(self):
         self.w.connect()
-        return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def logout(self):
         self.w.disconnect()
-
-    def connect(self):
-        self.w.connect()
 
     @cached_property
     def stock_list(self) -> StockTickers:

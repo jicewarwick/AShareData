@@ -329,7 +329,9 @@ class ReportingDate(object):
         if date is None:
             date = dt.date.today()
         year = date.year
-        if date.month < 5:
+        if date.month < 4:
+            return [dt.datetime(year - 1, 12, 31)]
+        elif date.month < 5:
             return [dt.datetime(year, 3, 30), dt.datetime(year - 1, 12, 31)]
         elif date.month < 9:
             return [dt.datetime(year, 6, 31)]

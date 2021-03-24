@@ -43,8 +43,12 @@ class TushareData(DataSource):
             tushare_token = config.get_global_config()['tushare']['token']
             db_interface = config.get_db_interface()
         super().__init__(db_interface)
-        self._pro = ts.pro_api(tushare_token)
+        self.token = tushare_token
+        self._pro = None
         self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
+
+    def login(self):
+        self._pro = ts.pro_api(self.token)
 
     def init_db(self):
         """Initialize database data. They cannot be achieved by naive ``update_*`` function"""
@@ -592,7 +596,7 @@ class TushareData(DataSource):
         with tqdm(tickers) as pbar:
             for ticker in tickers:
                 with rate_limiter:
-                    pbar.set_description(f'下载{ticker}的财务数据')
+                    pbar.set_description(f'下载 {ticker} 的财务数据')
                     self.get_financial(ticker)
                     pbar.update()
 
@@ -612,11 +616,12 @@ class TushareData(DataSource):
             tmp = df.modify_date.str.split(',').apply(lambda x: x[-1] if x else None)
             df.modify_date = tmp.apply(DateUtils.date_type2datetime)
             df = df.loc[(df.actual_date > db_timestamp) | (df.modify_date > db_timestamp), :]
-            update_tickers.add(df.ts_code)
+            if not df.empty:
+                update_tickers = update_tickers.union(set(df.ts_code.tolist()))
 
         with tqdm(update_tickers) as pbar:
             for ticker in update_tickers:
-                pbar.set_description(f'更新{ticker}的财报')
+                pbar.set_description(f'更新 {ticker} 的财报')
                 self.get_financial(ticker)
                 self.get_financial_index(ticker)
                 pbar.update()

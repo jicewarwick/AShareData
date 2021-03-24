@@ -25,14 +25,10 @@ class TDXData(DataSource, MinutesDataFunctionMixin):
         self._factor_param = utils.load_param('tdx_param.json')
         self.stock_ticker = StockTickers(db_interface)
 
-    def connect(self):
+    def login(self):
         self.api.connect(self.host, self.port)
 
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def logout(self):
         self.api.disconnect()
 
     def update_stock_minute(self):
@@ -65,8 +61,9 @@ class TDXData(DataSource, MinutesDataFunctionMixin):
                 pbar.set_description(f'下载 {ticker} 在 {date} 的分钟数据')
                 code, market = self._split_ticker(ticker)
                 data = self.api.get_security_bars(category=8, market=market, code=code, start=start_index, count=240)
-                data = self._formatting_data(data, ticker)
-                storage.append(data)
+                if data:
+                    data = self._formatting_data(data, ticker)
+                    storage.append(data)
                 pbar.update()
 
         df = pd.concat(storage)

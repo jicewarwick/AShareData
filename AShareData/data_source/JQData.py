@@ -43,13 +43,6 @@ class JQData(DataSource, MinutesDataFunctionMixin):
             with utils.NullPrinter():
                 jq.logout()
 
-    def __enter__(self):
-        self.login()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.logout()
-
     @cached_property
     def stock_tickers(self):
         return StockTickers(self.db_interface)

@@ -15,9 +15,17 @@ class DataSource(object):
         self.db_interface = db_interface if db_interface else get_db_interface()
 
     def __enter__(self):
+        self.login()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.logout()
+        pass
+
+    def login(self):
+        pass
+
+    def logout(self):
         pass
 
     @cached_property

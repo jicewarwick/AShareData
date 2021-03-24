@@ -561,7 +561,7 @@ class InterestRateFactor(ContinuousFactor):
         dates = data.index.get_level_values('DateTime').tolist()
         after_date = pd.Timestamp(self.calendar.offset(data.index.get_level_values('DateTime')[-1], 1))
         days = [(it[1] - it[0]).days for it in zip(dates, dates[1:] + [after_date])]
-        data = data / 365 * days
+        data = data / 365 * days / 100
         return data
 
 
