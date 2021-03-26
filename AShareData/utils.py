@@ -131,8 +131,8 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
     :param select_new_stock_period: 仅选取新上市的股票, 可与 ``ignore_new_stock_period`` 搭配使用
 
     :param ignore_st: 排除 风险警告股
-    :param select_st: 仅选取 风险警告股, 即 PT, ST, SST, \*ST, (即将)退市股 等
-    :param st_defer_period: 新ST纳入计算的时间(交易日天数), 配合 ``select_st``使用
+    :param select_st: 仅选取 风险警告股, 包括 PT, ST, SST, \*ST, (即将)退市股 等
+    :param st_defer_period: 新ST纳入计算的时间(交易日天数), 配合 ``select_st`` 使用
 
     :param select_pause: 选取停牌股
     :param ignore_pause: 排除停牌股

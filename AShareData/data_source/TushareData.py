@@ -50,6 +50,9 @@ class TushareData(DataSource):
     def login(self):
         self._pro = ts.pro_api(self.token)
 
+    def logout(self):
+        self._pro = ts.pro_api('')
+
     def init_db(self):
         """Initialize database data. They cannot be achieved by naive ``update_*`` function"""
         self.init_hk_calendar()
