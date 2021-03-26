@@ -41,27 +41,34 @@ Internally Computed Data
 --------------------------
 Base Class
 ^^^^^^^^^^^
-.. autoclass:: AShareData.FactorCompositor.FactorCompositor
+.. autoclass:: AShareData.factor_compositor.FactorCompositor
     :members:
 
 Implementation
 ^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: AShareData.FactorCompositor.ConstLimitStockFactorCompositor
+.. autoclass:: AShareData.factor_compositor.ConstLimitStockFactorCompositor
     :members:
 
-.. autoclass:: AShareData.FactorCompositor.FundAdjFactorCompositor
+.. autoclass:: AShareData.factor_compositor.FundAdjFactorCompositor
     :members:
 
 
 Index Compositor
 """""""""""""""""""""
-
 .. autoclass:: AShareData.utils.StockSelectionPolicy
     :members:
 
 .. autoclass:: AShareData.utils.StockIndexCompositionPolicy
     :members:
 
-.. autoclass:: AShareData.FactorCompositor.IndexCompositor
+.. autoclass:: AShareData.factor_compositor.IndexCompositor
     :members:
 
+
+Factor Portfolio Return
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: AShareData.factor_compositor.FactorPortfolioPolicy
+    :members:
+
+.. autoclass:: AShareData.factor_compositor.FactorPortfolio
+    :members:

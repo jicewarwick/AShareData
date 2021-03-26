@@ -32,7 +32,7 @@ class AShareDataReader(object):
 
     @cached_property
     def sec_name(self) -> CompactFactor:
-        """股票名称"""
+        """证券名称"""
         return CompactFactor('证券名称', self.db_interface)
 
     @cached_property
@@ -129,6 +129,21 @@ class AShareDataReader(object):
     def index_return(self) -> UnaryFactor:
         """指数收益率"""
         return self.index_close.pct_change().set_factor_name('指数收益率')
+
+    @cached_property
+    def user_constructed_index_return(self) -> ContinuousFactor:
+        """自合成指数收益率"""
+        return ContinuousFactor('自合成指数', '收益率', self.db_interface)
+
+    @cached_property
+    def market_return(self) -> ContinuousFactor:
+        """全市场收益率"""
+        return ContinuousFactor('自合成指数', '收益率', self.db_interface).bind_params(ids='全市场.IND')
+
+    @cached_property
+    def model_factor_return(self) -> ContinuousFactor:
+        """模型因子收益率"""
+        return ContinuousFactor('模型因子收益率', '收益率', self.db_interface)
 
     @cached_property
     def index_log_return(self) -> UnaryFactor:

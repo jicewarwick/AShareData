@@ -64,9 +64,7 @@ class PortfolioExposureTest(unittest.TestCase):
     def test_case():
         date = dt.datetime(2021, 3, 8)
         model = FamaFrench3FactorModel()
-        data_reader = AShareDataReader()
-        rf_rate = data_reader.three_month_shibor
-        exposure = ASharePortfolioExposure(model=model, rf_rate=rf_rate, date=date)
+        exposure = ASharePortfolioExposure(model=model)
         ticker = '000002.SZ'
         fh = FundHolding()
         portfolio_weight = fh.portfolio_stock_weight(date, 'ALL')

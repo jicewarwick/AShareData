@@ -2,9 +2,7 @@ import sys
 
 from AShareData import ConstLimitStockFactorCompositor, IndexUpdater, JQData, NegativeBookEquityListingCompositor, \
     set_global_config, TDXData, TushareData, WindData
-from AShareData import ConstLimitStockFactorCompositor, IndexUpdater, JQData, set_global_config, TDXData, TushareData, \
-    WindData, NegativeBookEquityListingCompositor
-from AShareData.model import FamaFrench3FactorModel
+from AShareData.model import FamaFrench3FactorModel, FamaFrenchCarhart4FactorModel, SMBandHMLCompositor, UMDCompositor
 
 if __name__ == '__main__':
     set_global_config(sys.argv[1])
@@ -50,7 +48,10 @@ if __name__ == '__main__':
     ConstLimitStockFactorCompositor().update()
     NegativeBookEquityListingCompositor().update()
     IndexUpdater().update()
-    FamaFrench3FactorModel().update_daily_factor_return()
+
+    # model data
+    SMBandHMLCompositor(FamaFrench3FactorModel()).update()
+    UMDCompositor(FamaFrenchCarhart4FactorModel()).update()
 
     with TDXData() as tdx_data:
         tdx_data.update_stock_minute()

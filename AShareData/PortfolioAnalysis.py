@@ -1,24 +1,21 @@
 import datetime as dt
 import logging
+from functools import lru_cache
 from typing import Sequence, Tuple, Union
 
-import alphalens
 import numpy as np
 import pandas as pd
-from jqfactor_analyzer import FactorAnalyzer
 from scipy.stats.mstats import winsorize
 from statsmodels.api import OLS
-from statsmodels.stats import descriptivestats
 from statsmodels.tools.tools import add_constant
 
-from . import AShareDataReader, DateUtils
+from . import AShareDataReader
 from .algo import human_sort
 from .config import get_db_interface
 from .DBInterface import DBInterface
-from .Factor import BinaryFactor, FactorBase, IndustryFactor, InterestRateFactor, UnaryFactor
+from .Factor import BinaryFactor, FactorBase, IndustryFactor, InterestRateFactor, OnTheRecordFactor, UnaryFactor
 from .model.model import FinancialModel
 from .Tickers import StockTickerSelector
-from .utils import StockSelectionPolicy
 
 
 class CrossSectionalPortfolioAnalysis(object):
@@ -167,87 +164,54 @@ class CrossSectionalPortfolioAnalysis(object):
             lambda x: np.corrcoef(x[factor_names[0]], x[factor_names[1]])[0, 1])
 
 
-# abandoned
-class ASharePortfolioAnalysis(object):
-    def __init__(self, db_interface: DBInterface = None):
-        super().__init__()
-        self.db_interface = db_interface if db_interface else get_db_interface()
-        self.data_reader = AShareDataReader(self.db_interface)
-
-    def market_return(self, start_date: DateUtils.DateType, end_date: DateUtils.DateType):
-        pass
-
-    def beta_portfolio(self):
-        pass
-
-    def size_portfolio(self, start_date: DateUtils.DateType, end_date: DateUtils.DateType) -> pd.DataFrame:
-        policy = StockSelectionPolicy(ignore_new_stock_period=360, ignore_st=True)
-        selector = StockTickerSelector(policy)
-        dates = self.data_reader.calendar.last_day_of_month(start_date, end_date)
-        hfq_price = self.data_reader.hfq_close.get_data(dates, ticker_selector=selector).dropna().unstack()
-        market_size = self.data_reader.stock_free_floating_market_cap.get_data(dates=dates,
-                                                                               ticker_selector=selector).dropna()
-
-        factor_data = alphalens.utils.get_clean_factor_and_forward_returns(market_size, hfq_price, quantiles=10)
-
-        fa = FactorAnalyzer(market_size, hfq_price, bins=5, max_loss=0.5)
-
-        return factor_data
-
-    @staticmethod
-    def summary_statistics(factor_data: pd.DataFrame) -> pd.DataFrame:
-        storage = []
-        for name, group in factor_data['factor'].groupby('date'):
-            content = descriptivestats.describe(group).T
-            content.index = [name]
-            storage.append(content)
-        cross_section_info = pd.concat(storage)
-
-        return cross_section_info
-
-
 class ASharePortfolioExposure(object):
-    def __init__(self, model: FinancialModel, rf_rate: InterestRateFactor, date: dt.datetime = None,
-                 look_back_period: int = 60, minimum_look_back_length: int = 40, db_interface: DBInterface = None):
-        self.db_interface = db_interface if db_interface else get_db_interface()
+    def __init__(self, model: FinancialModel, rf_rate: InterestRateFactor = None,
+                 rebalance_schedule: str = 'D', computing_schedule: str = 'D',
+                 db_interface: DBInterface = None):
         self.model = model
-        self.rf_rate = rf_rate
-        self.look_back_period = look_back_period
-        self.date = date if date else dt.datetime.combine(dt.date.today(), dt.time())
+        self.factor_names = self.model.get_db_factor_names(rebalance_schedule, computing_schedule)
+
+        self.db_interface = db_interface if db_interface else get_db_interface()
         self.data_reader = AShareDataReader(self.db_interface)
-        self.start_date = self.data_reader.calendar.offset(self.date, -look_back_period)
-        self.min_look_back_length = minimum_look_back_length
+        self.rf_rate = rf_rate if rf_rate else self.data_reader.three_month_shibor
+        market_return = self.data_reader.market_return
+        self.excess_market_return = (market_return - self.rf_rate).set_factor_name(f'{market_return}-Rf')
+        self.stock_pause_info = OnTheRecordFactor('股票停牌', self.db_interface)
 
-    @property
-    def factor_return(self):
-        table_name = '模型因子日收益率'
-        return self.db_interface.read_table(table_name, ids=self.model.factor_names,
-                                            start_date=self.start_date, end_date=self.date).unstack()
+    @lru_cache(10)
+    def common_data(self, date: dt.datetime, start_date: dt.datetime):
+        rf_data = self.rf_rate.get_data(start_date=start_date, end_date=date)
+        rm = self.excess_market_return.get_data(start_date=start_date, end_date=date)
+        col_names = [rm.index.get_level_values('ID')[0]]
+        if self.factor_names:
+            factor_data = self.data_reader.model_factor_return.get_data(ids=self.factor_names,
+                                                                        start_date=start_date, end_date=date)
+            col_names.extend(self.factor_names)
+        else:
+            factor_data = None
+        data = pd.concat([rm, factor_data]).unstack().reindex(col_names, axis=1).rename({col_names[0]: 'Rm-Rf'}, axis=1)
+        return rf_data, data
 
-    @property
-    def rf_return(self):
-        return self.rf_rate.get_data(start_date=self.start_date, end_date=self.date)
-
-    @property
-    def market_excess_return(self):
-        market_return_factor_name = self.model.factor_names[0]
-        ret = self.factor_return[market_return_factor_name] - self.rf_return
-        ret.name = f'{market_return_factor_name}-Rf'
-        return ret
-
-    def get_stock_exposure(self, ticker: str):
-        returns = self.data_reader.stock_return.get_data(ids=[ticker], start_date=self.start_date, end_date=self.date)
+    def get_stock_exposure(self, ticker: str, date: dt.datetime = None, lookback_period: int = 60,
+                           minimum_look_back_length: int = 40):
+        date = date if date else dt.datetime.combine(dt.date.today(), dt.time())
+        start_date = self.data_reader.calendar.offset(date, -lookback_period - 1)
+        returns = self.data_reader.stock_return.get_data(ids=[ticker], start_date=start_date, end_date=date)
         y = returns.droplevel('ID')
-        data = pd.concat([y, self.market_excess_return, self.factor_return[self.model.factor_names[1:]]], axis=1)
-        data = data.dropna()
-        if data.shape[0] < self.min_look_back_length:
+        rf_data, x = self.common_data(date, start_date)
+        data = pd.concat([y - rf_data, x], axis=1).dropna()
+        pause_counts = self.stock_pause_info.get_counts(ids=[ticker], start_date=start_date, end_date=date).values[0]
+        if data.shape[0] - pause_counts < minimum_look_back_length:
             return
         regress_res = OLS(data.iloc[:, 0], add_constant(data.iloc[:, 1:])).fit()
         res = regress_res.params.iloc[1:]
         res.name = ticker
         return res.to_frame().T
 
-    def get_portfolio_exposure(self, portfolio_weight: pd.DataFrame):
-        storage = [self.get_stock_exposure(it) for it in portfolio_weight.index.get_level_values('ID')]
+    def get_portfolio_exposure(self, portfolio_weight: pd.DataFrame, date: dt.datetime = None,
+                               lookback_period: int = 60, minimum_look_back_length: int = 40):
+        date = date if date else portfolio_weight.index.get_level_values('DateTime')[0]
+        storage = [self.get_stock_exposure(it, date, lookback_period, minimum_look_back_length)
+                   for it in portfolio_weight.index.get_level_values('ID')]
         stock_exposure = pd.concat(storage)
         return stock_exposure.mul(portfolio_weight.droplevel('DateTime'), axis=0).sum()

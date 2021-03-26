@@ -8,54 +8,57 @@ from ..Tickers import StockTickerSelector
 from ..utils import StockSelectionPolicy
 
 
-class FamaFrench3FactorModel(FinancialModel):
+class FamaFrenchCarhart4FactorModel(FinancialModel):
     def __init__(self):
-        """Fama French 3 factor model(1992)"""
-        super().__init__('Fama French 3 factor model', ['FF3_SMB', 'FF3_HML'])
+        """Fama French Carhart 4 factor model(1997)"""
+        super().__init__('Fama French Carhart 4 factor model', ['FF3_SMB', 'FF3_HML', 'FFC4_UMD'])
 
         self.stock_selection_policy = StockSelectionPolicy(ignore_negative_book_value_stock=True,
                                                            ignore_st=True, ignore_pause=True,
                                                            ignore_new_stock_period=244)
         self.hml_threshold = [0, 0.3, 0.7, 1]
         self.smb_threshold = [0, 0.5, 1]
+        self.umd_threshold = [0, 0.3, 0.7, 1]
 
 
-class SMBandHMLCompositor(ModelFactorCompositor):
-    def __init__(self, model: FamaFrench3FactorModel, db_interface: DBInterface = None):
-        """Compute SMB and HML in Fama French 3 factor model"""
+class UMDCompositor(ModelFactorCompositor):
+    def __init__(self, model: FamaFrenchCarhart4FactorModel, db_interface: DBInterface = None):
+        """Compute UMD/MOM in Fama French Carhart 4 factor model"""
         super().__init__(model, db_interface)
+        self.factor_names = ['Carhart_UMD']
 
         self.start_date = dt.datetime(2007, 1, 4)
         self.ticker_selector = StockTickerSelector(model.stock_selection_policy, self.db_interface)
 
         self.cap = self.data_reader.stock_free_floating_market_cap
-        self.bm = self.data_reader.bm
         self.returns = self.data_reader.stock_return
 
     def compute_factor_return(self, balance_date: dt.datetime, pre_date: dt.datetime, date: dt.datetime,
                               rebalance_marker: str, period_marker: str) -> pd.Series:
-        def cap_weighted_return(x):
-            return x[returns.name].dot(x[cap.name]) / x[cap.name].sum()
-
         # data
+        tm1 = self.calendar.offset(balance_date, -22)
+        tm12 = self.calendar.offset(balance_date, -22 * 12)
         tickers = self.ticker_selector.ticker(date)
-        bm = self.bm.get_data(ids=tickers, dates=balance_date).droplevel('DateTime')
+        tm1_ticker = self.ticker_selector.ticker(tm1)
+        tm12_ticker = self.ticker_selector.ticker(tm12)
+        tickers = sorted(list(set(tickers) & set(tm1_ticker) & set(tm12_ticker)))
+        p1 = self.data_reader.hfq_close.get_data(ids=tickers, dates=tm1)
+        p12 = self.data_reader.hfq_close.get_data(ids=tickers, dates=tm12)
+        pct_diff = p12.droplevel('DateTime') / p1.droplevel('DateTime')
         cap = self.cap.get_data(ids=tickers, dates=balance_date).droplevel('DateTime')
         returns = self.returns.get_data(ids=tickers, dates=[pre_date, date]).droplevel('DateTime')
-        df = pd.concat([returns, bm, cap], axis=1).dropna()
+        df = pd.concat([returns, cap, pct_diff], axis=1).dropna()
 
         # grouping
-        df['G_SMB'] = pd.qcut(df[self.cap.name], self.model.smb_threshold, labels=['small', 'big'])
-        df['G_HML'] = pd.qcut(df[self.bm.name], self.model.hml_threshold, labels=['low', 'mid', 'high'])
-        rets = df.groupby(['G_SMB', 'G_HML']).apply(cap_weighted_return)
-        tmp = rets.groupby('G_SMB').mean()
-        smb = tmp.loc['small'] - tmp.loc['big']
-        tmp = rets.groupby('G_HML').mean()
-        hml = tmp.loc['high'] - tmp.loc['low']
+        df['G_SMB'] = pd.qcut(df[cap.name], self.model.smb_threshold, labels=['small', 'big'])
+        df['G_UMD'] = pd.qcut(df[pct_diff.name], self.model.umd_threshold, labels=['up', 'mid', 'down'])
+        rets = df.groupby(['G_SMB', 'G_UMD'])[returns.name].mean()
+        tmp = rets.groupby('G_UMD').mean()
+        umd = tmp.loc['up'] - tmp.loc['down']
 
         # formatting result
         factor_names = [f'{factor_name}_{rebalance_marker}{period_marker}' for factor_name in self.factor_names]
         index_date = pre_date if period_marker == 'M' else date
         index = pd.MultiIndex.from_product([[index_date], factor_names], names=('DateTime', 'ID'))
-        factor_df = pd.Series([smb, hml], index=index, name='收益率')
+        factor_df = pd.Series(umd, index=index, name='收益率')
         return factor_df
