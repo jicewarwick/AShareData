@@ -19,11 +19,14 @@ class FamaFrenchCarhart4FactorModel(FinancialModel):
         self.hml_threshold = [0, 0.3, 0.7, 1]
         self.smb_threshold = [0, 0.5, 1]
         self.umd_threshold = [0, 0.3, 0.7, 1]
+        self.offset_1 = 22
+        self.offset_2 = 22*12
 
 
 class UMDCompositor(ModelFactorCompositor):
     def __init__(self, model: FamaFrenchCarhart4FactorModel, db_interface: DBInterface = None):
         """Compute UMD/MOM in Fama French Carhart 4 factor model"""
+        model = model if model else FamaFrenchCarhart4FactorModel()
         super().__init__(model, db_interface)
         self.factor_names = ['Carhart_UMD']
 
@@ -36,8 +39,8 @@ class UMDCompositor(ModelFactorCompositor):
     def compute_factor_return(self, balance_date: dt.datetime, pre_date: dt.datetime, date: dt.datetime,
                               rebalance_marker: str, period_marker: str) -> pd.Series:
         # data
-        tm1 = self.calendar.offset(balance_date, -22)
-        tm12 = self.calendar.offset(balance_date, -22 * 12)
+        tm1 = self.calendar.offset(balance_date, -self.model.offset_1)
+        tm12 = self.calendar.offset(balance_date, -self.model.offset_2)
         tickers = self.ticker_selector.ticker(date)
         tm1_ticker = self.ticker_selector.ticker(tm1)
         tm12_ticker = self.ticker_selector.ticker(tm12)

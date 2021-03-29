@@ -210,6 +210,10 @@ class AShareDataReader(object):
         """一年期shibor"""
         return InterestRateFactor('shibor利率数据', '1年', self.db_interface).set_factor_name('1年shibor')
 
+    @cached_property
+    def model_factor_return(self):
+        return ContinuousFactor('模型因子收益率', '收益率', self.db_interface)
+
     @staticmethod
     def exponential_weight(n: int, half_life: int):
         series = range(-(n - 1), 1)

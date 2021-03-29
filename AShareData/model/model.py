@@ -33,7 +33,7 @@ class FinancialModel(object):
 
 
 class ModelFactorCompositor(FactorCompositor):
-    def __init__(self, model: FinancialModel, db_interface: DBInterface):
+    def __init__(self, model, db_interface: DBInterface):
         """ Model Factor Return Compositor
 
         Compute factor returns specified by ``model``
@@ -52,7 +52,7 @@ class ModelFactorCompositor(FactorCompositor):
         self.update_monthly_rebalanced_portfolio_return()
 
     def update_monthly_rebalanced_portfolio_return(self):
-        eg_factor_name = f'{self.model.factor_names[0]}_MD'
+        eg_factor_name = f'{self.model.factor_names[-1]}_MD'
         start_date = self.db_interface.get_latest_timestamp(self.db_table_name, self.start_date,
                                                             column_condition=('ID', eg_factor_name))
         end_date = self.db_interface.get_latest_timestamp('股票日行情')
@@ -77,7 +77,7 @@ class ModelFactorCompositor(FactorCompositor):
                 pbar.update()
 
     def update_daily_rebalanced_portfolio(self):
-        eg_factor_name = f'{self.model.factor_names[0]}_DD'
+        eg_factor_name = f'{self.model.factor_names[-1]}_DD'
         start_date = self.db_interface.get_latest_timestamp(self.db_table_name, self.start_date,
                                                             column_condition=('ID', eg_factor_name))
         end_date = self.db_interface.get_latest_timestamp('股票日行情')

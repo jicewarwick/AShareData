@@ -4,8 +4,9 @@ from AShareData import ConstLimitStockFactorCompositor, IndexUpdater, JQData, Ne
     set_global_config, TDXData, TushareData, WindData
 from AShareData.model import FamaFrench3FactorModel, FamaFrenchCarhart4FactorModel, SMBandHMLCompositor, UMDCompositor
 
-if __name__ == '__main__':
-    set_global_config(sys.argv[1])
+
+def daily_routine(config_loc: str):
+    set_global_config(config_loc)
 
     with TushareData() as tushare_crawler:
         tushare_crawler.update_base_info()
@@ -50,8 +51,12 @@ if __name__ == '__main__':
     IndexUpdater().update()
 
     # model data
-    SMBandHMLCompositor(FamaFrench3FactorModel()).update()
-    UMDCompositor(FamaFrenchCarhart4FactorModel()).update()
+    SMBandHMLCompositor().update()
+    UMDCompositor().update()
 
     with TDXData() as tdx_data:
         tdx_data.update_stock_minute()
+
+
+if __name__ == '__main__':
+    daily_routine(sys.argv[1])

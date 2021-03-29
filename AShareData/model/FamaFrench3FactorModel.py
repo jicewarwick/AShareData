@@ -21,8 +21,9 @@ class FamaFrench3FactorModel(FinancialModel):
 
 
 class SMBandHMLCompositor(ModelFactorCompositor):
-    def __init__(self, model: FamaFrench3FactorModel, db_interface: DBInterface = None):
+    def __init__(self, model: FamaFrench3FactorModel = None, db_interface: DBInterface = None):
         """Compute SMB and HML in Fama French 3 factor model"""
+        model = model if model else FamaFrench3FactorModel()
         super().__init__(model, db_interface)
 
         self.start_date = dt.datetime(2007, 1, 4)

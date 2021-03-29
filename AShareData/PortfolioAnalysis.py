@@ -112,6 +112,7 @@ class CrossSectionalPortfolioAnalysis(object):
             self._factor_sorting(factor_names[1], quantile[1], separate_neg_vals[1],
                                  gb_vars=['DateTime', f'G_{factor_names[0]}'])
 
+    # TODO
     def fm_regression(self):
         data = self.cache_data.loc[:, ['forward_return'] + self.cache['factor_names']].copy()
         # need to winsorize
