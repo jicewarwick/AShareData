@@ -2,7 +2,7 @@ import sys
 
 from AShareData import ConstLimitStockFactorCompositor, IndexUpdater, JQData, NegativeBookEquityListingCompositor, \
     set_global_config, TDXData, TushareData, WindData
-from AShareData.model import FamaFrench3FactorModel, FamaFrenchCarhart4FactorModel, SMBandHMLCompositor, UMDCompositor
+from AShareData.model import SMBandHMLCompositor, UMDCompositor
 
 
 def daily_routine(config_loc: str):

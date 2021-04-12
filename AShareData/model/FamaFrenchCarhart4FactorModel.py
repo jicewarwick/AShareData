@@ -24,7 +24,7 @@ class FamaFrenchCarhart4FactorModel(FinancialModel):
 
 
 class UMDCompositor(ModelFactorCompositor):
-    def __init__(self, model: FamaFrenchCarhart4FactorModel, db_interface: DBInterface = None):
+    def __init__(self, model: FamaFrenchCarhart4FactorModel = None, db_interface: DBInterface = None):
         """Compute UMD/MOM in Fama French Carhart 4 factor model"""
         model = model if model else FamaFrenchCarhart4FactorModel()
         super().__init__(model, db_interface)
