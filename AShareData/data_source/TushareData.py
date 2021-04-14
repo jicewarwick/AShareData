@@ -511,7 +511,7 @@ class TushareData(DataSource):
 
                 try:
                     self.db_interface.insert_df(df, data_category)
-                except:
+                except Exception:
                     print(f'请手动处理{stock}的分红数据')
 
                 pbar.update()
@@ -536,7 +536,7 @@ class TushareData(DataSource):
                 df['ann_date'].where(df['ann_date'].notnull(), df['imp_ann_date'], inplace=True)
                 df.drop(['div_proc', 'imp_ann_date'], axis=1, inplace=True)
                 df = self._standardize_df(df, column_desc)
-                self.db_interface.insert_df(df, data_category)
+                self.db_interface.update_df(df, data_category)
                 pbar.update()
 
         logging.getLogger(__name__).info(f'{data_category}信息下载完成.')
@@ -581,12 +581,12 @@ class TushareData(DataSource):
             except:
                 logging.getLogger(__name__).error(f'{ticker} - {table_name} failed to get coherent data')
 
-        loop_vars = [(self._pro.balancesheet, balance_sheet_desc, balance_sheet),
-                     (self._pro.income, income_desc, income),
-                     (self._pro.cashflow, cash_flow_desc, cash_flow)]
+        loop_vars = [(self._pro.income, income_desc, income),
+                     (self._pro.cashflow, cash_flow_desc, cash_flow),
+                     (self._pro.balancesheet, balance_sheet_desc, balance_sheet)]
         for f, desc, table in loop_vars:
-            download_data(f, combined_types, desc, f'合并{table}')
             download_data(f, mother_types, desc, f'母公司{table}')
+            download_data(f, combined_types, desc, f'合并{table}')
 
     def init_accounting_data(self):
         tickers = self.stock_tickers.all_ticker()
@@ -609,8 +609,10 @@ class TushareData(DataSource):
         table_name = '财报披露计划'
         desc = self._factor_param[table_name]['输出参数']
         ref_table = '合并资产负债表'
-        db_timestamp = self.db_interface.get_latest_timestamp(ref_table)
-        update_tickers = set(self.stock_tickers.new_ticker(db_timestamp))
+        db_data = self.db_interface.read_table(ref_table, '期末总股本')
+        latest = db_data.groupby('ID').tail(1).reset_index().loc[:, ['DateTime', 'ID']].rename({'ID': 'ts_code'},
+                                                                                               axis=1)
+        update_tickers = set(self.stock_tickers.all_ticker()) - set(latest.ts_code.tolist())
 
         report_dates = DateUtils.ReportingDate.get_latest_report_date()
         for report_date in report_dates:
@@ -618,15 +620,16 @@ class TushareData(DataSource):
             df.actual_date = df.actual_date.apply(DateUtils.date_type2datetime)
             tmp = df.modify_date.str.split(',').apply(lambda x: x[-1] if x else None)
             df.modify_date = tmp.apply(DateUtils.date_type2datetime)
-            df = df.loc[(df.actual_date > db_timestamp) | (df.modify_date > db_timestamp), :]
-            if not df.empty:
-                update_tickers = update_tickers.union(set(df.ts_code.tolist()))
+            df2 = df.merge(latest, on='ts_code', how='left')
+            df3 = df2.loc[(df2.actual_date > df2.DateTime) | (df2.modify_date > df2.DateTime), :]
+            if not df3.empty:
+                update_tickers = update_tickers.union(set(df3.ts_code.tolist()))
 
         with tqdm(update_tickers) as pbar:
             for ticker in update_tickers:
                 pbar.set_description(f'更新 {ticker} 的财报')
-                self.get_financial(ticker)
                 self.get_financial_index(ticker)
+                self.get_financial(ticker)
                 pbar.update()
 
     def get_financial_index(self, ticker: str) -> Optional[pd.DataFrame]:
