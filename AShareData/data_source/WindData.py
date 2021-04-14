@@ -275,20 +275,20 @@ class WindData(DataSource):
         """更新股本信息"""
 
         # 流通股本
-        def float_a_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
+        def float_share_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
             data = self.w.wsd(ticker, "float_a_shares", date, date, "unit=1")
             data.name = 'A股流通股本'
             return data
 
-        self.sparse_data_template('A股流通股本', float_a_func)
+        self.sparse_data_template('A股流通股本', float_share_func)
 
         # 自由流通股本
-        def free_float_a_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
+        def free_float_share_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
             data = self.w.wsd(ticker, "free_float_shares", date, date, "unit=1")
             data.name = '自由流通股本'
             return data
 
-        self.sparse_data_template('自由流通股本', free_float_a_func)
+        self.sparse_data_template('自由流通股本', free_float_share_func)
 
         # 总股本
         def total_share_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
@@ -536,13 +536,13 @@ class WindData(DataSource):
             default_start_date = self.stock_list.list_date()
         if ticker is None:
             ticker = self.stock_list.all_ticker()
-        current_data = self.db_interface.read_table(table_name).groupby('ID').tail(1)
-        current_data = current_data.loc[current_data.index.get_level_values('ID').isin(ticker), :]
+        start_series = self.db_interface.read_table(table_name).groupby('ID').tail(1)
+        start_series = start_series.loc[start_series.index.get_level_values('ID').isin(ticker), :]
         end_date = self.calendar.today()
-        new_data = data_func(ticker=ticker, date=end_date)
-        new_data.name = table_name
+        end_series = data_func(ticker=ticker, date=end_date)
+        end_series.name = table_name
 
-        self.sparse_data_queryer(data_func, current_data, new_data, f'更新{table_name}',
+        self.sparse_data_queryer(data_func, start_series, end_series, f'更新{table_name}',
                                  default_start_date=default_start_date)
 
     @classmethod
