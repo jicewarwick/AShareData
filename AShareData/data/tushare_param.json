@@ -287,20 +287,24 @@
 		},
 		"每分钟限速": 60
 	},
-	"公募基金持仓数据": {
+	"公募基金持仓": {
 		"输入参数": {
-			"ts_code": "基金代码"
+			"ts_code": "基金代码",
+			"ann_date": "公告日期",
+			"start_date": "报告期开始日期",
+			"end_date": "报告期结束日期"
 		},
 		"输出参数": {
-			"ts_code": "TS基金代码",
-			"ann_date": "公告日期",
-			"end_date": "截止日期",
+			"ts_code": "IndexCode",
+			"ann_date": "DateTime",
+			"end_date": "报告期",
 			"symbol": "ID",
 			"mkv": "持有股票市值",
 			"amount": "持有股票数量",
 			"stk_mkv_ratio": "占股票市值比",
 			"stk_float_ratio": "占流通股本比例"
-		}
+		},
+		"每分钟限速": 60
 	},
 	"IPO新股列表": {
 		"输入参数": {

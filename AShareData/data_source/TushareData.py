@@ -5,7 +5,7 @@ import logging
 import re
 from functools import cached_property
 from itertools import product
-from typing import Callable, Mapping, Optional, Sequence, Union
+from typing import Callable, List, Mapping, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ from tqdm import tqdm
 from .DataSource import DataSource
 from .. import config, constants, DateUtils, utils
 from ..DBInterface import DBInterface
-from ..Tickers import StockTickers
+from ..Tickers import FundTickers, StockTickers
 
 START_DATE = {
     'common': dt.datetime(1990, 1, 1),
@@ -58,6 +58,8 @@ class TushareData(DataSource):
         self.init_hk_calendar()
         self.init_stock_names()
         self.init_accounting_data()
+        fund_tickers = FundTickers(self.db_interface).all_ticker()
+        self.update_fund_portfolio(fund_tickers)
 
     def update_base_info(self):
         """Update calendar and ticker lists"""
@@ -291,6 +293,7 @@ class TushareData(DataSource):
         for market, status in itertools.product(['E', 'O'], ['D', 'I', 'L']):
             storage.append(self._pro.fund_basic(market=market, status=status, fields=list(desc.keys())))
         output = pd.concat(storage)
+        output = output.loc[self.filter_valid_cn_equity_ticker(output.ts_code), :]
         etf_type = ['ETF' if it.endswith('ETF') else '' for it in output['name']]
         openness = ['' if it == '契约型开放式' else '封闭' for it in output['type']]
         exchange_type = ['' if it == 'E' else '场外' for it in output['market']]
@@ -321,7 +324,8 @@ class TushareData(DataSource):
         # info
         output = output.drop(['type', 'market'], axis=1)
         content = self._standardize_df(output, desc)
-        self.db_interface.update_df(content, '基金列表')
+        self.db_interface.purge_table('基金列表')
+        self.db_interface.insert_df(content, '基金列表')
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     #######################################
@@ -903,6 +907,29 @@ class TushareData(DataSource):
                     pbar.update()
         logging.getLogger(__name__).info(f'{table_name} 更新完成.')
 
+    def update_fund_portfolio(self, tickers: Sequence[str] = None):
+        """更新公募基金持仓数据
+
+        PS: 每个基金只保存最近的4000条记录
+        """
+        table_name = '公募基金持仓'
+        params = self._factor_param[table_name]['输出参数']
+        rate = self._factor_param[table_name]['每分钟限速']
+        if tickers is None:
+            tickers = FundTickers(self.db_interface).ticker()
+
+        with tqdm(tickers) as pbar:
+            rate_limiter = RateLimiter(rate - 1, period=60)
+            for ticker in tickers:
+                with rate_limiter:
+                    pbar.set_description(f'下载{ticker}的{table_name}')
+                    df = self._pro.fund_portfolio(ts_code=ticker, fields=list(params.keys()))
+                    df = df.drop_duplicates(subset=list(params.keys())[:4])
+                    df = self._standardize_df(df, params)
+                    self.db_interface.insert_df(df, table_name)
+                    pbar.update()
+        logging.getLogger(__name__).info(f'{table_name} 更新完成.')
+
     #######################################
     # us stock funcs
     #######################################
@@ -927,7 +954,7 @@ class TushareData(DataSource):
             df[it] = df[it].apply(DateUtils.date_type2datetime)
 
         df.rename(parameter_info, axis=1, inplace=True)
-        index = sorted(list({'DateTime', 'ID', '报告期', 'IndexCode'} & set(df.columns)))
+        index = sorted(list({'DateTime', 'IndexCode', 'ID', '报告期'} & set(df.columns)))
         if start_time and 'DateTime' in index:
             df = df.loc[(df.DateTime >= start_time) & (df.DateTime <= dt.datetime.today()), :]
         df = df.set_index(index, drop=True)
@@ -1006,3 +1033,7 @@ class TushareData(DataSource):
 
         cache = pd.concat(storage)
         return pd.concat([data, cache], axis=1)
+
+    @staticmethod
+    def filter_valid_cn_equity_ticker(tickers: Sequence[str]) -> List[bool]:
+        return [len(ticker) == 9 for ticker in tickers]

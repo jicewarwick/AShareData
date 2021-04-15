@@ -3,9 +3,49 @@
 		"index": "int",
 		"交易日期": "datetime"
 	},
-	"港股交易日历": {
-		"index": "int",
-		"交易日期": "datetime"
+	"Shibor利率数据": {
+		"DateTime": "date",
+		"隔夜": "float",
+		"1周": "float",
+		"2周": "float",
+		"1个月": "float",
+		"3个月": "float",
+		"6个月": "float",
+		"9个月": "float",
+		"1年": "float"
+	},
+
+	"上市公司基本信息": {
+		"ID": "varchar",
+		"交易所代码": "str",
+		"法人代表": "str",
+		"总经理": "str",
+		"董秘": "str",
+		"注册资本": "double",
+		"注册日期": "date",
+		"所在省份": "str",
+		"所在城市": "str",
+		"公司介绍": "str",
+		"公司主页": "str",
+		"电子邮件": "str",
+		"办公室": "str",
+		"员工人数": "int",
+		"主要业务及产品": "str",
+		"经营范围": "str"
+	},
+	"IPO新股列表": {
+		"ID": "varchar",
+		"申购代码": "varchar",
+		"名称": "str",
+		"上网发行日期": "date",
+		"上市日期": "date",
+		"发行总量": "double",
+		"上网发行总量": "double",
+		"发行价格": "float",
+		"市盈率": "float",
+		"个人申购上限": "double",
+		"募集资金": "double",
+		"中签率": "float"
 	},
 	"证券代码": {
 		"DateTime": "date",
@@ -43,24 +83,6 @@
 		"ID": "varchar",
 		"自由流通股本": "double"
 	},
-	"上市公司基本信息": {
-		"ID": "varchar",
-		"交易所代码": "str",
-		"法人代表": "str",
-		"总经理": "str",
-		"董秘": "str",
-		"注册资本": "double",
-		"注册日期": "date",
-		"所在省份": "str",
-		"所在城市": "str",
-		"公司介绍": "str",
-		"公司主页": "str",
-		"电子邮件": "str",
-		"办公室": "str",
-		"员工人数": "int",
-		"主要业务及产品": "str",
-		"经营范围": "str"
-	},
 	"分红送股": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -74,6 +96,45 @@
 		"派息日": "datetime",
 		"红股上市日": "datetime",
 		"实施公告日": "datetime"
+	},
+	"股票停牌": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"证券名称": "varchar",
+		"停牌类型": "varchar",
+		"停牌原因": "varchar"
+	},
+	"股票集合竞价数据": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"成交价": "float",
+		"成交量": "double",
+		"成交额": "double",
+		"卖5价": "float",
+		"卖4价": "float",
+		"卖3价": "float",
+		"卖2价": "float",
+		"卖1价": "float",
+		"买1价": "float",
+		"买2价": "float",
+		"买3价": "float",
+		"买4价": "float",
+		"买5价": "float",
+		"卖5量": "double",
+		"卖4量": "double",
+		"卖3量": "double",
+		"卖2量": "double",
+		"卖1量": "double",
+		"买1量": "double",
+		"买2量": "double",
+		"买3量": "double",
+		"买4量": "double",
+		"买5量": "double"
+	},
+	"股票最新价": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"最新价": "float"
 	},
 	"股票日行情": {
 		"DateTime": "date",
@@ -95,38 +156,7 @@
 		"成交量": "float",
 		"成交额": "double"
 	},
-	"指数日行情": {
-		"DateTime": "date",
-		"ID": "varchar",
-		"开盘点位": "float",
-		"最高点位": "float",
-		"最低点位": "float",
-		"收盘点位": "float",
-		"成交量": "double",
-		"成交额": "double",
-		"总市值": "double",
-		"流通市值": "double",
-		"总股本": "double",
-		"流通股本": "double",
-		"自由流通股本": "double",
-		"市盈率": "float",
-		"市盈率TTM": "float",
-		"市净率": "float"
-	},
-	"IPO新股列表": {
-		"ID": "varchar",
-		"申购代码": "varchar",
-		"名称": "str",
-		"上网发行日期": "date",
-		"上市日期": "date",
-		"发行总量": "double",
-		"上网发行总量": "double",
-		"发行价格": "float",
-		"市盈率": "float",
-		"个人申购上限": "double",
-		"募集资金": "double",
-		"中签率": "float"
-	},
+
 	"申万一级行业": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -152,33 +182,7 @@
 		"ID": "varchar",
 		"中证行业": "str"
 	},
-	"沪深股通成份股": {
-		"DateTime": "date",
-		"ID": "varchar",
-		"沪深股通成份股": "boolean"
-	},
-	"沪深港股通持股明细": {
-		"DateTime": "date",
-		"ID": "varchar",
-		"持股数量": "int"
-	},
-	"Shibor利率数据": {
-		"DateTime": "date",
-		"隔夜": "float",
-		"1周": "float",
-		"2周": "float",
-		"1个月": "float",
-		"3个月": "float",
-		"6个月": "float",
-		"9个月": "float",
-		"1年": "float"
-	},
-	"指数成分股权重": {
-		"DateTime": "date",
-		"ID": "varchar",
-		"IndexCode": "varchar",
-		"权重": "float"
-	},
+
 	"资产负债表": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -526,6 +530,43 @@
 		"y3": "date",
 		"y5": "date"
 	},
+
+	"沪深股通成份股": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"沪深股通成份股": "boolean"
+	},
+	"沪深港股通持股明细": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"持股数量": "int"
+	},
+
+	"指数日行情": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"开盘点位": "float",
+		"最高点位": "float",
+		"最低点位": "float",
+		"收盘点位": "float",
+		"成交量": "double",
+		"成交额": "double",
+		"总市值": "double",
+		"流通市值": "double",
+		"总股本": "double",
+		"流通股本": "double",
+		"自由流通股本": "double",
+		"市盈率": "float",
+		"市盈率TTM": "float",
+		"市净率": "float"
+	},
+	"指数成分股权重": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"IndexCode": "varchar",
+		"权重": "float"
+	},
+
 	"期货合约": {
 		"ID": "varchar",
 		"合约代码": "varchar",
@@ -550,6 +591,7 @@
 		"成交额": "double",
 		"持仓量": "double"
 	},
+
 	"期权合约": {
 		"ID": "varchar",
 		"证券名称": "str",
@@ -582,30 +624,7 @@
 		"Theta": "float",
 		"Rho": "float"
 	},
-	"场内基金日行情": {
-		"DateTime": "date",
-		"ID": "varchar",
-		"开盘价": "float",
-		"最高价": "float",
-		"最低价": "float",
-		"收盘价": "float",
-		"成交量": "float",
-		"成交额": "double",
-		"基金份额": "double",
-		"单位净值": "float"
-	},
-	"股票停牌": {
-		"DateTime": "date",
-		"ID": "varchar",
-		"证券名称": "varchar",
-		"停牌类型": "varchar",
-		"停牌原因": "varchar"
-	},
-	"一字涨跌停": {
-		"DateTime": "date",
-		"ID": "varchar",
-		"涨跌停": "int"
-	},
+
 	"可转债列表": {
 		"ID": "varchar",
 		"转债名称": "str",
@@ -625,6 +644,17 @@
 		"初始转股价": "float",
 		"到期赎回价格(含税)": "float"
 	},
+	"可转债日行情": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double"
+	},
+
 	"基金列表": {
 		"ID": "varchar",
 		"证券名称": "str",
@@ -638,6 +668,18 @@
 		"管理费": "float",
 		"托管费": "float",
 		"投资风格": "varchar"
+	},
+	"场内基金日行情": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double",
+		"基金份额": "double",
+		"单位净值": "float"
 	},
 	"场外基金净值": {
 		"DateTime": "date",
@@ -655,42 +697,20 @@
 		"ID": "varchar",
 		"每股派息": "float"
 	},
-	"股票集合竞价数据": {
-		"DateTime": "datetime",
-		"ID": "varchar",
-		"成交价": "float",
-		"成交量": "double",
-		"成交额": "double",
-		"卖5价": "float",
-		"卖4价": "float",
-		"卖3价": "float",
-		"卖2价": "float",
-		"卖1价": "float",
-		"买1价": "float",
-		"买2价": "float",
-		"买3价": "float",
-		"买4价": "float",
-		"买5价": "float",
-		"卖5量": "double",
-		"卖4量": "double",
-		"卖3量": "double",
-		"卖2量": "double",
-		"卖1量": "double",
-		"买1量": "double",
-		"买2量": "double",
-		"买3量": "double",
-		"买4量": "double",
-		"买5量": "double"
-	},
-	"可转债日行情": {
+	"公募基金持仓": {
+		"IndexCode": "varchar",
 		"DateTime": "date",
+		"报告期": "date",
 		"ID": "varchar",
-		"开盘价": "float",
-		"最高价": "float",
-		"最低价": "float",
-		"收盘价": "float",
-		"成交量": "float",
-		"成交额": "double"
+		"持有股票市值": "double",
+		"持有股票数量": "double",
+		"占股票市值比": "float",
+		"占流通股本比例": "float"
+	},
+
+	"港股交易日历": {
+		"index": "int",
+		"交易日期": "datetime"
 	},
 	"港股日行情": {
 		"DateTime": "date",
@@ -702,6 +722,7 @@
 		"成交量": "float",
 		"成交额": "double"
 	},
+
 	"美股日行情": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -716,16 +737,7 @@
 		"PE": "float",
 		"PB": "float"
 	},
-	"股票最新价": {
-		"DateTime": "datetime",
-		"ID": "varchar",
-		"最新价": "float"
-	},
-	"负净资产股票": {
-		"DateTime": "datetime",
-		"ID": "varchar",
-		"负净资产股票": "boolean"
-	},
+
 	"持仓记录": {
 		"id": "int",
 		"accountName": "str",
@@ -757,6 +769,17 @@
 		"orderVolume": "int",
 		"orderPrice": "float",
 		"orderStatus": "varchar"
+	},
+
+	"负净资产股票": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"负净资产股票": "boolean"
+	},
+	"一字涨跌停": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"涨跌停": "int"
 	},
 	"因子分组收益率": {
 		"DateTime": "date",
