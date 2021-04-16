@@ -692,6 +692,11 @@
 		"资产净值": "double",
 		"合计资产净值": "double"
 	},
+	"场外基金份额": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"基金份额": "double"
+	},
 	"公募基金分红": {
 		"DateTime": "date",
 		"ID": "varchar",

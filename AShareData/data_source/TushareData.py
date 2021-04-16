@@ -868,12 +868,13 @@ class TushareData(DataSource):
 
                     share_data = self._pro.fund_share(trade_date=date_str)
                     share_data['fd_share'] = share_data['fd_share'] * 10000
-                    ind = share_data['market'] == 'OF'
+                    ind = share_data['market'] == 'O'
                     share_data.drop(['fund_type', 'market'], axis=1, inplace=True)
                     share_data = self._standardize_df(share_data, share_params)
                     ex_share_data = share_data.loc[~ind, :]
+                    of_share_data = share_data.loc[ind, :]
 
-                    db_data = daily_data.join(ex_nav_part, how='outer').join(ex_share_data, how='outer')
+                    db_data = daily_data.join(ex_nav_part, how='left').join(ex_share_data, how='left')
 
                     nav_data = self._pro.fund_nav(end_date=date_str, market='O', fields=list(nav_params.keys()))
                     nav_part = self._standardize_df(nav_data.iloc[:, :3].copy(), nav_params)
@@ -881,6 +882,7 @@ class TushareData(DataSource):
 
                     self.db_interface.update_df(db_data, daily_table_name)
                     self.db_interface.update_df(nav_part, '场外基金净值')
+                    self.db_interface.update_df(of_share_data, '场外基金份额')
                     self.db_interface.update_df(asset_part, '场外基金规模')
 
                     pbar.update()
