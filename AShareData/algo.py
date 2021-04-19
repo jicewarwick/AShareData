@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Sequence
+from typing import Dict, Optional, Sequence
 
 
 def chunk_list(l: list, n: int):
@@ -36,3 +36,15 @@ def get_less_or_equal_of_a_in_b(a: Sequence, b: Sequence) -> Dict:
         ret[a[i]] = b[j - 1]
         i += 1
     return ret
+
+
+def extract_close_operate_period(fund_name: str) -> Optional[int]:
+    if fund_name:
+        if '封闭运作' in fund_name:
+            fund_name = fund_name.replace('三', '3').replace('二', '2').replace('一', '1').replace('两', '2')
+            if '年' in fund_name:
+                return int(fund_name[fund_name.index('年') - 1]) * 12
+            elif '月' in fund_name:
+                loc = fund_name.index('月') - 1
+                ret_str = fund_name[loc - 2:loc] if fund_name[loc - 2].isnumeric() else fund_name[loc]
+                return int(ret_str)

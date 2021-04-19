@@ -404,6 +404,31 @@ class WindData(DataSource):
                 pbar.update()
 
     #######################################
+    # future funcs
+    #######################################
+    def update_fund_extra_info(self):
+        table_name = '基金拓展信息'
+        fields = {'全名': 'fund_fullname', '封闭式': 'fund_type', '投资类型': 'fund_investtype', '初始基金': 'fund_initial',
+                  '分级基金': 'fund_structuredfundornot', '定开': 'fund_regulopenfundornot',
+                  '定开时长(月)': 'fund_operateperiod_cls'}
+
+        funds_list = self.db_interface.get_column('场内基金日行情', 'ID')
+        funds_list = [ticker for ticker in funds_list if len(ticker) == 9]
+        old_funds = self.db_interface.get_column(table_name, 'ID')
+        new_funds = sorted(set(funds_list) - set(old_funds))
+        if new_funds:
+            data = self.w.wss(new_funds, ','.join(fields.values()))
+            data.columns = list(fields.keys())
+            data.index.name = 'ID'
+            data['封闭式'] = data['封闭式'].str.contains('封闭式')
+            data['初始基金'] = (data['初始基金'] == '是')
+            data['分级基金'] = (data['分级基金'] == '是')
+            data['定开'] = (data['定开'] == '是')
+            data['债券型'] = data['投资类型'].str.contains('债')
+            data['封闭运作转LOF时长(月)'] = data['全名'].apply(algo.extract_close_operate_period)
+            self.db_interface.insert_df(data, table_name)
+
+    #######################################
     # option funcs
     #######################################
     def get_stock_option_daily_data(self, date: dt.datetime) -> None:

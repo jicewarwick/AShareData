@@ -669,6 +669,18 @@
 		"托管费": "float",
 		"投资风格": "varchar"
 	},
+	"基金拓展信息": {
+		"ID": "varchar",
+		"全名": "str",
+		"投资类型": "varchar",
+		"封闭式": "boolean",
+		"债券型": "boolean",
+		"初始基金": "boolean",
+		"分级基金": "boolean",
+		"定开": "boolean",
+		"定开时长(月)": "int",
+		"封闭运作转LOF时长(月)": "int"
+	},
 	"场内基金日行情": {
 		"DateTime": "date",
 		"ID": "varchar",
