@@ -140,13 +140,6 @@ class WindWrapper(object):
         self._api_error(data)
         return data[1]
 
-    # outright functions
-    def get_index_constitute(self, date: DateUtils.DateType = dt.date.today(),
-                             index: str = '000300.SH') -> pd.DataFrame:
-        date = DateUtils.date_type2datetime(date)
-        data = self.wset('indexconstituent', date=date, windcode=index)
-        return data
-
 
 class WindData(DataSource):
     """Wind 数据源"""
@@ -453,7 +446,7 @@ class WindData(DataSource):
                 pbar.set_description(f'下载{date}的{table_name}')
                 indicators = "open,low,high,close,volume,amt,mkt_cap_ard,total_shares,float_a_shares,free_float_shares,pe_ttm"
                 data = self.w.wss(indexes, indicators, date=date, priceAdj='U', cycle='D')
-                data = data.rename(self._factor_param[table_name], axis=1).rename({'ID', 'IndexCode'}, axis=1)
+                data = data.rename(self._factor_param[table_name], axis=1)
                 self.db_interface.insert_df(data, table_name)
                 pbar.update()
 

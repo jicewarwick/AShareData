@@ -761,7 +761,7 @@ class TushareData(DataSource):
         valuation_info = self._pro.index_dailybasic(trade_date=date, fields=basic_fields)
         valuation_info = self._standardize_df(valuation_info, basic_desc)
         data = pd.concat([price_info, valuation_info], axis=1)
-        data = data.loc[data.index.get_level_values('IndexCode').isin(indexes), :]
+        data = data.loc[data.index.get_level_values('ID').isin(indexes), :]
         self.db_interface.insert_df(data, table_name)
 
     def update_index_daily(self):
@@ -949,16 +949,13 @@ class TushareData(DataSource):
     # utils funcs
     #######################################
     @staticmethod
-    def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str], start_time: dt.datetime = None) \
-            -> Union[pd.Series, pd.DataFrame]:
+    def _standardize_df(df: pd.DataFrame, parameter_info: Mapping[str, str]) -> Union[pd.Series, pd.DataFrame]:
         dates_columns = [it for it in df.columns if it.endswith('date')]
         for it in dates_columns:
             df[it] = df[it].apply(DateUtils.date_type2datetime)
 
         df.rename(parameter_info, axis=1, inplace=True)
-        index = sorted(list({'DateTime', 'IndexCode', 'ID', '报告期'} & set(df.columns)))
-        if start_time and 'DateTime' in index:
-            df = df.loc[(df.DateTime >= start_time) & (df.DateTime <= dt.datetime.today()), :]
+        index = [it for it in ['DateTime', 'ID', 'ConstituteTicker', '报告期'] if it in df.columns]
         df = df.set_index(index, drop=True)
         if df.shape[1] == 1:
             df = df.iloc[:, 0]

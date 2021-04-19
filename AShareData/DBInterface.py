@@ -154,7 +154,7 @@ class MySQLInterface(DBInterface):
         if 'id' in col_names:
             primary_keys = ['id']
         else:
-            primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'IndexCode'] if it in col_names]
+            primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'ConstituteTicker'] if it in col_names]
 
         existing_tables = [it.lower() for it in self.meta.tables]
         if table_name.lower() in existing_tables:
@@ -336,7 +336,7 @@ class MySQLInterface(DBInterface):
                    start_date: dt.datetime = None, end_date: dt.datetime = None,
                    dates: Union[Sequence[dt.datetime], dt.datetime] = None,
                    report_period: dt.datetime = None, report_month: int = None,
-                   ids: Union[str, Sequence[str]] = None, index_code: str = None,
+                   ids: Union[str, Sequence[str]] = None, constitute_ticker: str = None,
                    text_statement: str = None) -> Union[pd.Series, pd.DataFrame]:
         """ 读取数据库中的表
 
@@ -386,8 +386,8 @@ class MySQLInterface(DBInterface):
                 q = q.filter(t.columns['ID'] == ids)
             else:
                 q = q.filter(t.columns['ID'].in_(ids))
-        if (index_code is not None) and ('IndexCode' in columns):
-            q = q.filter(t.columns['IndexCode'] == index_code)
+        if (constitute_ticker is not None) and ('ConstituteTicker' in columns):
+            q = q.filter(t.columns['ConstituteTicker'] == constitute_ticker)
 
         ret = pd.read_sql(q.statement, con=self.engine)
         session.close()

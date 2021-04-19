@@ -295,10 +295,10 @@
 			"end_date": "报告期结束日期"
 		},
 		"输出参数": {
-			"ts_code": "IndexCode",
+			"ts_code": "ID",
 			"ann_date": "DateTime",
 			"end_date": "报告期",
-			"symbol": "ID",
+			"symbol": "ConstituteTicker",
 			"mkv": "持有股票市值",
 			"amount": "持有股票数量",
 			"stk_mkv_ratio": "占股票市值比",
@@ -395,7 +395,7 @@
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "IndexCode",
+			"ts_code": "ID",
 			"trade_date": "DateTime",
 			"total_mv": "总市值",
 			"float_mv": "流通市值",
@@ -1975,7 +1975,7 @@
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"ts_code": "IndexCode",
+			"ts_code": "ID",
 			"trade_date": "DateTime",
 			"close": "收盘点位",
 			"open": "开盘点位",
@@ -1994,8 +1994,8 @@
 			"end_date": "结束日期"
 		},
 		"输出参数": {
-			"index_code": "IndexCode",
-			"con_code": "ID",
+			"index_code": "ID",
+			"con_code": "ConstituteTicker",
 			"trade_date": "DateTime",
 			"weight": "权重"
 		}

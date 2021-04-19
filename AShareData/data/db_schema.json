@@ -563,7 +563,7 @@
 	"指数成分股权重": {
 		"DateTime": "date",
 		"ID": "varchar",
-		"IndexCode": "varchar",
+		"ConstituteTicker": "varchar",
 		"权重": "float"
 	},
 
@@ -703,10 +703,10 @@
 		"每股派息": "float"
 	},
 	"公募基金持仓": {
-		"IndexCode": "varchar",
 		"DateTime": "date",
-		"报告期": "date",
 		"ID": "varchar",
+		"报告期": "date",
+		"ConstituteTicker": "varchar",
 		"持有股票市值": "double",
 		"持有股票数量": "double",
 		"占股票市值比": "float",
