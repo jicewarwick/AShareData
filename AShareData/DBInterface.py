@@ -348,7 +348,7 @@ class MySQLInterface(DBInterface):
         :param report_period: 报告期
         :param report_month: 报告月份
         :param ids: 合约代码
-        :param index_code: 指数代码
+        :param constitute_ticker: 成分股代码
         :param text_statement: SQL指令
         :return:
         """

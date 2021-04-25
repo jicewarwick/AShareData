@@ -356,8 +356,8 @@ class IndexConstitute(Factor):
 
     def _get_data(self, index_ticker: str, date: DateUtils.DateType):
         date_str = DateUtils.date_type2str(date, '-')
-        stm = f'DateTime = (SELECT MAX(DateTime) FROM `{self.table_name}` WHERE DateTime <= "{date_str}" AND IndexCode = "{index_ticker}")'
-        ret = self.db_interface.read_table(self.table_name, index_code=index_ticker, text_statement=stm)
+        stm = f'DateTime = (SELECT MAX(DateTime) FROM `{self.table_name}` WHERE DateTime <= "{date_str}")'
+        ret = self.db_interface.read_table(self.table_name, ids=index_ticker, text_statement=stm)
         ret.index = pd.MultiIndex.from_product([[date], ret.index.get_level_values('ID')])
         ret.index.names = ['DateTime', 'ID']
         return ret
@@ -528,21 +528,19 @@ class ContinuousFactor(NonFinancialFactor):
 
     def _get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                   start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                  ids: Sequence[str] = None, ticker_selector: TickerSelector = None,
-                  index_code: str = None, **kwargs) -> Union[pd.Series, pd.DataFrame]:
+                  ids: Sequence[str] = None, ticker_selector: TickerSelector = None, **kwargs) \
+            -> Union[pd.Series, pd.DataFrame]:
         """
         :param start_date: start date
         :param end_date: end date
         :param dates: selected dates
         :param ids: query stocks
         :param ticker_selector: TickerSelector that specifies criteria
-        :param index_code: query index
         :return: pandas.DataFrame with DateTime as index and stock as column
         """
 
         df = self.db_interface.read_table(self.table_name, columns=self._factor_name,
-                                          start_date=start_date, end_date=end_date,
-                                          dates=dates, ids=ids, index_code=index_code)
+                                          start_date=start_date, end_date=end_date, dates=dates, ids=ids)
 
         if ticker_selector:
             index = ticker_selector.generate_index(dates=dates)
