@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import pandas as pd
 
-from AShareData import AShareDataReader, TradingCalendar, utils
+from AShareData import AShareDataReader, constants, TradingCalendar, utils
 from AShareData.config import get_db_interface
 from AShareData.DBInterface import DBInterface
 from AShareData.Factor import CompactFactor, ContinuousFactor
@@ -85,3 +85,18 @@ class IndexHighlighter(object):
             print(f'申万2级行业 - {it}')
             print(constitute.get_major_constitute(it, 10))
             print('')
+
+
+def major_index_valuation(db_interface: DBInterface = None):
+    if db_interface is None:
+        db_interface = get_db_interface()
+    data = db_interface.read_table('指数日行情', ['市盈率TTM', '市净率']).dropna(how='all')
+    tmp = data.groupby('ID').rank()
+    latest = data.groupby('ID').tail(1)
+    percentile = tmp.groupby('ID').tail(1) / tmp.groupby('ID').max()
+    percentile.columns = [f'{it}分位' for it in percentile.columns]
+    ret = pd.concat([latest, percentile], axis=1)
+    ret = ret.loc[:, sorted(ret.columns)].reset_index()
+    index_name_dict = dict(zip(constants.STOCK_INDEXES.values(), constants.STOCK_INDEXES.keys()))
+    ret['ID'] = ret['ID'].map(index_name_dict)
+    return ret.set_index(['DateTime', 'ID'])

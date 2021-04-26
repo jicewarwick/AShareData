@@ -10,7 +10,7 @@ from .DBInterface import MySQLInterface
 from .factor_compositor import ConstLimitStockFactorCompositor, IndexCompositor, IndexUpdater, \
     NegativeBookEquityListingCompositor
 from .model import FamaFrench3FactorModel
-from .tools import IndexHighlighter, MajorIndustryConstitutes
+from .tools import IndexHighlighter, major_index_valuation, MajorIndustryConstitutes
 
 ch = logging.StreamHandler()
 ch.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s'))
