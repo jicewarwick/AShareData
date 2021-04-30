@@ -6,6 +6,7 @@ import re
 from functools import cached_property
 from itertools import product
 from typing import Callable, List, Mapping, Optional, Sequence, Union
+from retrying import retry
 
 import numpy as np
 import pandas as pd
@@ -67,7 +68,7 @@ class TushareData(DataSource):
         self.update_hk_calendar()
         self.update_stock_list_date()
         self.update_convertible_bond_list_date()
-        self.update_fund_list_date()
+        # self.update_fund_list_date()
         self.update_future_list_date()
         self.update_option_list_date()
 
@@ -609,6 +610,7 @@ class TushareData(DataSource):
 
         logging.getLogger(__name__).info('财报下载完成')
 
+    @retry(stop_max_attempt_number=3)
     def update_financial_data(self):
         table_name = '财报披露计划'
         desc = self._factor_param[table_name]['输出参数']
@@ -767,7 +769,7 @@ class TushareData(DataSource):
     def update_index_daily(self):
         table_name = '指数日行情'
         start_date = self.db_interface.get_latest_timestamp(table_name, START_DATE['index_daily'])
-        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, False))
 
         rate = self._factor_param[table_name]['每分钟限速']
         rate_limiter = RateLimiter(rate, period=60)

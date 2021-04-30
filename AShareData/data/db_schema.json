@@ -1,4 +1,8 @@
 {
+	"cache": {
+		"ID": "varchar",
+		"更新时间": "date"
+	},
 	"交易日历": {
 		"index": "int",
 		"交易日期": "datetime"
@@ -658,28 +662,27 @@
 	"基金列表": {
 		"ID": "varchar",
 		"证券名称": "str",
-		"管理人": "varchar",
-		"证券类型": "varchar",
-		"成立日期": "date",
-		"到期日期": "date",
-		"上市时间": "date",
-		"发行日期": "date",
-		"退市日期": "date",
-		"管理费": "float",
-		"托管费": "float",
-		"投资风格": "varchar"
-	},
-	"基金拓展信息": {
-		"ID": "varchar",
 		"全名": "str",
+        "管理人": "varchar",
+        "封闭式": "boolean",
 		"投资类型": "varchar",
-		"封闭式": "boolean",
-		"债券型": "boolean",
 		"初始基金": "boolean",
-		"分级基金": "boolean",
+        "分级基金": "boolean",
+		"债券型": "boolean",
+		"ETF": "boolean",
 		"定开": "boolean",
-		"定开时长(月)": "int",
-		"封闭运作转LOF时长(月)": "int"
+        "定开时长(月)": "int",
+		"封闭运作转LOF时长(月)": "int",
+		"管理费率": "float",
+        "浮动管理费": "boolean",
+		"浮动管理费说明": "str",
+        "托管费率": "float",
+		"销售服务费率": "float"
+	},
+	"基金时间表": {
+		"ID": "varchar",
+		"上市日期": "date",
+		"退市日期": "date"
 	},
 	"场内基金日行情": {
 		"DateTime": "date",

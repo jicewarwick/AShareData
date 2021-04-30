@@ -5,8 +5,8 @@ import numpy as np
 from . import DateUtils
 from .config import generate_db_interface_from_config, get_db_interface
 from .DBInterface import DBInterface
-from .Factor import BetaFactor, BinaryFactor, CompactFactor, ContinuousFactor, IndexConstitute, IndustryFactor, \
-    InterestRateFactor, LatestAccountingFactor, OnTheRecordFactor, TTMAccountingFactor, UnaryFactor
+from .Factor import BetaFactor, BinaryFactor, CompactFactor, ContinuousFactor, FactorBase, IndexConstitute, \
+    IndustryFactor, InterestRateFactor, LatestAccountingFactor, OnTheRecordFactor, TTMAccountingFactor, UnaryFactor
 from .Tickers import StockTickers
 
 
@@ -41,7 +41,7 @@ class AShareDataReader(object):
         return CompactFactor('复权因子', self.db_interface)
 
     @cached_property
-    def free_a_shares(self) -> CompactFactor:
+    def float_a_shares(self) -> CompactFactor:
         """A股流通股本"""
         return CompactFactor('A股流通股本', self.db_interface)
 
@@ -64,11 +64,6 @@ class AShareDataReader(object):
     def total_share(self) -> CompactFactor:
         """股票总股本"""
         return CompactFactor('总股本', self.db_interface)
-
-    @cached_property
-    def floating_share(self) -> CompactFactor:
-        """股票流通股本"""
-        return CompactFactor('流通股本', self.db_interface)
 
     @cached_property
     def free_floating_share(self) -> CompactFactor:
@@ -186,6 +181,17 @@ class AShareDataReader(object):
         return (self.book_val.shift(-1) / self.stock_market_cap).set_factor_name('BM')
 
     @cached_property
+    def pb(self) -> BinaryFactor:
+        """Price to Book"""
+        return (self.stock_market_cap / self.book_val).set_factor_name('PB')
+
+    # TODO
+    @cached_property
+    def pb_after_close(self) -> BinaryFactor:
+        """After market Price to Book"""
+        return (self.stock_market_cap / self.book_val.shift(-1)).set_factor_name('BM')
+
+    @cached_property
     def pe_ttm(self) -> BinaryFactor:
         """Price to Earning Trailing Twelve Month"""
         return (self.stock_market_cap / self.earning_ttm).set_factor_name('PE_TTM')
@@ -213,6 +219,10 @@ class AShareDataReader(object):
     @cached_property
     def model_factor_return(self):
         return ContinuousFactor('模型因子收益率', '收益率', self.db_interface)
+
+    def get_index_return_factor(self, ticker: str) -> FactorBase:
+        factor = ContinuousFactor('自合成指数', '收益率') if ticker.endswith('.IND') else self.index_return
+        return factor.bind_params(ids=ticker)
 
     @staticmethod
     def exponential_weight(n: int, half_life: int):

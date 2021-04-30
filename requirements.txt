@@ -1,4 +1,5 @@
 alphalens
+dateutil
 empyrical
 jqdatasdk
 matplotlib
@@ -7,6 +8,7 @@ pandas
 pytdx
 ratelimiter
 requests
+retrying
 scipy
 setuptools
 sqlalchemy

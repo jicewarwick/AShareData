@@ -38,10 +38,11 @@ class MyTestCase(unittest.TestCase):
     def test_index_constitute(self):
         print(self.db.index_constitute.get_data('000300.SH', '20201130'))
 
-    def test_pe_ttm(self):
+    def test_ttm(self):
         print(self.db.earning_ttm.get_data(dates=self.dates, ids=self.ids))
         print(self.db.stock_market_cap.get_data(dates=self.dates, ids=self.ids))
         print(self.db.pe_ttm.get_data(dates=self.dates, ids=self.ids))
+        print(self.db.pb_after_close.get_data(dates=self.dates, ids=self.ids))
 
     def test_cap_weight(self):
         print(self.db.free_floating_cap_weight.get_data(dates=[self.start_date, self.end_date], ids=self.ids))

@@ -25,11 +25,15 @@ class MajorIndustryConstitutes(object):
     def get_major_constitute(self, name: str, n: int = None):
         assert name in self.industry.all_industries, 'unknown industry'
         constitute = self.industry.list_constitutes(date=self.date, industry=name)
-        sec_name = self.data_reader.sec_name.get_data(ids=constitute, dates=self.date)
         val = self.cap.get_data(ids=constitute, dates=self.date) / 1e8
-        ret = pd.concat([sec_name, val], axis=1).sort_values(val.name, ascending=False)
         if n:
-            ret = ret.head(n)
+            val = val.sort_values(ascending=False)
+            val = val.head(n)
+            constitute = val.index.get_level_values('ID').tolist()
+        sec_name = self.data_reader.sec_name.get_data(ids=constitute, dates=self.date)
+        pe = self.data_reader.pe_ttm.get_data(ids=constitute, dates=self.date)
+        pb = self.data_reader.pb.get_data(ids=constitute, dates=self.date)
+        ret = pd.concat([sec_name, val, pe, pb], axis=1).sort_values(val.name, ascending=False)
         return ret
 
 

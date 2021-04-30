@@ -86,7 +86,7 @@ class DBInterface(object):
     def delete_datetime_records(self, table_name: str, datetime: dt.datetime):
         raise NotImplementedError()
 
-    def delete_id_records(self, table_name: str, ticker: str):
+    def delete_id_records(self, table_name: str, tickers: str):
         raise NotImplementedError()
 
 
@@ -421,10 +421,13 @@ class MySQLInterface(DBInterface):
         conn = self.engine.connect()
         conn.execute(stmt)
 
-    def delete_id_records(self, table_name: str, ticker: str):
+    def delete_id_records(self, table_name: str, tickers: Union[str, Sequence[str]]):
         table_name = table_name.lower()
         t = self.meta.tables[table_name]
-        stmt = t.delete().where(t.c.ID == ticker)
+        if isinstance(tickers, str):
+            stmt = t.delete().where(t.c.ID == tickers)
+        else:
+            stmt = t.delete().where(t.c.ID.in_(tickers))
         conn = self.engine.connect()
         conn.execute(stmt)
 

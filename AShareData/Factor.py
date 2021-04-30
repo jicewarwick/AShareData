@@ -405,6 +405,8 @@ class CompactFactor(NonFinancialFactor):
             dates = [dates]
         data = self.data.copy()
         if ids:
+            if isinstance(ids, str):
+                ids = [ids]
             data = data.loc[(slice(None), ids)]
         if dates:
             end_date = max(dates)

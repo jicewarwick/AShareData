@@ -1,7 +1,9 @@
 import unittest
 
-from AShareData import set_global_config
+from AShareData import *
+from AShareData.analysis.fund_nav_analysis import *
 from AShareData.analysis.holding import *
+from AShareData.analysis.public_fund_holding import *
 # from AShareData.analysis.trading import *
 from AShareData.analysis.return_analysis import *
 from AShareData.Factor import ContinuousFactor
@@ -33,6 +35,19 @@ class MyTestCase(unittest.TestCase):
         print(h.get_holding(date))
         print(h.get_holding(date, fund='指增1号 - 东财 - 普通户'))
         print(h.get_holding(date, fund='ALL'))
+
+    def test_fund_nav_analysis(self):
+        fund_nav_analysis = FundNAVAnalysis('110011.OF')
+        fund_nav_analysis.compute_correlation('399006.SZ')
+        model = FamaFrench3FactorModel()
+        fund_nav_analysis.compute_exposure(model)
+        fund_nav_analysis.get_latest_published_portfolio_holding()
+
+    def test_public_fund_holding(self):
+        ticker = '000001.SZ'
+        date = dt.datetime(2020, 12, 31)
+        rec = PublicFundHoldingRecords(ticker, date)
+        self = rec
 
 
 if __name__ == '__main__':

@@ -404,29 +404,115 @@ class WindData(DataSource):
                 pbar.update()
 
     #######################################
-    # future funcs
+    # fund funcs
     #######################################
-    def update_fund_extra_info(self):
-        table_name = '基金拓展信息'
-        fields = {'全名': 'fund_fullname', '封闭式': 'fund_type', '投资类型': 'fund_investtype', '初始基金': 'fund_initial',
-                  '分级基金': 'fund_structuredfundornot', '定开': 'fund_regulopenfundornot',
-                  '定开时长(月)': 'fund_operateperiod_cls'}
+    def init_fund_info(self):
+        self.get_fund_base_info()
+        self.get_fund_time_info()
 
-        funds_list = self.db_interface.get_column('场内基金日行情', 'ID')
-        funds_list = [ticker for ticker in funds_list if len(ticker) == 9]
-        old_funds = self.db_interface.get_column(table_name, 'ID')
-        new_funds = sorted(set(funds_list) - set(old_funds))
-        if new_funds:
-            data = self.w.wss(new_funds, ','.join(fields.values()))
-            data.columns = list(fields.keys())
-            data.index.name = 'ID'
-            data['封闭式'] = data['封闭式'].str.contains('封闭式')
-            data['初始基金'] = (data['初始基金'] == '是')
-            data['分级基金'] = (data['分级基金'] == '是')
-            data['定开'] = (data['定开'] == '是')
-            data['债券型'] = data['投资类型'].str.contains('债')
-            data['封闭运作转LOF时长(月)'] = data['全名'].apply(algo.extract_close_operate_period)
-            self.db_interface.insert_df(data, table_name)
+    def update_fund_info(self):
+        date_str = self.calendar.today().strftime('%Y-%m-%d')
+
+        # otc funds
+        new_funds = self.w.wset("sectorconstituent", f"date={date_str};sectorid=1000007789000000;field=wind_code")
+        new_funds = new_funds.index.tolist()
+        self.get_fund_base_info(new_funds)
+        self.get_fund_time_info(new_funds)
+
+        old_funds = self.w.wset("sectorconstituent", f"date={date_str};sectorid=1000007791000000;field=wind_code")
+        old_funds = old_funds.index.tolist()
+        self.get_fund_time_info(old_funds)
+
+        # exchange funds
+        new_exchange_funds = self.db_interface.read_table('场内基金日行情', '收盘价', dates=self.calendar.today())
+        new_exchange_funds = new_exchange_funds.index.tolist()
+        db_ids = self.db_interface.get_all_id('场内基金列表')
+        new_exchange_funds = sorted(set(new_exchange_funds) - set(db_ids))
+        if new_exchange_funds:
+            self.get_fund_base_info(new_exchange_funds)
+            self.get_fund_time_info(new_exchange_funds)
+
+    def get_fund_base_info(self, tickers: Sequence[str] = None):
+        table_name = '基金列表'
+        if tickers is None:
+            date_str = dt.date.today().strftime('%Y-%m-%d')
+            otc = self.w.wset("sectorconstituent", f"date={date_str};sectorid=1000008492000000;field=wind_code")
+            tickers = otc.index.tolist()
+
+            listed = self.w.wset("sectorconstituent", f"date={date_str};sectorid=1000027452000000;field=wind_code")
+            tickers.extend(listed.index.tolist())
+
+            tickers = [it for it in tickers if ((not it.startswith('F')) & (not it.startswith('P')))]
+        else:
+            db_tickers = self.db_interface.get_all_id(table_name)
+            tickers = sorted(set(tickers) - set(db_tickers))
+            if not tickers:
+                return
+
+        fields = {'证券名称': 'sec_name', '全名': 'fund_fullname', '管理人': 'fund_corp_fundmanagementcompany',
+                  '封闭式': 'fund_type', '投资类型': 'fund_investtype', '初始基金': 'fund_initial',
+                  '分级基金': 'fund_structuredfundornot', '定开': 'fund_regulopenfundornot',
+                  '定开时长(月)': 'fund_operateperiod_cls', '管理费率': 'fund_managementfeeratio',
+                  '浮动管理费': 'fund_floatingmgntfeeornot', '浮动管理费说明': 'fund_floatingmgntfeedescrip',
+                  '托管费率': 'fund_custodianfeeratio', '销售服务费率': 'fund_salefeeratio',
+                  }
+
+        if len(tickers) > 3000:
+            storage = []
+            for it in algo.chunk_list(tickers, 3000):
+                storage.append(self.w.wss(it, ','.join(fields.values())))
+            data = pd.concat(storage)
+        else:
+            data = self.w.wss(tickers, ','.join(fields.values()))
+        data.columns = list(fields.keys())
+        data.index.name = 'ID'
+        data['封闭式'] = data['封闭式'].str.contains('封闭式')
+        data['初始基金'] = (data['初始基金'] == '是')
+        data['分级基金'] = (data['分级基金'] == '是')
+        data['浮动管理费'] = (data['浮动管理费'] == '是')
+        data['定开'] = (data['定开'] == '是')
+        data['债券型'] = data['投资类型'].str.contains('债')
+        data['ETF'] = (data['全名'].str.contains('交易型开放式')) & (~data.index.str.endswith('OF'))
+        data['封闭运作转LOF时长(月)'] = data['全名'].apply(algo.extract_close_operate_period)
+        self.db_interface.insert_df(data, table_name)
+
+    def get_fund_time_info(self, tickers: Sequence[str] = None):
+        init = True if tickers is None else False
+        if tickers is None:
+            tickers = self.db_interface.get_all_id('基金列表')
+
+        exchange_ticker = [it for it in tickers if not it.endswith('.OF')]
+        otc_ticker = [it for it in tickers if it.endswith('.OF')]
+        storage = []
+        if exchange_ticker:
+            data = self.w.wss(exchange_ticker, 'ipo_date,delist_date')
+            data.columns = ['上市日期', '退市日期']
+            storage.append(data)
+        if otc_ticker:
+            if len(otc_ticker) > 3000:
+                storage1 = []
+                for it in algo.chunk_list(otc_ticker, 3000):
+                    storage1.append(self.w.wss(it, 'fund_setupdate,fund_maturitydate'))
+                data = pd.concat(storage1)
+            else:
+                data = self.w.wss(otc_ticker, 'fund_setupdate,fund_maturitydate')
+            data.columns = ['上市日期', '退市日期']
+            storage.append(data)
+
+        data = pd.concat(storage)
+        data.index.name = 'ID'
+        data.loc[data['上市日期'] == dt.datetime(1899, 12, 30), '上市日期'] = pd.NaT
+        data.loc[data['退市日期'] == dt.datetime(1899, 12, 30), '退市日期'] = pd.NaT
+        if not init:
+            self.db_interface.delete_id_records(data.index.tolist())
+        self.db_interface.insert_df(data, '基金时间表')
+
+        list_time_info = data.stack().reset_index()
+        list_time_info.columns = ['ID', '上市状态', 'DateTime']
+        list_time_info['上市状态'] = list_time_info['上市状态'].map({'上市日期': True, '退市日期': False})
+        list_time_info['证券类型'] = ['场外基金' if it.endswith('.OF') else '场内基金' for it in list_time_info.ID.tolist()]
+        list_time_info.set_index(['DateTime', 'ID'], inplace=True)
+        self.db_interface.update_df(list_time_info, '证券代码')
 
     #######################################
     # option funcs
