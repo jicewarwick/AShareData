@@ -50,7 +50,7 @@ class WindWrapper(object):
             has_data = any(data)
 
         if (error_code != 0) or (not has_data):
-            raise ValueError(f"Failed to get data, ErrorCode: {error_code}, Error Message: {api_data[1].iloc[0, 0]}")
+            raise ValueError(f'Failed to get data, ErrorCode: {error_code}, Error Message: {api_data[1].iloc[0, 0]}')
 
     @staticmethod
     def _standardize_date(date: DateUtils.DateType = None):
@@ -234,7 +234,7 @@ class WindData(DataSource):
         end_time = dt.datetime.combine(date.date(), dt.time(hour=16))
         storage = []
         for section in algo.chunk_list(self.stock_list.ticker(date), 100):
-            partial_data = self.w.wsi(section, "open,high,low,close,volume,amt", start_time, end_time, "")
+            partial_data = self.w.wsi(section, 'open,high,low,close,volume,amt', start_time, end_time, '')
             storage.append(partial_data.dropna())
         data = pd.concat(storage)
         data.set_index('windcode', append=True, inplace=True)
@@ -269,7 +269,7 @@ class WindData(DataSource):
 
         # 流通股本
         def float_share_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
-            data = self.w.wsd(ticker, "float_a_shares", date, date, "unit=1")
+            data = self.w.wsd(ticker, 'float_a_shares', date, date, 'unit=1')
             data.name = 'A股流通股本'
             return data
 
@@ -277,7 +277,7 @@ class WindData(DataSource):
 
         # 自由流通股本
         def free_float_share_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
-            data = self.w.wsd(ticker, "free_float_shares", date, date, "unit=1")
+            data = self.w.wsd(ticker, 'free_float_shares', date, date, 'unit=1')
             data.name = '自由流通股本'
             return data
 
@@ -285,7 +285,7 @@ class WindData(DataSource):
 
         # 总股本
         def total_share_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
-            data = self.w.wsd(ticker, "total_shares", date, date, "unit=1")
+            data = self.w.wsd(ticker, 'total_shares', date, date, 'unit=1')
             data.name = '总股本'
             return data
 
@@ -293,7 +293,7 @@ class WindData(DataSource):
 
         # A股总股本
         def total_a_share_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
-            data = self.w.wsd(ticker, "share_totala", date, date, "unit=1")
+            data = self.w.wsd(ticker, 'share_totala', date, date, 'unit=1')
             data.name = 'A股总股本'
             return data
 
@@ -350,10 +350,10 @@ class WindData(DataSource):
         with tqdm(chunks) as pbar:
             pbar.set_description('下载股票停牌数据')
             for range_start, range_end in chunks:
-                start_date_str = range_start.strftime("%Y%m%d")
-                end_date_str = range_end.strftime("%Y%m%d")
+                start_date_str = range_start.strftime('%Y%m%d')
+                end_date_str = range_end.strftime('%Y%m%d')
                 pbar.set_postfix_str(f'{start_date_str} - {end_date_str}')
-                data = self.w.wset("tradesuspend",
+                data = self.w.wset('tradesuspend',
                                    f'startdate={start_date_str};enddate={end_date_str};field=date,wind_code,suspend_type,suspend_reason')
                 data.rename(renaming_dict, axis=1, inplace=True)
                 ind1 = (data['停牌类型'] == '盘中停牌') & (data['停牌原因'].str.startswith('股票价格'))
@@ -378,7 +378,7 @@ class WindData(DataSource):
                 pbar.set_description(f'下载{date}的{table_name}')
                 tickers = self.convertible_bond_list.ticker(date)
                 if tickers:
-                    data = self.w.wss(tickers, "open, high, low, close, volume, amt",
+                    data = self.w.wss(tickers, 'open, high, low, close, volume, amt',
                                       date=date, options='priceAdj=U;cycle=D')
                     data.rename(renaming_dict, axis=1, inplace=True)
                     self.db_interface.insert_df(data, table_name)
@@ -397,7 +397,7 @@ class WindData(DataSource):
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{contract_daily_table_name}')
-                data = self.w.wss(self.future_list.ticker(date), "open, high, low, close, settle, volume, amt, oi",
+                data = self.w.wss(self.future_list.ticker(date), 'open, high, low, close, settle, volume, amt, oi',
                                   date=date, options='priceAdj=U;cycle=D')
                 data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)
                 self.db_interface.insert_df(data, contract_daily_table_name)
@@ -414,12 +414,12 @@ class WindData(DataSource):
         date_str = self.calendar.today().strftime('%Y-%m-%d')
 
         # otc funds
-        new_funds = self.w.wset("sectorconstituent", f"date={date_str};sectorid=1000007789000000;field=wind_code")
+        new_funds = self.w.wset('sectorconstituent', f'date={date_str};sectorid=1000007789000000;field=wind_code')
         new_funds = new_funds.index.tolist()
         self.get_fund_base_info(new_funds)
         self.get_fund_time_info(new_funds)
 
-        old_funds = self.w.wset("sectorconstituent", f"date={date_str};sectorid=1000007791000000;field=wind_code")
+        old_funds = self.w.wset('sectorconstituent', f'date={date_str};sectorid=1000007791000000;field=wind_code')
         old_funds = old_funds.index.tolist()
         self.get_fund_time_info(old_funds)
 
@@ -436,10 +436,10 @@ class WindData(DataSource):
         table_name = '基金列表'
         if tickers is None:
             date_str = dt.date.today().strftime('%Y-%m-%d')
-            otc = self.w.wset("sectorconstituent", f"date={date_str};sectorid=1000008492000000;field=wind_code")
+            otc = self.w.wset('sectorconstituent', f'date={date_str};sectorid=1000008492000000;field=wind_code')
             tickers = otc.index.tolist()
 
-            listed = self.w.wset("sectorconstituent", f"date={date_str};sectorid=1000027452000000;field=wind_code")
+            listed = self.w.wset('sectorconstituent', f'date={date_str};sectorid=1000027452000000;field=wind_code')
             tickers.extend(listed.index.tolist())
 
             tickers = [it for it in tickers if ((not it.startswith('F')) & (not it.startswith('P')))]
@@ -523,7 +523,7 @@ class WindData(DataSource):
 
         tickers = self.etf_option_list.ticker(date) + self.option_list.ticker(date)
         data = self.w.wss(tickers,
-                          "high,open,low,close,volume,amt,oi,delta,gamma,vega,theta,rho",
+                          'high,open,low,close,volume,amt,oi,delta,gamma,vega,theta,rho',
                           date=date, priceAdj='U', cycle='D')
         data.rename(self._factor_param[contract_daily_table_name], axis=1, inplace=True)
         self.db_interface.insert_df(data, contract_daily_table_name)
@@ -555,7 +555,7 @@ class WindData(DataSource):
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的{table_name}')
-                indicators = "open,low,high,close,volume,amt,mkt_cap_ard,total_shares,float_a_shares,free_float_shares,pe_ttm"
+                indicators = 'open,low,high,close,volume,amt,mkt_cap_ard,total_shares,float_a_shares,free_float_shares,pe_ttm'
                 data = self.w.wss(indexes, indicators, date=date, priceAdj='U', cycle='D')
                 data = data.rename(self._factor_param[table_name], axis=1)
                 self.db_interface.insert_df(data, table_name)

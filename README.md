@@ -26,7 +26,7 @@ Manual:
     - 自合成指标:
         - 股票涨跌停一字板
         - 股票自定义指数合成
-    
+
 Dependencies:
 - numpy
 - pandas

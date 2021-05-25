@@ -19,7 +19,7 @@ class WebDataCrawler(DataSource):
     _SW_INDUSTRY_URL = 'http://www.swsindex.com/downloadfiles.aspx'
     _HEADER = {
         'Connection': 'keep-alive',
-        'User-Agent': "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36",
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
     }
     _ZZ_INDUSTRY_URL = 'http://www.csindex.com.cn/zh-CN/downloads/industry-price-earnings-ratio-detail'
 

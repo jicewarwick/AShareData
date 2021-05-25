@@ -32,7 +32,7 @@ autodoc_type_aliases = {'AShare.DateUtils.DateType': 'DateType'}
 autodoc_default_options = {
     'member-order': 'bysource',
 }
-autodoc_mock_imports = ["WindPy"]
+autodoc_mock_imports = ['WindPy']
 autoclass_content = 'both'
 
 # autosummary

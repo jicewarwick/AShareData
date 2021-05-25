@@ -6,5 +6,6 @@ __pycache__/
 *.egg-info/
 AShareData/complimentary_code/
 docs/build
+docs/latex
 docs/source/_.*/
 docs/source/modules

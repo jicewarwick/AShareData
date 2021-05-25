@@ -1,0 +1,12 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1  # Use the ref you want to point at
+    hooks:
+    - id: trailing-whitespace
+    - id: requirements-txt-fixer
+    - id: check-case-conflict
+    - id: check-docstring-first
+    - id: double-quote-string-fixer
+    - id: check-json
+    # - id: pretty-format-json
+      # args: ['--autofix', '--indent', '4', '--no-ensure-ascii', '--no-sort-keys', '--']

@@ -19,5 +19,5 @@ logger = logging.getLogger(__name__)
 logger.addHandler(ch)
 logger.setLevel(logging.INFO)
 
-if importlib.util.find_spec("WindPy"):
+if importlib.util.find_spec('WindPy'):
     from .data_source import WindData

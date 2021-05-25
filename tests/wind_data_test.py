@@ -46,20 +46,20 @@ class WindWrapperTestCase(unittest.TestCase):
         self.w.connect()
 
     def test_wsd(self):
-        stock = "000001.SZ"
-        stocks = ["000001.SZ", "000002.SZ"]
+        stock = '000001.SZ'
+        stocks = ['000001.SZ', '000002.SZ']
         start_date = dt.datetime(2019, 10, 23)
         end_date = dt.datetime(2019, 10, 24)
-        indicator = "high"
-        indicators = "high,low"
+        indicator = 'high'
+        indicators = 'high,low'
         provider = '中信'
 
-        print(self.w.wsd(stock, indicator, start_date, start_date, ""))
-        print(self.w.wsd(stock, indicators, start_date, start_date, ""))
-        print(self.w.wsd(stocks, indicator, start_date, start_date, ""))
-        print(self.w.wsd(stock, indicator, start_date, end_date, ""))
-        print(self.w.wsd(stock, indicators, start_date, end_date, ""))
-        print(self.w.wsd(stocks, indicator, start_date, end_date, ""))
+        print(self.w.wsd(stock, indicator, start_date, start_date, ''))
+        print(self.w.wsd(stock, indicators, start_date, start_date, ''))
+        print(self.w.wsd(stocks, indicator, start_date, start_date, ''))
+        print(self.w.wsd(stock, indicator, start_date, end_date, ''))
+        print(self.w.wsd(stock, indicators, start_date, end_date, ''))
+        print(self.w.wsd(stocks, indicator, start_date, end_date, ''))
 
         print(self.w.wsd(stocks, f'industry_{constants.INDUSTRY_DATA_PROVIDER_CODE_DICT[provider]}',
                          start_date, end_date, industryType=constants.INDUSTRY_LEVEL[provider]))
@@ -70,7 +70,7 @@ class WindWrapperTestCase(unittest.TestCase):
         # print('\n')
         # print(data)
 
-        data = self.w.wss(['000001.SZ', '000002.SZ', '000005.SZ'], "open,low,high,close,volume,amt",
+        data = self.w.wss(['000001.SZ', '000002.SZ', '000005.SZ'], 'open,low,high,close,volume,amt',
                           date='20190715',
                           priceAdj='U', cycle='D')
         print('\n')
@@ -81,7 +81,7 @@ class WindWrapperTestCase(unittest.TestCase):
         # print(data)
 
     def test_wset(self):
-        data = self.w.wset("futurecc", startdate='2019-07-29', enddate='2020-07-29', wind_code='A.DCE')
+        data = self.w.wset('futurecc', startdate='2019-07-29', enddate='2020-07-29', wind_code='A.DCE')
         print('\n')
         print(data)
 
@@ -91,7 +91,7 @@ class WindWrapperTestCase(unittest.TestCase):
         wind_code = '510050.SH'
         status = 'all'
         field = 'wind_code,trade_code,sec_name'
-        data = self.w.wset("optioncontractbasicinfo", options=f'field={field}', startdate=start_date, enddate=end_date,
+        data = self.w.wset('optioncontractbasicinfo', options=f'field={field}', startdate=start_date, enddate=end_date,
                            status=status, windcode=wind_code, exchange=exchange)
         print('\n')
         print(data)

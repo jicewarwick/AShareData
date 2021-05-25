@@ -7,7 +7,7 @@ from .TDXData import TDXData
 from .TushareData import TushareData
 from .WebData import WebDataCrawler
 
-if importlib.util.find_spec("WindPy"):
+if importlib.util.find_spec('WindPy'):
     from .WindData import WindData
 
     logging.getLogger(__name__).info('WindPy found')
