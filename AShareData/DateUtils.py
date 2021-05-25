@@ -334,6 +334,6 @@ class ReportingDate(object):
         elif date.month < 5:
             return [dt.datetime(year, 3, 30), dt.datetime(year - 1, 12, 31)]
         elif date.month < 9:
-            return [dt.datetime(year, 6, 31)]
+            return [dt.datetime(year, 6, 30)]
         else:
             return [dt.datetime(year, 9, 30)]

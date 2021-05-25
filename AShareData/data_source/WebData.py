@@ -1,6 +1,7 @@
 import datetime as dt
 import logging
-from typing import Union
+from io import StringIO
+from typing import Sequence, Union
 
 import pandas as pd
 import requests
@@ -88,3 +89,17 @@ def stock_code2ts_code(stock_code: Union[int, str]) -> str:
 
 def ts_code2stock_code(ts_code: str) -> str:
     return ts_code.split()[0]
+
+
+def get_current_cffex_contracts(products: Union[str, Sequence[str]]):
+    """Get IC, IF, IH, IO contracts from CFFEX"""
+    today = dt.datetime.today()
+    url = f'http://www.cffex.com.cn/sj/jycs/{today.strftime("%Y%m")}/{today.strftime("%d")}/{today.strftime("%Y%m%d")}_1.csv'
+    rsp = requests.get(url)
+    rsp.encoding = 'gbk'
+    data = pd.read_csv(StringIO(rsp.text), skiprows=1)
+    tickers = data['合约代码'].tolist()
+    if isinstance(products, str):
+        products = [products]
+    ret = [it for it in tickers if it[:2] in products]
+    return ret

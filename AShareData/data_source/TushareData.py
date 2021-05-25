@@ -611,7 +611,7 @@ class TushareData(DataSource):
         logging.getLogger(__name__).info('财报下载完成')
 
     @retry(stop_max_attempt_number=3)
-    def update_financial_data(self):
+    def update_financial_data(self, date: dt.datetime = None):
         table_name = '财报披露计划'
         desc = self._factor_param[table_name]['输出参数']
         ref_table = '合并资产负债表'
@@ -620,7 +620,7 @@ class TushareData(DataSource):
                                                                                                axis=1)
         update_tickers = set(self.stock_tickers.all_ticker()) - set(latest.ts_code.tolist())
 
-        report_dates = DateUtils.ReportingDate.get_latest_report_date()
+        report_dates = DateUtils.ReportingDate.get_latest_report_date(date)
         for report_date in report_dates:
             df = self._pro.disclosure_date(end_date=DateUtils.date_type2str(report_date), fields=list(desc.keys()))
             df.actual_date = df.actual_date.apply(DateUtils.date_type2datetime)
