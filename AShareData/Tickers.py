@@ -37,10 +37,13 @@ class TickersBase(object):
         first_list_info = self.cache.groupby('ID').head(1)
         return dict(zip(first_list_info.ID, first_list_info.DateTime))
 
-    def get_list_date(self, ticker: str):
+    def get_list_date(self, tickers: Union[str, Sequence[str]]) -> Union[pd.Series, dt.datetime]:
         """ return the list date of a ticker"""
-        info = self.cache.loc[self.cache.ID == ticker, :]
-        return info.DateTime.iloc[0]
+        if isinstance(tickers, str):
+            tickers = [tickers]
+        info = self.cache.loc[self.cache.ID.isin(tickers), :].set_index('ID')
+        ret = info.DateTime.iloc[0] if info.shape[0] == 1 else info.DateTime
+        return ret
 
     def new_ticker(self, start_date: dt.datetime, end_date: dt.datetime = None) -> List[str]:
         if end_date is None:
@@ -102,18 +105,19 @@ class FutureOptionTickers(DiscreteTickers):
         super().__init__('商品期权', db_interface)
 
 
-class ExchangeStockETFTickers(DiscreteTickers):
-    """场内股票ETF基金代码"""
-
-    def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('股票型ETF基金', db_interface)
-
-
-class BondETFTickers(DiscreteTickers):
-    """债券ETF基金代码"""
-
-    def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('债券型ETF基金', db_interface)
+#
+# class ExchangeStockETFTickers(DiscreteTickers):
+#     """场内股票ETF基金代码"""
+#
+#     def __init__(self, db_interface: DBInterface = None) -> None:
+#         super().__init__('股票型ETF基金', db_interface)
+#
+#
+# class BondETFTickers(DiscreteTickers):
+#     """债券ETF基金代码"""
+#
+#     def __init__(self, db_interface: DBInterface = None) -> None:
+#         super().__init__('债券型ETF基金', db_interface)
 
 
 class ConglomerateTickers(TickersBase):
@@ -138,40 +142,42 @@ class FundTickers(ConglomerateTickers):
         super().__init__('证券类型 like "%基金"', db_interface)
 
 
-class ETFTickers(ConglomerateTickers):
-    """ETF"""
+#
+# class ETFTickers(ConglomerateTickers):
+#     """ETF"""
+#
+#     def __init__(self, db_interface: DBInterface = None) -> None:
+#         super().__init__('证券类型 like "%ETF%基金"', db_interface)
 
-    def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('证券类型 like "%ETF%基金"', db_interface)
 
-
-class ExchangeFundTickers(ConglomerateTickers):
+class ExchangeFundTickers(DiscreteTickers):
     """场内基金"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('证券类型 like "%基金" AND 证券类型 not like "%场外基金"', db_interface)
+        super().__init__('场内基金', db_interface)
 
 
-class OTCFundTickers(ConglomerateTickers):
+class OTCFundTickers(DiscreteTickers):
     """场外基金"""
 
     def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('证券类型 like "%场外基金"', db_interface)
+        super().__init__('场外基金', db_interface)
 
 
-class StockFundTickers(ConglomerateTickers):
-    """股票型基金"""
-
-    def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('证券类型 like "股票型%基金"', db_interface)
-
-
-class StockOTCFundTickers(ConglomerateTickers):
-    """股票型场外基金"""
-
-    def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('证券类型 like "股票型%场外基金"', db_interface)
-
+#
+# class StockFundTickers(ConglomerateTickers):
+#     """股票型基金"""
+#
+#     def __init__(self, db_interface: DBInterface = None) -> None:
+#         super().__init__('证券类型 like "股票型%基金"', db_interface)
+#
+#
+# class StockOTCFundTickers(ConglomerateTickers):
+#     """股票型场外基金"""
+#
+#     def __init__(self, db_interface: DBInterface = None) -> None:
+#         super().__init__('证券类型 like "股票型%场外基金"', db_interface)
+#
 
 class InvestmentStyleFundTickers(ConglomerateTickers):
     def __init__(self, asset_type_statement: str, style_statement: str, db_interface: DBInterface = None) -> None:
@@ -180,26 +186,27 @@ class InvestmentStyleFundTickers(ConglomerateTickers):
         self.cache = self.cache.loc[self.cache.ID.isin(support_data.index)]
 
 
-class EnhancedIndexFund(InvestmentStyleFundTickers):
-    """指数增强场外基金"""
-
-    def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('证券类型 like "股票型%场外基金"', '投资风格 = "增强指数型"', db_interface)
-
-
-class IndexFund(InvestmentStyleFundTickers):
-    """指数场外基金"""
-
-    def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('证券类型 like "股票型%场外基金"', '投资风格 = "被动指数型"', db_interface)
-
-
-class ActiveManagedOTCStockFundTickers(InvestmentStyleFundTickers):
-    """主动管理型场外基金"""
-
-    def __init__(self, db_interface: DBInterface = None) -> None:
-        super().__init__('(证券类型 like "股票型%场外基金") OR (证券类型 like "混合型%场外基金")', '(投资风格 != "被动指数型") AND (投资风格 != "增强指数型")',
-                         db_interface)
+#
+# class EnhancedIndexFund(InvestmentStyleFundTickers):
+#     """指数增强场外基金"""
+#
+#     def __init__(self, db_interface: DBInterface = None) -> None:
+#         super().__init__('证券类型 like "股票型%场外基金"', '投资风格 = "增强指数型"', db_interface)
+#
+#
+# class IndexFund(InvestmentStyleFundTickers):
+#     """指数场外基金"""
+#
+#     def __init__(self, db_interface: DBInterface = None) -> None:
+#         super().__init__('证券类型 like "股票型%场外基金"', '投资风格 = "被动指数型"', db_interface)
+#
+#
+# class ActiveManagedOTCStockFundTickers(InvestmentStyleFundTickers):
+#     """主动管理型场外基金"""
+#
+#     def __init__(self, db_interface: DBInterface = None) -> None:
+#         super().__init__('(证券类型 like "股票型%场外基金") OR (证券类型 like "混合型%场外基金")', '(投资风格 != "被动指数型") AND (投资风格 != "增强指数型")',
+#                          db_interface)
 
 
 class StockTickerSelector(TickerSelector):

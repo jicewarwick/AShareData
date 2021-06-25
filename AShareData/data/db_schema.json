@@ -656,7 +656,13 @@
 		"最低价": "float",
 		"收盘价": "float",
 		"成交量": "float",
-		"成交额": "double"
+		"成交额": "double",
+		"未转股余额": "double"
+	},
+	"可转债转股价": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"可转债转股价": "float"
 	},
 
 	"基金列表": {

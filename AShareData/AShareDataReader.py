@@ -51,6 +51,11 @@ class AShareDataReader(object):
         return OnTheRecordFactor('一字涨跌停', self.db_interface)
 
     @cached_property
+    def stock_open(self) -> ContinuousFactor:
+        """股票开盘价"""
+        return ContinuousFactor('股票日行情', '开盘价', self.db_interface)
+
+    @cached_property
     def stock_close(self) -> ContinuousFactor:
         """股票收盘价"""
         return ContinuousFactor('股票日行情', '收盘价', self.db_interface)
@@ -184,6 +189,21 @@ class AShareDataReader(object):
     def pb(self) -> BinaryFactor:
         """Price to Book"""
         return (self.stock_market_cap / self.book_val).set_factor_name('PB')
+
+    @cached_property
+    def cb_close(self) -> ContinuousFactor:
+        """可转债收盘价"""
+        return ContinuousFactor('可转债日行情', '收盘价', self.db_interface)
+
+    @cached_property
+    def cb_total_val(self) -> ContinuousFactor:
+        """可转债未转股余额"""
+        return ContinuousFactor('可转债日行情', '未转股余额', self.db_interface)
+
+    @cached_property
+    def cb_convert_price(self) -> CompactFactor:
+        """可转债转股价"""
+        return CompactFactor('可转债转股价').set_factor_name('转股价')
 
     # TODO
     @cached_property

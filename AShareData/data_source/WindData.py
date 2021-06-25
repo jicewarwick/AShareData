@@ -10,7 +10,7 @@ from tqdm import tqdm
 from .DataSource import DataSource
 from .. import algo, config, constants, DateUtils, utils
 from ..DBInterface import DBInterface
-from ..Tickers import ConvertibleBondTickers, ETFOptionTickers, ETFTickers, FutureTickers, IndexOptionTickers, \
+from ..Tickers import ConvertibleBondTickers, ETFOptionTickers, FutureTickers, IndexOptionTickers, \
     StockTickers
 
 
@@ -175,10 +175,6 @@ class WindData(DataSource):
     @cached_property
     def etf_option_list(self) -> ETFOptionTickers:
         return ETFOptionTickers(self.db_interface)
-
-    @cached_property
-    def etf_list(self):
-        return ETFTickers(self.db_interface)
 
     @cached_property
     def convertible_bond_list(self):
@@ -369,7 +365,7 @@ class WindData(DataSource):
     def update_convertible_bond_daily_data(self):
         """更新可转债日行情"""
         table_name = '可转债日行情'
-        renaming_dict = self._factor_param['股票日行情']
+        renaming_dict = self._factor_param['可转债日行情']
         start_date = self.db_interface.get_latest_timestamp(table_name, dt.datetime(1993, 2, 9))
         dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
@@ -378,11 +374,23 @@ class WindData(DataSource):
                 pbar.set_description(f'下载{date}的{table_name}')
                 tickers = self.convertible_bond_list.ticker(date)
                 if tickers:
-                    data = self.w.wss(tickers, 'open, high, low, close, volume, amt',
-                                      date=date, options='priceAdj=U;cycle=D')
+                    data = self.w.wss(tickers, list(renaming_dict.keys()), date=date, options='priceAdj=DP;cycle=D')
                     data.rename(renaming_dict, axis=1, inplace=True)
                     self.db_interface.insert_df(data, table_name)
                 pbar.update()
+
+    def update_convertible_price(self):
+        table_name = '可转债转股价'
+        cb_tickers = ConvertibleBondTickers(self.db_interface)
+        ticker = cb_tickers.all_ticker()
+        start_date = cb_tickers.list_date()
+
+        def convert_price_func(ticker: str, date: DateUtils.DateType) -> pd.Series:
+            data = self.w.wsd(ticker, 'clause_conversion2_swapshareprice', date, date, '')
+            data.name = table_name
+            return data
+
+        self.sparse_data_template(table_name, convert_price_func, ticker=ticker, default_start_date=start_date)
 
     #######################################
     # future funcs
