@@ -37,6 +37,14 @@
 		"AMT": "成交额",
 		"CLAUSE_CONVERSION2_BONDLOT": "未转股余额"
 	},
+	"可转债分钟行情": {
+		"OPEN": "开盘价",
+		"HIGH": "最高价",
+		"LOW": "最低价",
+		"CLOSE": "收盘价",
+		"VOLUME": "成交量",
+		"AMOUNT": "成交额"
+	},
 	"期货日行情": {
 		"OPEN": "开盘价",
 		"HIGH": "最高价",

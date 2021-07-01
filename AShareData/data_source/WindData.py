@@ -221,24 +221,7 @@ class WindData(DataSource):
                 self.get_stock_daily_data(date)
                 pbar.update()
 
-    def get_stock_minute_data(self, date: dt.datetime):
-        """获取 ``date`` 的股票分钟行情"""
-        table_name = '股票分钟行情'
-        replace_dict = self._factor_param[table_name]
-
-        start_time = dt.datetime.combine(date.date(), dt.time(hour=8))
-        end_time = dt.datetime.combine(date.date(), dt.time(hour=16))
-        storage = []
-        for section in algo.chunk_list(self.stock_list.ticker(date), 100):
-            partial_data = self.w.wsi(section, 'open,high,low,close,volume,amt', start_time, end_time, '')
-            storage.append(partial_data.dropna())
-        data = pd.concat(storage)
-        data.set_index('windcode', append=True, inplace=True)
-        data.index.names = ['DateTime', 'ID']
-        data.rename(replace_dict, axis=1, inplace=True)
-        self.db_interface.insert_df(data, table_name)
-
-    def update_minutes_data(self) -> None:
+    def update_stock_minutes_data(self) -> None:
         """更新股票分钟行情"""
         table_name = '股票分钟行情'
         latest = self.db_interface.get_latest_timestamp(table_name, dt.datetime.today() - dt.timedelta(days=365 * 3))
@@ -247,7 +230,8 @@ class WindData(DataSource):
         with tqdm(date_range) as pbar:
             for date in date_range:
                 pbar.set_description(f'更新{date}的{table_name}')
-                self.get_stock_minute_data(date)
+                tickers = self.stock_list.ticker(date)
+                self.get_minute_data_base(table_name=table_name, date=date, tickers=tickers)
                 pbar.update()
 
     def update_stock_adj_factor(self):
@@ -379,7 +363,7 @@ class WindData(DataSource):
                     self.db_interface.insert_df(data, table_name)
                 pbar.update()
 
-    def update_convertible_price(self):
+    def update_cb_convertible_price(self):
         table_name = '可转债转股价'
         cb_tickers = ConvertibleBondTickers(self.db_interface)
         ticker = cb_tickers.all_ticker()
@@ -391,6 +375,19 @@ class WindData(DataSource):
             return data
 
         self.sparse_data_template(table_name, convert_price_func, ticker=ticker, default_start_date=start_date)
+
+    def update_cb_minutes_data(self) -> None:
+        """更新可转债分钟行情"""
+        table_name = '可转债分钟行情'
+        latest = self.db_interface.get_latest_timestamp(table_name, dt.datetime.today() - dt.timedelta(days=365 * 3))
+        date_range = self.calendar.select_dates(latest.date(), dt.date.today(), inclusive=(False, True))
+
+        with tqdm(date_range) as pbar:
+            for date in date_range[:10]:
+                pbar.set_description(f'更新{date}的{table_name}')
+                tickers = self.stock_list.ticker(date)
+                self.get_minute_data_base(table_name=table_name, date=date, tickers=tickers)
+                pbar.update()
 
     #######################################
     # future funcs
@@ -656,6 +653,21 @@ class WindData(DataSource):
 
         self.sparse_data_queryer(data_func, start_series, end_series, f'更新{table_name}',
                                  default_start_date=default_start_date)
+
+    def get_minute_data_base(self, table_name: str, date: dt.datetime, tickers: Sequence[str], options: str = ''):
+        replace_dict = self._factor_param[table_name]
+
+        start_time = dt.datetime.combine(date.date(), dt.time(hour=8))
+        end_time = dt.datetime.combine(date.date(), dt.time(hour=16))
+        storage = []
+        for section in algo.chunk_list(tickers, 100):
+            partial_data = self.w.wsi(section, 'open,high,low,close,volume,amt', start_time, end_time, options)
+            storage.append(partial_data.dropna())
+        data = pd.concat(storage)
+        data.set_index('windcode', append=True, inplace=True)
+        data.index.names = ['DateTime', 'ID']
+        data.rename(replace_dict, axis=1, inplace=True)
+        self.db_interface.insert_df(data, table_name)
 
     @classmethod
     def from_config(cls, config_loc: str):

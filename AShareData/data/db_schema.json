@@ -659,6 +659,16 @@
 		"成交额": "double",
 		"未转股余额": "double"
 	},
+	"可转债分钟行情": {
+		"DateTime": "datetime",
+		"ID": "varchar",
+		"开盘价": "float",
+		"最高价": "float",
+		"最低价": "float",
+		"收盘价": "float",
+		"成交量": "float",
+		"成交额": "double"
+	},
 	"可转债转股价": {
 		"DateTime": "date",
 		"ID": "varchar",

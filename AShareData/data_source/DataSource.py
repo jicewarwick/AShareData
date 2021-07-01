@@ -1,5 +1,4 @@
 import datetime as dt
-from functools import cached_property
 
 import pandas as pd
 
@@ -13,6 +12,7 @@ class DataSource(object):
 
     def __init__(self, db_interface: DBInterface = None) -> None:
         self.db_interface = db_interface if db_interface else get_db_interface()
+        self.calendar = DateUtils.SHSZTradingCalendar(self.db_interface)
 
     def __enter__(self):
         self.login()
@@ -27,11 +27,6 @@ class DataSource(object):
 
     def logout(self):
         pass
-
-    @cached_property
-    def calendar(self) -> DateUtils.TradingCalendar:
-        """交易日历"""
-        return DateUtils.TradingCalendar(self.db_interface)
 
 
 class MinutesDataFunctionMixin(object):

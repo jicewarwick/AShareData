@@ -36,6 +36,7 @@ def daily_routine(config_loc: str):
         wind_data.update_pause_stock_info()
 
         wind_data.update_convertible_bond_daily_data()
+        wind_data.update_cb_convertible_price()
         wind_data.update_future_daily_data()
         wind_data.update_fund_extra_info()
         wind_data.update_fund_info()
@@ -46,6 +47,7 @@ def daily_routine(config_loc: str):
 
     with TDXData() as tdx_data:
         tdx_data.update_stock_minute()
+        tdx_data.update_convertible_bond_minute()
 
     # compute data
     ConstLimitStockFactorCompositor().update()
@@ -55,9 +57,6 @@ def daily_routine(config_loc: str):
     # model data
     SMBandHMLCompositor().update()
     UMDCompositor().update()
-
-    with TDXData() as tdx_data:
-        tdx_data.update_stock_minute()
 
 
 if __name__ == '__main__':
