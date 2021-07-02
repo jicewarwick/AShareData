@@ -7,7 +7,7 @@ from AShareData.DateUtils import *
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         set_global_config('config.json')
-        self.calendar = TradingCalendar()
+        self.calendar = SHSZTradingCalendar()
 
     def test_is_trading_day(self):
         self.assertFalse(self.calendar.is_trading_date(dt.date(2019, 10, 1)))

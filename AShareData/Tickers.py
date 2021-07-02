@@ -219,12 +219,9 @@ class StockTickerSelector(TickerSelector):
         """
         super().__init__()
         self.db_interface = db_interface if db_interface else get_db_interface()
+        self.calendar = DateUtils.SHSZTradingCalendar(self.db_interface)
         self.stock_ticker = StockTickers(self.db_interface)
         self.policy = policy
-
-    @cached_property
-    def calendar(self):
-        return DateUtils.TradingCalendar(self.db_interface)
 
     @cached_property
     def paused_stock_selector(self):

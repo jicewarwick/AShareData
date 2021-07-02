@@ -19,11 +19,7 @@ class AShareDataReader(object):
         """
 
         self.db_interface = db_interface if db_interface else get_db_interface()
-
-    @cached_property
-    def calendar(self) -> DateUtils.TradingCalendar:
-        """交易日历"""
-        return DateUtils.TradingCalendar(self.db_interface)
+        self.calendar = DateUtils.SHSZTradingCalendar(self.db_interface)
 
     @cached_property
     def stocks(self) -> StockTickers:

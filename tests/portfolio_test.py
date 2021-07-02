@@ -1,6 +1,6 @@
 import unittest
 
-from AShareData import set_global_config, TradingCalendar
+from AShareData import set_global_config, SHSZTradingCalendar
 from AShareData.analysis.holding import *
 from AShareData.model.FamaFrench3FactorModel import FamaFrench3FactorModel
 from AShareData.PortfolioAnalysis import *
@@ -31,7 +31,7 @@ class CrossSectionTesting(unittest.TestCase):
         market_cap = self.data_reader.stock_free_floating_market_cap
         start_date = dt.datetime(2020, 8, 1)
         end_date = dt.datetime(2021, 2, 1)
-        dates = TradingCalendar().first_day_of_month(start_date, end_date)
+        dates = SHSZTradingCalendar().first_day_of_month(start_date, end_date)
 
         self.t = CrossSectionalPortfolioAnalysis(forward_return, factors=factors, dates=dates, market_cap=market_cap,
                                                  ticker_selector=ticker_selector)

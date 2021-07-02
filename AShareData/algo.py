@@ -2,7 +2,7 @@ import re
 from typing import Dict, Optional, Sequence
 
 
-def chunk_list(l: list, n: int):
+def chunk_list(l: Sequence, n: int):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 

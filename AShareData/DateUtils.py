@@ -4,6 +4,8 @@ import inspect
 from functools import wraps
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
+from singleton_decorator import singleton
+
 from .config import get_db_interface
 from .DBInterface import DBInterface
 
@@ -238,7 +240,8 @@ class TradingCalendarBase(object):
         return res
 
 
-class TradingCalendar(TradingCalendarBase):
+@singleton
+class SHSZTradingCalendar(TradingCalendarBase):
     """A Share Trading Calendar"""
 
     def __init__(self, db_interface: DBInterface = None):
@@ -248,6 +251,7 @@ class TradingCalendar(TradingCalendarBase):
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
 
 
+@singleton
 class HKTradingCalendar(TradingCalendarBase):
     """A Share Trading Calendar"""
 

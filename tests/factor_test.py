@@ -1,6 +1,6 @@
 import unittest
 
-from AShareData import set_global_config, TradingCalendar
+from AShareData import set_global_config
 from AShareData.Factor import *
 from AShareData.Tickers import *
 from AShareData.utils import StockSelectionPolicy
@@ -10,7 +10,7 @@ class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         set_global_config('config.json')
         self.db_interface = get_db_interface()
-        self.calendar = TradingCalendar()
+        self.calendar = SHSZTradingCalendar()
         self.start_date = dt.datetime(2002, 3, 1)
         self.end_date = dt.datetime(2002, 3, 30)
         self.ids = ['000001.SZ', '000002.SZ']
@@ -133,6 +133,9 @@ class MyTestCase(unittest.TestCase):
         print(self.close.mean('ID').get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
         print(self.close.sum('DateTime').get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
         print(self.close.sum('ID').get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
+
+    def test_diff(self):
+        print(self.close.diff().get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
 
 
 if __name__ == '__main__':

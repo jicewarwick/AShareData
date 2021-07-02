@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import pandas as pd
 
-from AShareData import AShareDataReader, constants, TradingCalendar, utils
+from AShareData import AShareDataReader, constants, SHSZTradingCalendar, utils
 from AShareData.config import get_db_interface
 from AShareData.DBInterface import DBInterface
 from AShareData.Factor import CompactFactor, ContinuousFactor
@@ -16,7 +16,7 @@ plt.rcParams['axes.unicode_minus'] = False
 class MajorIndustryConstitutes(object):
     def __init__(self, provider: str, level: int, cap: CompactFactor = None, db_interface: DBInterface = None):
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.calendar = TradingCalendar(self.db_interface)
+        self.calendar = SHSZTradingCalendar(self.db_interface)
         self.date = self.calendar.yesterday()
         self.data_reader = AShareDataReader(self.db_interface)
         self.industry = self.data_reader.industry(provider=provider, level=level)
@@ -42,7 +42,7 @@ class IndexHighlighter(object):
 
     def __init__(self, date: dt.datetime = None, db_interface: DBInterface = None):
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.calendar = TradingCalendar(self.db_interface)
+        self.calendar = SHSZTradingCalendar(self.db_interface)
         if date is None:
             date = dt.datetime.combine(dt.date.today(), dt.time())
         self.date = date

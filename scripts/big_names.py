@@ -7,7 +7,7 @@ if __name__ == '__main__':
     set_global_config(config_loc)
 
     data_reader = AShareDataReader()
-    calendar = DateUtils.TradingCalendar()
+    calendar = DateUtils.SHSZTradingCalendar()
     date = calendar.yesterday()
 
     industry = data_reader.industry('申万', 2).get_data(dates=date)

@@ -5,7 +5,7 @@ from .analysis import IndustryComparison, TradingAnalysis
 from .AShareDataReader import AShareDataReader
 from .config import generate_db_interface_from_config, get_db_interface, get_global_config, set_global_config
 from .data_source import JQData, TDXData, TushareData, WebDataCrawler
-from .DateUtils import TradingCalendar
+from .DateUtils import SHSZTradingCalendar
 from .DBInterface import MySQLInterface
 from .factor_compositor import ConstLimitStockFactorCompositor, IndexCompositor, IndexUpdater, \
     NegativeBookEquityListingCompositor

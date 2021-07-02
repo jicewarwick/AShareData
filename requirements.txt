@@ -11,6 +11,7 @@ requests
 retrying
 scipy
 setuptools
+singleton-decorator
 sqlalchemy
 statsmodels
 tqdm

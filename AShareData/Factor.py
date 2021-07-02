@@ -8,6 +8,7 @@ import pandas as pd
 
 from . import algo, constants, DateUtils, utils
 from .config import get_db_interface
+from .DateUtils import SHSZTradingCalendar
 from .DBInterface import DBInterface
 from .utils import TickerSelector
 
@@ -17,6 +18,7 @@ class FactorBase(object):
         super().__init__()
         self._factor_name = factor_name
         self.name = factor_name
+        self.calendar = SHSZTradingCalendar()
 
     def set_factor_name(self, name):
         self.name = name
@@ -223,6 +225,8 @@ class FactorBase(object):
         """analogue to pd.pct_change for each ``ID``"""
 
         def sub_get_data(self, **kwargs):
+            if 'start_date' in kwargs:
+                kwargs['start_date'] = self.calendar.offset(kwargs['start_date'], -1)
             return self.f.get_data(**kwargs).unstack().pct_change().stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'_get_data': sub_get_data})
@@ -232,6 +236,8 @@ class FactorBase(object):
         """analogue to pd.diff for each ``ID``"""
 
         def sub_get_data(self, **kwargs):
+            if 'start_date' in kwargs:
+                kwargs['start_date'] = self.calendar.offset(kwargs['start_date'], -1)
             return self.f.get_data(**kwargs).unstack().diff().stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'_get_data': sub_get_data})
@@ -241,25 +247,37 @@ class FactorBase(object):
         """analogue to pd.shift(n) for each ``ID``"""
 
         def sub_get_data(self, **kwargs):
+            if 'start_date' in kwargs and n > 0:
+                kwargs['start_date'] = self.calendar.offset(kwargs['start_date'], n)
+            elif 'end_date' in kwargs and n < 0:
+                kwargs['end_date'] = self.calendar.offset(kwargs['end_date'], n)
             return self.f.get_data(**kwargs).unstack().shift(n).stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'_get_data': sub_get_data})
         return Foo(self)
 
-    def diff_shift(self, shift: int):
+    def diff_shift(self, n: int):
         """analogue to pd.diff().shift(n) for each ``ID``"""
 
         def sub_get_data(self, **kwargs):
-            return self.f.get_data(**kwargs).unstack().diff().shift(shift).stack().dropna()
+            if 'start_date' in kwargs and n > 0:
+                kwargs['start_date'] = self.calendar.offset(kwargs['start_date'], n)
+            elif 'end_date' in kwargs and n < 0:
+                kwargs['end_date'] = self.calendar.offset(kwargs['end_date'], n)
+            return self.f.get_data(**kwargs).unstack().diff().shift(n).stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'_get_data': sub_get_data})
         return Foo(self)
 
-    def pct_change_shift(self, shift: int):
+    def pct_change_shift(self, n: int):
         """analogue to pd.pct_change().shift(n) for each ``ID``"""
 
         def sub_get_data(self, **kwargs):
-            return self.f.get_data(**kwargs).unstack().pct_change().shift(shift).stack().dropna()
+            if 'start_date' in kwargs and n > 0:
+                kwargs['start_date'] = self.calendar.offset(kwargs['start_date'], n)
+            elif 'end_date' in kwargs and n < 0:
+                kwargs['end_date'] = self.calendar.offset(kwargs['end_date'], n)
+            return self.f.get_data(**kwargs).unstack().pct_change().shift(n).stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'_get_data': sub_get_data})
         return Foo(self)
@@ -295,11 +313,9 @@ class FactorBase(object):
         Foo = type('', (UnaryFactor,), {'_get_data': sub_get_data})
         return Foo(self)
 
-    def bind_params(self, ids: Union[str, Sequence[str]] = None, index_code: str = None):
+    def bind_params(self, ids: Union[str, Sequence[str]] = None):
         if ids:
             self._get_data = partial(self._get_data, ids=ids)
-        if index_code:
-            self._get_data = partial(self._get_data, index_code=index_code)
         return self
 
 
@@ -388,7 +404,6 @@ class CompactFactor(NonFinancialFactor):
     def __init__(self, table_name: str, db_interface: DBInterface = None):
         super().__init__(table_name, table_name, db_interface)
         self.data = self.db_interface.read_table(table_name)
-        self.calendar = DateUtils.TradingCalendar(db_interface)
 
     def _get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
                   start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
@@ -554,7 +569,6 @@ class ContinuousFactor(NonFinancialFactor):
 class InterestRateFactor(ContinuousFactor):
     def __init__(self, table_name: str, factor_name: str, db_interface: DBInterface = None):
         super().__init__(table_name, factor_name, db_interface)
-        self.calendar = DateUtils.TradingCalendar(self.db_interface)
 
     def _get_data(self, *args, **kwargs) -> pd.Series:
         data = super()._get_data(*args, **kwargs)
@@ -571,7 +585,6 @@ class PriceFactor(FactorBase):
         super().__init__(factor.name)
         self.factor = factor
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.calendar = DateUtils.TradingCalendar(self.db_interface)
 
     def _get_data(self, *args, **kwargs) -> pd.Series:
         return self.factor.get_data(*args, **kwargs)
@@ -598,7 +611,6 @@ class AccountingFactor(Factor):
 
         table_name = self.fields[factor_name]
         super().__init__(f'合并{table_name}', factor_name, db_interface)
-        self.calendar = DateUtils.TradingCalendar(self.db_interface)
         self.report_month = None
         self.buffer_length = 365 * 2
         self.offset_strs = None
@@ -845,11 +857,10 @@ class BetaFactor(FactorBase):
         self.stock_ret = stock_ret.pct_change()
         if market_ret is None:
             market_ret = ContinuousFactor('指数日行情', '收盘点位', db_interface).pct_change()
-            market_ret.bind_params(index_code='000300.SH')
+            market_ret.bind_params(ids='000300.SH')
         self.market_ret = market_ret
         if rf_rate is None:
             self.rf_rate = InterestRateFactor('shibor利率数据', '3个月', db_interface)
-        self.calendar = DateUtils.TradingCalendar(db_interface)
 
     def _get_data(self, dates: Sequence[dt.datetime],
                   ids: Union[str, Sequence[str]] = None, ticker_selector: TickerSelector = None,
@@ -862,7 +873,7 @@ class BetaFactor(FactorBase):
             end_date = self.calendar.offset(date, -1)
             stock_data = self.stock_ret.get_data(ids=ids, start_date=start_date, end_date=end_date).reset_index()
             market_data = self.market_ret.get_data(start_date=start_date, end_date=end_date).droplevel(
-                'IndexCode').reset_index()
+                'ID').reset_index()
             rf_data = self.rf_rate.get_data(start_date=start_date, end_date=end_date).reset_index()
             combined_data = pd.merge(stock_data, market_data, on='DateTime')
             combined_data = pd.merge(combined_data, rf_data, on='DateTime')
