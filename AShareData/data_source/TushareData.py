@@ -6,18 +6,18 @@ import re
 from functools import cached_property
 from itertools import product
 from typing import Callable, List, Mapping, Optional, Sequence, Union
-from retrying import retry
 
 import numpy as np
 import pandas as pd
 import tushare as ts
 from ratelimiter import RateLimiter
+from retrying import retry
 from tqdm import tqdm
 
 from .DataSource import DataSource
 from .. import config, constants, DateUtils, utils
 from ..DBInterface import DBInterface
-from ..Tickers import FundTickers, StockTickers
+from ..Tickers import FundTickers, FundWithStocksTickers, StockFundTickers, StockTickers
 
 START_DATE = {
     'common': dt.datetime(1990, 1, 1),
@@ -911,7 +911,47 @@ class TushareData(DataSource):
                     pbar.update()
         logging.getLogger(__name__).info(f'{table_name} 更新完成.')
 
-    def update_fund_portfolio(self, tickers: Sequence[str] = None):
+    def get_update_fund_portfolio_info(self):
+        tickers = StockFundTickers(self.db_interface).ticker()
+        fund_manager_info = self.db_interface.read_table('基金列表', ids=tickers)
+        managers = fund_manager_info['管理人'].drop_duplicates().tolist()
+        update_managers = []
+        table_name = '公募基金持仓'
+        rate = self._factor_param[table_name]['每分钟限速']
+
+        rate_limiter = RateLimiter(rate - 1, period=60)
+        report_period = None
+        for manager in managers:
+            for investment_type in ['灵活配置型基金', '偏股混合型基金']:
+                mask = (fund_manager_info['管理人'] == manager) & (fund_manager_info['投资类型'] == investment_type)
+                tickers = fund_manager_info.loc[mask, :].index.tolist()
+                checker = False
+                for ticker in tickers:
+                    holding = self.db_interface.read_table('公募基金持仓', ids=ticker)
+                    if not holding.empty:
+                        db_reporting_period = holding.index.get_level_values('报告期')[0]
+                        if db_reporting_period >= DateUtils.ReportingDate.get_latest_report_date()[-1]:
+                            break
+                        with rate_limiter:
+                            df = self._pro.fund_portfolio(ts_code=ticker)
+                            tmp = DateUtils.date_type2datetime(df['end_date'][0])
+                            if tmp >= db_reporting_period:
+                                report_period = tmp
+                                update_managers.append(manager)
+                                checker = True
+                                break
+                if checker:
+                    break
+
+        tickers = FundWithStocksTickers(self.db_interface).ticker()
+        storage = []
+        for manager in update_managers:
+            man_ticker = set(tickers) & set(
+                fund_manager_info.loc[fund_manager_info['管理人'] == manager, :].index.tolist())
+            storage.extend(list(man_ticker))
+        self.update_fund_portfolio(storage[25:], report_period)
+
+    def update_fund_portfolio(self, tickers: Sequence[str] = None, end_date: dt.datetime = None):
         """更新公募基金持仓数据
 
         PS: 每个基金只保存最近的4000条记录
@@ -930,7 +970,12 @@ class TushareData(DataSource):
                     df = self._pro.fund_portfolio(ts_code=ticker, fields=list(params.keys()))
                     df = df.drop_duplicates(subset=list(params.keys())[:4])
                     df = self._standardize_df(df, params)
-                    self.db_interface.insert_df(df, table_name)
+                    if end_date:
+                        df = df.loc[df.index.get_level_values('报告期') == end_date, :]
+                    try:
+                        self.db_interface.insert_df(df, table_name)
+                    except:
+                        pass
                     pbar.update()
         logging.getLogger(__name__).info(f'{table_name} 更新完成.')
 

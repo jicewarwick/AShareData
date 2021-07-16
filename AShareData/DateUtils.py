@@ -341,3 +341,13 @@ class ReportingDate(object):
             return [dt.datetime(year, 6, 30)]
         else:
             return [dt.datetime(year, 9, 30)]
+
+    @staticmethod
+    @dtlize_input_dates
+    def get_report_date(year: int, n: int = 1) -> dt.datetime:
+        """
+        返回 ``year`` 年的第 ``n`` 个报告期
+        """
+        month = n * 4
+        day = 31 if month == 3 or month == 12 else 30
+        return dt.datetime(year, month, day)

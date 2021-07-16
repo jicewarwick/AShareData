@@ -155,6 +155,7 @@ class MySQLInterface(DBInterface):
             primary_keys = ['id']
         else:
             primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'ConstituteTicker'] if it in col_names]
+        index = [] if len(primary_keys) <= 1 else primary_keys[1:]
 
         existing_tables = [it.lower() for it in self.meta.tables]
         if table_name.lower() in existing_tables:
@@ -163,7 +164,7 @@ class MySQLInterface(DBInterface):
 
         new_table = Table(table_name, self.meta,
                           *(Column(col_name, col_type) for col_name, col_type in zip(col_names, col_types)),
-                          sa.PrimaryKeyConstraint(*primary_keys))
+                          sa.PrimaryKeyConstraint(*primary_keys), sa.Index(*index))
         new_table.create()
         self.meta.reflect()
         logging.getLogger(__name__).info(f'表 {table_name} 创建成功.')

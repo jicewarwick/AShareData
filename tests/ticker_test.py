@@ -42,8 +42,12 @@ class MyTestCase(unittest.TestCase):
         stock_etf = ExchangeStockETFTickers(self.db_interface)
         self.ticker_test(stock_etf)
 
+    def test_bond_etf_ticker(self):
+        stock_etf = BondETFTickers(self.db_interface)
+        self.ticker_test(stock_etf)
+
     def test_active_stock_ticker(self):
-        ticker = ActiveManagedOTCStockFundTickers(self.db_interface)
+        ticker = ActiveManagedStockFundTickers(True, self.db_interface)
         self.ticker_test(ticker)
 
     def test_exchange_fund_ticker(self):
