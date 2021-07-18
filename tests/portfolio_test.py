@@ -2,9 +2,9 @@ import unittest
 
 from AShareData import set_global_config, SHSZTradingCalendar
 from AShareData.analysis.holding import *
-from AShareData.model.FamaFrench3FactorModel import FamaFrench3FactorModel
-from AShareData.PortfolioAnalysis import *
-from AShareData.Tickers import StockTickerSelector
+from AShareData.model.fama_french_3_factor_model import FamaFrench3FactorModel
+from AShareData.portfolio_analysis import *
+from AShareData.tickers import StockTickerSelector
 from AShareData.utils import StockSelectionPolicy
 
 

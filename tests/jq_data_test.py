@@ -1,12 +1,12 @@
 import unittest
 
-from AShareData import JQData, set_global_config
+import AShareData as asd
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        set_global_config('config.json')
-        self.jq_data = JQData()
+        asd.set_global_config('config.json')
+        self.jq_data = asd.JQData()
 
     def test_jq_login(self):
         pass

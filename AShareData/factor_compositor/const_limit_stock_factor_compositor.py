@@ -4,9 +4,9 @@ import pandas as pd
 from tqdm import tqdm
 
 from .. import utils
-from ..DBInterface import DBInterface
-from .FactorCompositor import FactorCompositor
-from ..Tickers import StockTickerSelector
+from ..database_interface import DBInterface
+from .factor_compositor import FactorCompositor
+from ..tickers import StockTickerSelector
 
 
 class ConstLimitStockFactorCompositor(FactorCompositor):

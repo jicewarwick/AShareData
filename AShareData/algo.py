@@ -24,7 +24,8 @@ def get_less_or_equal_of_a_in_b(a: Sequence, b: Sequence) -> Dict:
     :param b: non-empty sorted sequence of comparable T
     :return: {va: vb} s.t. vb = max(b) given vb <= va for all va in a
     """
-    assert len(b) > 0, 'b cannot be empty'
+    if len(b) <= 0:
+        raise ValueError(f'b({b}) cannot be empty')
     ret = {}
     i, j = 0, 1
     la, lb = len(a), len(b)

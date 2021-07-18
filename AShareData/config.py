@@ -4,7 +4,7 @@ from typing import Dict, Optional, Union
 import sqlalchemy as sa
 from sqlalchemy.engine.url import URL
 
-from .DBInterface import DBInterface, MySQLInterface
+from .database_interface import DBInterface, MySQLInterface
 
 __config__: Dict = None
 __db_interface__: DBInterface = None

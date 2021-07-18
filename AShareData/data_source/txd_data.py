@@ -7,11 +7,11 @@ from pytdx.hq import TdxHq_API
 from pytdx.params import TDXParams
 from tqdm import tqdm
 
-from .DataSource import DataSource, MinutesDataFunctionMixin
+from .data_source import DataSource, MinutesDataFunctionMixin
 from .. import utils
 from ..config import get_global_config
-from ..DBInterface import DBInterface
-from ..Tickers import ConvertibleBondTickers, StockTickers
+from ..database_interface import DBInterface
+from ..tickers import ConvertibleBondTickers, StockTickers
 
 
 class TDXData(DataSource, MinutesDataFunctionMixin):

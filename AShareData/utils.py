@@ -165,10 +165,13 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
         if self.select_new_stock_period:
             self.select_new_stock_period = int(self.select_new_stock_period)
         if self.industry_provider:
-            assert self.industry_provider in constants.INDUSTRY_DATA_PROVIDER, '非法行业分类机构!'
-            assert self.industry_level <= constants.INDUSTRY_LEVEL[self.industry_provider], '非法行业分类级别!'
+            if self.industry_provider not in constants.INDUSTRY_DATA_PROVIDER:
+                raise ValueError('非法行业分类机构!')
+            if not (0 < self.industry_level <= constants.INDUSTRY_LEVEL[self.industry_provider]):
+                raise ValueError('非法行业分类级别!')
             self.industry_level = int(self.industry_level)
-        assert not (self.ignore_st & self.select_st), '不能同时选择ST股票和忽略ST股票'
+        if self.ignore_st & self.select_st:
+            raise ValueError('不能同时选择ST股票和忽略ST股票')
 
 
 @dataclass
@@ -188,8 +191,8 @@ class StockIndexCompositionPolicy:
     start_date: dt.datetime = None
 
     def __post_init__(self):
-        if self.unit_base:
-            assert self.unit_base in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本'], '非法股本字段!'
+        if self.unit_base and self.unit_base not in ['自由流通股本', '总股本', 'A股流通股本', 'A股总股本']:
+            raise ValueError('非法股本字段!')
 
     @classmethod
     def from_dict(cls, info: Dict):

@@ -1,16 +1,14 @@
 import datetime as dt
 import unittest
 
-from AShareData.config import set_global_config
-from AShareData.data_source.WebData import WebDataCrawler
-from AShareData.DateUtils import SHSZTradingCalendar
+import AShareData as asd
 
 
 class WebDataSourceTest(unittest.TestCase):
     def setUp(self) -> None:
-        set_global_config('config.json')
-        self.web_crawler = WebDataCrawler()
-        self.calendar = SHSZTradingCalendar()
+        asd.set_global_config('config.json')
+        self.web_crawler = asd.WebDataCrawler()
+        self.calendar = asd.SHSZTradingCalendar()
 
     def test_sw_industry(self):
         self.web_crawler.get_sw_industry()

@@ -6,7 +6,7 @@ from AShareData.analysis.holding import *
 from AShareData.analysis.public_fund_holding import *
 # from AShareData.analysis.trading import *
 from AShareData.analysis.return_analysis import *
-from AShareData.Factor import ContinuousFactor
+from AShareData.factor import ContinuousFactor
 
 
 class MyTestCase(unittest.TestCase):

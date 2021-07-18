@@ -4,17 +4,17 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.axes import Axes
 
-from AShareData import DateUtils, utils
+from AShareData import date_utils, utils
 from AShareData.config import get_db_interface
-from AShareData.DBInterface import DBInterface
-from AShareData.Factor import ContinuousFactor
+from AShareData.database_interface import DBInterface
+from AShareData.factor import ContinuousFactor
 
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
 
 def plot_factor_return(factor_name: str, weight: bool = True, industry_neutral: bool = True, bins: int = 5,
-                       start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
+                       start_date: date_utils.DateType = None, end_date: date_utils.DateType = None,
                        db_interface: DBInterface = None) -> plt.Figure:
     if db_interface is None:
         db_interface = get_db_interface()

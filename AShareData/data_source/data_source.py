@@ -2,9 +2,9 @@ import datetime as dt
 
 import pandas as pd
 
-from .. import DateUtils
+from .. import date_utils
 from ..config import get_db_interface
-from ..DBInterface import DBInterface
+from ..database_interface import DBInterface
 
 
 class DataSource(object):
@@ -12,7 +12,7 @@ class DataSource(object):
 
     def __init__(self, db_interface: DBInterface = None) -> None:
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.calendar = DateUtils.SHSZTradingCalendar(self.db_interface)
+        self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
 
     def __enter__(self):
         self.login()

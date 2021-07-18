@@ -3,9 +3,9 @@ import datetime as dt
 import pandas as pd
 
 from .. import utils
-from ..AShareDataReader import AShareDataReader
+from ..ashare_data_reader import AShareDataReader
 from ..config import get_db_interface
-from ..DBInterface import DBInterface
+from ..database_interface import DBInterface
 
 
 class IndustryComparison(object):

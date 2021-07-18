@@ -6,10 +6,10 @@ from typing import Dict, List, Sequence, Union
 import pandas as pd
 from singleton_decorator import singleton
 
-from . import DateUtils
+from . import date_utils
 from .config import get_db_interface
-from .DBInterface import DBInterface
-from .Factor import CompactFactor, CompactRecordFactor, IndustryFactor, OnTheRecordFactor
+from .database_interface import DBInterface
+from .factor import CompactFactor, CompactRecordFactor, IndustryFactor, OnTheRecordFactor
 from .utils import StockSelectionPolicy, TickerSelector
 
 
@@ -33,8 +33,8 @@ class TickersBase(object):
         """ return ALL ticker for the asset class"""
         return sorted(self.cache.ID.unique().tolist())
 
-    @DateUtils.dtlize_input_dates
-    def ticker(self, date: DateUtils.DateType = None) -> List[str]:
+    @date_utils.dtlize_input_dates
+    def ticker(self, date: date_utils.DateType = None) -> List[str]:
         """ return tickers that are alive on `date`, `date` default to today"""
         if date is None:
             date = dt.datetime.today()
@@ -245,7 +245,7 @@ class StockTickerSelector(TickerSelector):
         """
         super().__init__()
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.calendar = DateUtils.SHSZTradingCalendar(self.db_interface)
+        self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
         self.stock_ticker = StockTickers(self.db_interface)
         self.policy = policy
 
@@ -274,8 +274,8 @@ class StockTickerSelector(TickerSelector):
         if self.policy.industry:
             return IndustryFactor(self.policy.industry_provider, self.policy.industry_level, self.db_interface)
 
-    @DateUtils.dtlize_input_dates
-    def ticker(self, date: DateUtils.DateType, ids: Sequence[str] = None) -> List[str]:
+    @date_utils.dtlize_input_dates
+    def ticker(self, date: date_utils.DateType, ids: Sequence[str] = None) -> List[str]:
         """ select stocks that matched selection policy on `date`(amongst `ids`)
 
         :param date: query date
@@ -325,8 +325,8 @@ class StockTickerSelector(TickerSelector):
         ids = sorted(list(ids))
         return ids
 
-    def generate_index(self, start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
-                       dates: Union[DateUtils.DateType, Sequence[DateUtils.DateType]] = None) -> pd.MultiIndex:
+    def generate_index(self, start_date: date_utils.DateType = None, end_date: date_utils.DateType = None,
+                       dates: Union[date_utils.DateType, Sequence[date_utils.DateType]] = None) -> pd.MultiIndex:
         storage = []
         if dates is None:
             dates = self.calendar.select_dates(start_date, end_date)

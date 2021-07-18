@@ -7,11 +7,11 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-from .DataSource import DataSource
-from .. import DateUtils, utils
+from .data_source import DataSource
+from .. import date_utils, utils
 from ..config import get_db_interface
-from ..DBInterface import DBInterface
-from ..Tickers import StockTickers
+from ..database_interface import DBInterface
+from ..tickers import StockTickers
 
 
 class WebDataCrawler(DataSource):
@@ -56,11 +56,11 @@ class WebDataCrawler(DataSource):
         raw_data.set_index(['DateTime', 'ID'], inplace=True)
         self.db_interface.update_df(raw_data[['行业名称']], '申万一级行业')
 
-    @DateUtils.dtlize_input_dates
-    def get_zz_industry(self, date: DateUtils.DateType) -> None:
+    @date_utils.dtlize_input_dates
+    def get_zz_industry(self, date: date_utils.DateType) -> None:
         """获取中证4级行业"""
         referer_template = 'http://www.csindex.com.cn/zh-CN/downloads/industry-price-earnings-ratio?type=zz1&date='
-        date_str = DateUtils.date_type2str(date, '-')
+        date_str = date_utils.date_type2str(date, '-')
         header = self._HEADER
         header['referer'] = referer_template + date_str
         storage = []

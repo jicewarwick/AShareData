@@ -1,11 +1,11 @@
 import pandas as pd
 from tqdm import tqdm
 
-from .FactorCompositor import FactorCompositor
+from .factor_compositor import FactorCompositor
 from .. import utils
-from ..DBInterface import DBInterface
-from ..Factor import CompactFactor
-from ..Tickers import StockTickerSelector
+from ..database_interface import DBInterface
+from ..factor import CompactFactor
+from ..tickers import StockTickerSelector
 
 
 class IndexCompositor(FactorCompositor):

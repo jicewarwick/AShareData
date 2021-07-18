@@ -1,7 +1,7 @@
 import unittest
 
 from AShareData.config import set_global_config
-from AShareData.Tickers import *
+from AShareData.tickers import *
 from AShareData.utils import StockSelectionPolicy
 
 

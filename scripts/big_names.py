@@ -1,13 +1,13 @@
 import pandas as pd
 
-from AShareData import AShareDataReader, DateUtils, get_db_interface, set_global_config
+import AShareData as asd
 
 if __name__ == '__main__':
     config_loc = './config.json'
-    set_global_config(config_loc)
+    asd.set_global_config(config_loc)
 
-    data_reader = AShareDataReader()
-    calendar = DateUtils.SHSZTradingCalendar()
+    data_reader = asd.AShareDataReader()
+    calendar = asd.SHSZTradingCalendar()
     date = calendar.yesterday()
 
     industry = data_reader.industry('申万', 2).get_data(dates=date)
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     big_cap = df.head(300)
     all_ticker = pd.concat([industry_big_name, big_cap]).drop_duplicates().sort_index().droplevel('DateTime')
 
-    company_info = get_db_interface().read_table('上市公司基本信息', columns=['所在城市', '主要业务及产品', '经营范围'],
-                                                 ids=all_ticker.index.get_level_values('ID').tolist())
+    company_info = asd.get_db_interface().read_table('上市公司基本信息', columns=['所在城市', '主要业务及产品', '经营范围'],
+                                                     ids=all_ticker.index.get_level_values('ID').tolist())
     ret = pd.concat([all_ticker, company_info], axis=1)
     ret.to_excel('big_names.xlsx', freeze_panes=(0, 3))

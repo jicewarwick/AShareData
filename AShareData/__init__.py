@@ -2,14 +2,14 @@ import importlib.util
 import logging
 
 from .analysis import IndustryComparison, TradingAnalysis
-from .AShareDataReader import AShareDataReader
+from .ashare_data_reader import AShareDataReader
 from .config import generate_db_interface_from_config, get_db_interface, get_global_config, set_global_config
 from .data_source import JQData, TDXData, TushareData, WebDataCrawler
-from .DateUtils import SHSZTradingCalendar
-from .DBInterface import MySQLInterface
+from .database_interface import MySQLInterface
+from .date_utils import SHSZTradingCalendar
 from .factor_compositor import ConstLimitStockFactorCompositor, IndexCompositor, IndexUpdater, \
     NegativeBookEquityListingCompositor
-from .model import FamaFrench3FactorModel
+from .model import FamaFrench3FactorModel, FamaFrenchCarhart4FactorModel
 from .tools import IndexHighlighter, major_index_valuation, MajorIndustryConstitutes
 
 ch = logging.StreamHandler()
