@@ -372,10 +372,10 @@ class MySQLInterface(DBInterface):
                 q = q.filter(t.columns['DateTime'].in_(dates))
             else:
                 q = q.filter(t.columns['DateTime'] == dates)
-        elif end_date is not None:
+        if end_date is not None:
             q = q.filter(t.columns['DateTime'] <= end_date)
-            if start_date is not None:
-                q = q.filter(t.columns['DateTime'] >= start_date)
+        if start_date is not None:
+            q = q.filter(t.columns['DateTime'] >= start_date)
         if report_period is not None:
             q = q.filter(t.columns['报告期'] == report_period)
         if report_month is not None:
