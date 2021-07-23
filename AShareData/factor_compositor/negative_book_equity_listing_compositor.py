@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from .FactorCompositor import FactorCompositor
-from ..DBInterface import DBInterface
+from .factor_compositor import FactorCompositor
+from ..database_interface import DBInterface
 
 
 class NegativeBookEquityListingCompositor(FactorCompositor):

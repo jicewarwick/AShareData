@@ -7,7 +7,7 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 from singleton_decorator import singleton
 
 from .config import get_db_interface
-from .DBInterface import DBInterface
+from .database_interface import DBInterface
 
 DateType = Union[str, dt.datetime, dt.date]
 

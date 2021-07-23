@@ -6,10 +6,10 @@ from typing import List, Sequence, Union
 import numpy as np
 import pandas as pd
 
-from . import algo, constants, DateUtils, utils
+from . import algo, constants, date_utils, utils
 from .config import get_db_interface
-from .DateUtils import SHSZTradingCalendar
-from .DBInterface import DBInterface
+from .database_interface import DBInterface
+from .date_utils import SHSZTradingCalendar
 from .utils import TickerSelector
 
 
@@ -294,7 +294,8 @@ class FactorBase(object):
         pass
 
     def mean(self, along: str = 'DateTime'):
-        assert along in ['DateTime', 'ID'], 'along can only be DateTime or ID'
+        if along not in ['DateTime', 'ID']:
+            raise ValueError('along can only be DateTime or ID')
 
         def sub_get_data(self, **kwargs):
             data = self.f.get_data(**kwargs)
@@ -304,7 +305,8 @@ class FactorBase(object):
         return Foo(self)
 
     def sum(self, along: str = 'DateTime'):
-        assert along in ['DateTime', 'ID'], 'along can only be DateTime or ID'
+        if along not in ['DateTime', 'ID']:
+            raise ValueError('along can only be DateTime or ID')
 
         def sub_get_data(self, **kwargs):
             data = self.f.get_data(**kwargs)
@@ -357,11 +359,14 @@ class Factor(FactorBase):
     # helper functions
     def _check_args(self, table_name: str, factor_name: str):
         table_name = table_name.lower()
-        assert self.db_interface.exist_table(table_name), f'数据库中不存在表 {table_name}'
+
+        if not self.db_interface.exist_table(table_name):
+            raise ValueError(f'数据库中无名为 {table_name} 的表')
 
         if factor_name:
             columns = self.db_interface.get_columns_names(table_name)
-            assert factor_name in columns, f'表 {table_name} 中不存在 {factor_name} 列'
+            if factor_name not in columns:
+                raise ValueError(f'表 {table_name} 中不存在 {factor_name} 列')
 
 
 class IndexConstitute(Factor):
@@ -370,8 +375,8 @@ class IndexConstitute(Factor):
     def __init__(self, db_interface: DBInterface = None):
         super().__init__('指数成分股权重', '', db_interface)
 
-    def _get_data(self, index_ticker: str, date: DateUtils.DateType):
-        date_str = DateUtils.date_type2str(date, '-')
+    def _get_data(self, index_ticker: str, date: date_utils.DateType):
+        date_str = date_utils.date_type2str(date, '-')
         stm = f'DateTime = (SELECT MAX(DateTime) FROM `{self.table_name}` WHERE DateTime <= "{date_str}")'
         ret = self.db_interface.read_table(self.table_name, ids=index_ticker, text_statement=stm)
         ret.index = pd.MultiIndex.from_product([[date], ret.index.get_level_values('ID')])
@@ -387,8 +392,8 @@ class NonFinancialFactor(Factor):
     def __init__(self, table_name: str, factor_name: str = None, db_interface: DBInterface = None):
         super().__init__(table_name, factor_name, db_interface)
         self._check_args(table_name, factor_name)
-        assert not any([it in table_name for it in constants.FINANCIAL_STATEMENTS_TYPE]), \
-            f'{table_name} 为财报数据, 请使用 FinancialFactor 类!'
+        if any([it in table_name for it in constants.FINANCIAL_STATEMENTS_TYPE]):
+            raise ValueError(f'{table_name} 为财报数据, 请使用 FinancialFactor 类!')
 
     def _get_data(self, *args, **kwargs):
         raise NotImplementedError()
@@ -405,8 +410,8 @@ class CompactFactor(NonFinancialFactor):
         super().__init__(table_name, table_name, db_interface)
         self.data = self.db_interface.read_table(table_name)
 
-    def _get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
-                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
+    def _get_data(self, dates: Union[Sequence[dt.datetime], date_utils.DateType] = None,
+                  start_date: date_utils.DateType = None, end_date: date_utils.DateType = None,
                   ids: Union[Sequence[str], str] = None, ticker_selector: TickerSelector = None) -> pd.Series:
         """
         :param start_date: start date
@@ -461,7 +466,8 @@ class IndustryFactor(CompactFactor):
         :param provider: Industry classification data provider
         :param level: Level of industry classification
         """
-        assert 0 < level <= constants.INDUSTRY_LEVEL[provider], f'{provider}行业没有{level}级'
+        if not (0 < level <= constants.INDUSTRY_LEVEL[provider]):
+            raise ValueError(f'{provider}行业没有{level}级')
         table_name = f'{provider}行业'
         super().__init__(table_name, db_interface)
         self.name = f'{provider}{level}级行业'
@@ -474,7 +480,7 @@ class IndustryFactor(CompactFactor):
 
             self.data = self.data.map(new_translation)
 
-    def list_constitutes(self, date: DateUtils.DateType, industry: str) -> List[str]:
+    def list_constitutes(self, date: date_utils.DateType, industry: str) -> List[str]:
         """
         获取行业内的股票构成
 
@@ -501,7 +507,7 @@ class OnTheRecordFactor(NonFinancialFactor):
         super().__init__(factor_name, db_interface=db_interface)
         self.factor_name = factor_name
 
-    def _get_data(self, date: DateUtils.DateType, **kwargs) -> List:
+    def _get_data(self, date: date_utils.DateType, **kwargs) -> List:
         """
         :param date: selected dates
         :return: list of IDs on the record
@@ -509,7 +515,7 @@ class OnTheRecordFactor(NonFinancialFactor):
         tmp = self.db_interface.read_table(self.table_name, dates=date)
         return tmp.index.get_level_values('ID').tolist()
 
-    def get_counts(self, start_date: DateUtils.DateType, end_date: DateUtils.DateType,
+    def get_counts(self, start_date: date_utils.DateType, end_date: date_utils.DateType,
                    ids: Sequence[str] = None) -> pd.Series:
         """返回 ``start_date`` 和 ``end_date`` (含)之间的记录次数"""
         tmp = self.db_interface.read_table(self.table_name, start_date=start_date, end_date=end_date, ids=ids)
@@ -526,7 +532,7 @@ class CompactRecordFactor(NonFinancialFactor):
         self.base_factor = compact_factor
         self.factor_name = factor_name
 
-    def _get_data(self, date: DateUtils.DateType, **kwargs) -> List:
+    def _get_data(self, date: date_utils.DateType, **kwargs) -> List:
         """
         :param date: selected dates
         :return: list of IDs on the record
@@ -543,8 +549,8 @@ class ContinuousFactor(NonFinancialFactor):
     def __init__(self, table_name: str, factor_name: str, db_interface: DBInterface = None):
         super().__init__(table_name, factor_name, db_interface)
 
-    def _get_data(self, dates: Union[Sequence[dt.datetime], DateUtils.DateType] = None,
-                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
+    def _get_data(self, dates: Union[Sequence[dt.datetime], date_utils.DateType] = None,
+                  start_date: date_utils.DateType = None, end_date: date_utils.DateType = None,
                   ids: Sequence[str] = None, ticker_selector: TickerSelector = None, **kwargs) \
             -> Union[pd.Series, pd.DataFrame]:
         """
@@ -607,7 +613,8 @@ class AccountingFactor(Factor):
                 statement = fields_data[statement_type]
                 for key, _ in statement.items():
                     self.fields[key] = statement_type
-        assert factor_name in self.fields.keys(), f'{factor_name} 非财报关键字'
+        if factor_name not in self.fields.keys():
+            raise ValueError(f'{factor_name} 非财报关键字')
 
         table_name = self.fields[factor_name]
         super().__init__(f'合并{table_name}', factor_name, db_interface)
@@ -616,7 +623,7 @@ class AccountingFactor(Factor):
         self.offset_strs = None
 
     def _get_data(self, dates: Union[dt.datetime, Sequence[dt.datetime]] = None,
-                  start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None,
+                  start_date: date_utils.DateType = None, end_date: date_utils.DateType = None,
                   ids: Sequence[str] = None, ticker_selector: TickerSelector = None) -> Union[pd.Series, pd.DataFrame]:
         """
         :param start_date: start date
@@ -689,7 +696,8 @@ class AccountingFactor(Factor):
 
     @staticmethod
     def loc_pre_data(ticker_data: pd.DataFrame, relevant_rec: pd.DataFrame, offset_str: str) -> pd.DataFrame:
-        pre_date = [DateUtils.ReportingDate.offset(it, offset_str) for it in relevant_rec.index.get_level_values('报告期')]
+        pre_date = [date_utils.ReportingDate.offset(it, offset_str) for it in
+                    relevant_rec.index.get_level_values('报告期')]
         ticker = ticker_data.index.get_level_values('ID')[0]
         pre_index = pd.MultiIndex.from_arrays([relevant_rec[offset_str], [ticker] * relevant_rec.shape[0], pre_date])
         pre_data = ticker_data.reindex(pre_index)

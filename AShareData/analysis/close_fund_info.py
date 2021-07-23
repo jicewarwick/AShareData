@@ -4,8 +4,8 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 
 from ..config import get_db_interface
-from ..DBInterface import DBInterface
-from ..Tickers import ExchangeFundTickers, OTCFundTickers
+from ..database_interface import DBInterface
+from ..tickers import ExchangeFundTickers, OTCFundTickers
 
 
 def close_fund_opening_info(date: dt.datetime = None, db_interface: DBInterface = None):

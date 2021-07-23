@@ -3,9 +3,9 @@ import logging
 import pandas as pd
 from tqdm import tqdm
 
-from .FactorCompositor import FactorCompositor
-from ..DBInterface import DBInterface
-from ..Tickers import FundTickers
+from .factor_compositor import FactorCompositor
+from ..database_interface import DBInterface
+from ..tickers import FundTickers
 
 
 class FundAdjFactorCompositor(FactorCompositor):

@@ -177,7 +177,8 @@ class MySQLInterface(DBInterface):
         self.meta.reflect()
 
     def purge_table(self, table_name: str) -> None:
-        assert table_name in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        if table_name not in self.meta.tables.keys():
+            raise ValueError(f'数据库中无名为 {table_name} 的表')
         table = self.meta.tables[table_name]
         conn = self.engine.connect()
         conn.execute(table.delete())
@@ -243,7 +244,8 @@ class MySQLInterface(DBInterface):
         :param column_condition: 列条件Tuple: (列名, 符合条件的列内容)
         :return: 最新时间
         """
-        assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        if table_name not in self.meta.tables.keys():
+            raise ValueError(f'数据库中无名为 {table_name} 的表')
         table = self.meta.tables[table_name.lower()]
         if 'DateTime' in table.columns.keys():
             session = Session(self.engine)
@@ -266,7 +268,8 @@ class MySQLInterface(DBInterface):
         :param column: 列名
         :return: 列的最小值
         """
-        assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        if table_name not in self.meta.tables.keys():
+            raise ValueError(f'数据库中无名为 {table_name} 的表')
         table = self.meta.tables[table_name.lower()]
         if 'DateTime' in table.columns.keys():
             session = Session(self.engine)
@@ -283,7 +286,8 @@ class MySQLInterface(DBInterface):
         :param column: 列名
         :return: 列的最大值
         """
-        assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        if table_name not in self.meta.tables.keys():
+            raise ValueError(f'数据库中无名为 {table_name} 的表')
         table = self.meta.tables[table_name.lower()]
         if 'DateTime' in table.columns.keys():
             session = Session(self.engine)
@@ -309,7 +313,8 @@ class MySQLInterface(DBInterface):
         :param column_name: 列名
         :return: 数据库表中的`column_name`列排序后的非重复值
         """
-        assert table_name.lower() in self.meta.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        if table_name not in self.meta.tables.keys():
+            raise ValueError(f'数据库中无名为 {table_name} 的表')
         table = self.meta.tables[table_name.lower()]
         if column_name in table.columns.keys():
             logging.getLogger(__name__).debug(f'{table_name} 表中找到 {column_name} 列')
@@ -323,7 +328,8 @@ class MySQLInterface(DBInterface):
         """清理表中多余的数据. 未实现"""
         metadata = sa.MetaData(self.engine)
         metadata.reflect()
-        assert table_name in metadata.tables.keys(), f'数据库中无名为 {table_name} 的表'
+        if table_name not in self.meta.tables.keys():
+            raise ValueError(f'数据库中无名为 {table_name} 的表')
         table = metadata.tables[table_name]
         session = Session(self.engine)
         data = self.read_table(table_name).unstack()

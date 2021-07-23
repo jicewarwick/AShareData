@@ -1,14 +1,14 @@
 import datetime as dt
 import sys
 
-from AShareData import AShareDataReader, set_global_config
+import AShareData as asd
 from AShareData.factor_compositor import FactorPortfolio, FactorPortfolioPolicy
 from AShareData.utils import StockSelectionPolicy
 
 if __name__ == '__main__':
-    set_global_config(sys.argv[1])
+    asd.set_global_config(sys.argv[1])
 
-    data_reader = AShareDataReader()
+    data_reader = asd.AShareDataReader()
     stock_selection_policy = StockSelectionPolicy()
     stock_selection_policy.ignore_new_stock_period = 244
     stock_selection_policy.ignore_st = True

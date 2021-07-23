@@ -1,7 +1,7 @@
 import datetime as dt
 import unittest
 
-from AShareData.AShareDataReader import AShareDataReader
+from AShareData.ashare_data_reader import AShareDataReader
 from AShareData.config import set_global_config
 
 

@@ -1,4 +1,4 @@
-from .BarraDescriptors import BarraDescriptor
+from .barra_descriptors import BarraDescriptor
 
 
 class BarraStyleFactors(object):

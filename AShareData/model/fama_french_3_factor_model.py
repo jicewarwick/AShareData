@@ -3,8 +3,8 @@ import datetime as dt
 import pandas as pd
 
 from .model import FinancialModel, ModelFactorCompositor
-from ..DBInterface import DBInterface
-from ..Tickers import StockTickerSelector
+from ..database_interface import DBInterface
+from ..tickers import StockTickerSelector
 from ..utils import StockSelectionPolicy
 
 

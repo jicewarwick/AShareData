@@ -12,10 +12,10 @@ from statsmodels.tools.tools import add_constant
 from . import AShareDataReader
 from .algo import human_sort
 from .config import get_db_interface
-from .DBInterface import DBInterface
-from .Factor import BinaryFactor, FactorBase, IndustryFactor, InterestRateFactor, OnTheRecordFactor, UnaryFactor
+from .database_interface import DBInterface
+from .factor import BinaryFactor, FactorBase, IndustryFactor, InterestRateFactor, OnTheRecordFactor, UnaryFactor
 from .model.model import FinancialModel
-from .Tickers import StockTickerSelector
+from .tickers import StockTickerSelector
 
 
 class CrossSectionalPortfolioAnalysis(object):
@@ -98,7 +98,11 @@ class CrossSectionalPortfolioAnalysis(object):
     def two_factor_sorting(self, factor_names: Tuple[str, str], independent: bool,
                            quantile: Union[int, Sequence[float], Tuple[int, int]] = None,
                            separate_neg_vals: Union[bool, Tuple[bool, bool]] = False):
-        assert factor_names[0] in self.factor_names and factor_names[1] in self.factor_names, 'Unknown factor name.'
+        if factor_names[0] not in self.factor_names:
+            raise ValueError(f'Unknown factor name: {factor_names[0]}.')
+        if factor_names[1] not in self.factor_names:
+            raise ValueError(f'Unknown factor name: {factor_names[1]}.')
+
         self.sorting_factor = list(factor_names)
         if not isinstance(quantile, Tuple):
             quantile = (quantile, quantile)

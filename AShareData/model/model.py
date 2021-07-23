@@ -4,8 +4,8 @@ from typing import List
 import pandas as pd
 from tqdm import tqdm
 
-from ..DBInterface import DBInterface
-from ..factor_compositor.FactorCompositor import FactorCompositor
+from ..database_interface import DBInterface
+from ..factor_compositor.factor_compositor import FactorCompositor
 
 
 class FinancialModel(object):

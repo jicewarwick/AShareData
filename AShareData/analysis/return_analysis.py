@@ -3,13 +3,13 @@ from typing import Tuple, Union
 import empyrical
 import pandas as pd
 
-from .. import DateUtils
-from ..Factor import ContinuousFactor
+from .. import date_utils
+from ..factor import ContinuousFactor
 
 
-@DateUtils.dtlize_input_dates
+@date_utils.dtlize_input_dates
 def aggregate_returns(target: ContinuousFactor, convert_to: str, benchmark_factor: ContinuousFactor = None,
-                      start_date: DateUtils.DateType = None, end_date: DateUtils.DateType = None
+                      start_date: date_utils.DateType = None, end_date: date_utils.DateType = None
                       ) -> Union[pd.Series, pd.DataFrame]:
     """ 按 年/月/周 统计收益
 

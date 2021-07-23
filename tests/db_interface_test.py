@@ -2,7 +2,7 @@ import unittest
 import datetime as dt
 
 from AShareData.config import get_db_interface, set_global_config
-from AShareData.DateUtils import date_type2datetime
+from AShareData.date_utils import date_type2datetime
 
 
 class MyTestCase(unittest.TestCase):

@@ -1,11 +1,11 @@
 import pandas as pd
 
-from .. import AShareDataReader, DBInterface
+from .. import AShareDataReader, database_interface
 from ..config import get_db_interface
 
 
 class TradingAnalysis(object):
-    def __init__(self, db_interface: DBInterface = None):
+    def __init__(self, db_interface: database_interface = None):
         self.db_interface = db_interface if db_interface else get_db_interface()
         self.data_reader = AShareDataReader(self.db_interface)
 

@@ -1,7 +1,7 @@
 import unittest
 
 from AShareData.config import set_global_config
-from AShareData.DateUtils import *
+from AShareData.date_utils import *
 
 
 class MyTestCase(unittest.TestCase):

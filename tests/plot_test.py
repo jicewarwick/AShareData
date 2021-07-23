@@ -1,7 +1,7 @@
 import unittest
 
 from AShareData.config import set_global_config
-from AShareData.Factor import ContinuousFactor
+from AShareData.factor import ContinuousFactor
 from AShareData.plot import plot_index
 
 

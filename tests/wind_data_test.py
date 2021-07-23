@@ -2,13 +2,13 @@ import datetime as dt
 import unittest
 
 from AShareData import constants, set_global_config
-from AShareData.data_source.WindData import WindData, WindWrapper
+from AShareData.data_source.wind_data import WindData, WindWrapper
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         config_loc = 'config.json'
-        set_global_config('config.json')
+        set_global_config(config_loc)
         self.wind_data = WindData.from_config(config_loc)
 
     def test_get_industry_func(self):

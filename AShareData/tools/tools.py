@@ -6,8 +6,8 @@ import pandas as pd
 
 from AShareData import AShareDataReader, constants, SHSZTradingCalendar, utils
 from AShareData.config import get_db_interface
-from AShareData.DBInterface import DBInterface
-from AShareData.Factor import CompactFactor, ContinuousFactor
+from AShareData.database_interface import DBInterface
+from AShareData.factor import CompactFactor, ContinuousFactor
 
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
@@ -23,7 +23,8 @@ class MajorIndustryConstitutes(object):
         self.cap = cap if cap else self.data_reader.stock_free_floating_market_cap
 
     def get_major_constitute(self, name: str, n: int = None):
-        assert name in self.industry.all_industries, 'unknown industry'
+        if name not in self.industry.all_industries:
+            raise ValueError(f'unknown industry: {name}')
         constitute = self.industry.list_constitutes(date=self.date, industry=name)
         val = self.cap.get_data(ids=constitute, dates=self.date) / 1e8
         if n:

@@ -1,3 +1,3 @@
-from .CAPM import CapitalAssetPricingModel as CAPM
-from .FamaFrench3FactorModel import FamaFrench3FactorModel, SMBandHMLCompositor
-from .FamaFrenchCarhart4FactorModel import FamaFrenchCarhart4FactorModel, UMDCompositor
+from .capm import CapitalAssetPricingModel as CAPM
+from .fama_french_3_factor_model import FamaFrench3FactorModel, SMBandHMLCompositor
+from .fama_french_carhart_4_factor_model import FamaFrenchCarhart4FactorModel, UMDCompositor

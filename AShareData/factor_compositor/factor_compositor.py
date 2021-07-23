@@ -1,6 +1,6 @@
-from ..AShareDataReader import AShareDataReader
-from ..data_source.DataSource import DataSource
-from ..DBInterface import DBInterface
+from ..ashare_data_reader import AShareDataReader
+from ..data_source.data_source import DataSource
+from ..database_interface import DBInterface
 
 
 class FactorCompositor(DataSource):

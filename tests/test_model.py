@@ -2,7 +2,7 @@ import datetime as dt
 import unittest
 
 from AShareData import set_global_config
-from AShareData.model.FamaFrench3FactorModel import FamaFrench3FactorModel
+from AShareData.model.fama_french_3_factor_model import FamaFrench3FactorModel
 
 
 class MyTestCase(unittest.TestCase):
