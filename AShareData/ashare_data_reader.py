@@ -213,6 +213,11 @@ class AShareDataReader(object):
         return (self.stock_market_cap / self.earning_ttm).set_factor_name('PE_TTM')
 
     @cached_property
+    def future_close(self) -> ContinuousFactor:
+        """期货收盘价"""
+        return ContinuousFactor('期货日行情', '收盘价', self.db_interface)
+
+    @cached_property
     def overnight_shibor(self) -> InterestRateFactor:
         """隔夜shibor"""
         return InterestRateFactor('shibor利率数据', '隔夜', self.db_interface).set_factor_name('隔夜shibor')

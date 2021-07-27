@@ -428,15 +428,6 @@ class WindData(DataSource):
         old_funds = old_funds.index.tolist()
         self.get_fund_time_info(old_funds)
 
-        # exchange funds
-        new_exchange_funds = self.db_interface.read_table('场内基金日行情', '收盘价', dates=self.calendar.today())
-        new_exchange_funds = new_exchange_funds.index.tolist()
-        db_ids = self.db_interface.get_all_id('场内基金列表')
-        new_exchange_funds = sorted(set(new_exchange_funds) - set(db_ids))
-        if new_exchange_funds:
-            self.get_fund_base_info(new_exchange_funds)
-            self.get_fund_time_info(new_exchange_funds)
-
     def get_fund_base_info(self, tickers: Sequence[str] = None):
         table_name = '基金列表'
         if tickers is None:
@@ -509,7 +500,7 @@ class WindData(DataSource):
         data.loc[data['上市日期'] == dt.datetime(1899, 12, 30), '上市日期'] = pd.NaT
         data.loc[data['退市日期'] == dt.datetime(1899, 12, 30), '退市日期'] = pd.NaT
         if not init:
-            self.db_interface.delete_id_records(data.index.tolist())
+            self.db_interface.delete_id_records('基金时间表', data.index.tolist())
         self.db_interface.insert_df(data, '基金时间表')
 
         list_time_info = data.stack().reset_index()

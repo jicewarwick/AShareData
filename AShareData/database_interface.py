@@ -189,7 +189,7 @@ class MySQLInterface(DBInterface):
             return
 
         start_timestamp = time.time()
-        df.to_sql(table_name, self.engine, if_exists='append')
+        df.to_sql(table_name.lower(), self.engine, if_exists='append')
         end_timestamp = time.time()
         logging.getLogger(__name__).debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
 
@@ -244,6 +244,7 @@ class MySQLInterface(DBInterface):
         :param column_condition: 列条件Tuple: (列名, 符合条件的列内容)
         :return: 最新时间
         """
+        table_name = table_name.lower()
         if table_name not in self.meta.tables.keys():
             raise ValueError(f'数据库中无名为 {table_name} 的表')
         table = self.meta.tables[table_name.lower()]

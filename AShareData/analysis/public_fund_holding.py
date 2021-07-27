@@ -2,7 +2,7 @@ import datetime as dt
 from typing import Dict
 
 import pandas as pd
-from cached_property import cached_property
+from functools import cached_property
 
 from ..ashare_data_reader import AShareDataReader
 from ..config import get_db_interface

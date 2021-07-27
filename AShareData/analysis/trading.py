@@ -1,13 +1,12 @@
 import pandas as pd
 
-from .. import AShareDataReader, database_interface
-from ..config import get_db_interface
+import AShareData as asd
 
 
 class TradingAnalysis(object):
-    def __init__(self, db_interface: database_interface = None):
-        self.db_interface = db_interface if db_interface else get_db_interface()
-        self.data_reader = AShareDataReader(self.db_interface)
+    def __init__(self, db_interface: asd.database_interface.DBInterface = None):
+        self.db_interface = db_interface if db_interface else asd.get_db_interface()
+        self.data_reader = asd.AShareDataReader(self.db_interface)
 
     def trading_volume_summary(self, trading_records: pd.DataFrame) -> pd.DataFrame:
         vol_summary = trading_records.groupby(['ID', 'tradeDirection'], as_index=False).tradeVolume.sum()

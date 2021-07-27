@@ -235,11 +235,14 @@ class TushareData(DataSource):
         # drop AP2107.CZC
         output = output.loc[output.symbol != 'AP107', :]
 
+        db_ids = self.db_interface.get_all_id('证券代码')
+        output = output.loc[~output['ts_code'].isin(db_ids), :]
+
         # list date
         list_info = output.loc[:, ['ts_code', 'list_date', 'delist_date']]
         list_info['证券类型'] = '期货'
         list_info = self._format_list_date(list_info, extend_delist_date=True)
-        self.db_interface.update_df(list_info, '证券代码')
+        self.db_interface.insert_df(list_info, '证券代码')
 
         # names
         name_info = output.loc[:, ['list_date', 'ts_code', 'name']].rename({'list_date': 'DateTime'}, axis=1)
@@ -248,7 +251,7 @@ class TushareData(DataSource):
 
         # info
         output = self._standardize_df(output, desc)
-        self.db_interface.update_df(output, '期货合约')
+        self.db_interface.insert_df(output, '期货合约')
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     def update_option_list_date(self) -> None:
@@ -267,19 +270,22 @@ class TushareData(DataSource):
         output.opt_code = self.format_ticker(output['opt_code'].tolist())
         output.ts_code = self.format_ticker(output['ts_code'].tolist())
 
+        db_ids = self.db_interface.get_all_id('证券代码')
+        output = output.loc[~output['ts_code'].isin(db_ids), :]
+
         # list date
         list_info = output.loc[:, ['ts_code', 'list_date', 'delist_date', 'opt_type']]
         list_info = self._format_list_date(list_info, extend_delist_date=True)
-        self.db_interface.update_df(list_info, '证券代码')
+        self.db_interface.insert_df(list_info, '证券代码')
 
         # names
         name_info = output.loc[:, ['list_date', 'ts_code', 'name']].rename({'list_date': 'DateTime'}, axis=1)
         name_info = self._standardize_df(name_info, desc)
-        self.db_interface.update_df(name_info, '证券名称')
+        self.db_interface.insert_df(name_info, '证券名称')
 
         # info
         info = self._standardize_df(output, desc)
-        self.db_interface.update_df(info, '期权合约')
+        self.db_interface.insert_df(info, '期权合约')
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     def update_fund_list_date(self) -> None:

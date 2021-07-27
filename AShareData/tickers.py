@@ -94,6 +94,16 @@ class FutureTickers(DiscreteTickers):
         super().__init__('期货', db_interface)
 
 
+class StockIndexFutureIndex(FutureTickers):
+    """股指期货合约代码"""
+
+    def __init__(self, db_interface: DBInterface = None) -> None:
+        super().__init__(db_interface)
+        mask = self.cache.ID.str.startswith('IH') | self.cache.ID.str.startswith('IF') | self.cache.ID.str.startswith(
+            'IC')
+        self.cache = self.cache.loc[mask, :]
+
+
 class ETFOptionTickers(DiscreteTickers):
     """期权合约代码"""
 

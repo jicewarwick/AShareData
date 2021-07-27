@@ -8,6 +8,7 @@ from AShareData import AShareDataReader, constants, SHSZTradingCalendar, utils
 from AShareData.config import get_db_interface
 from AShareData.database_interface import DBInterface
 from AShareData.factor import CompactFactor, ContinuousFactor
+from AShareData.tickers import StockIndexFutureIndex
 
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
@@ -105,3 +106,34 @@ def major_index_valuation(db_interface: DBInterface = None):
     index_name_dict = dict(zip(constants.STOCK_INDEXES.values(), constants.STOCK_INDEXES.keys()))
     ret['ID'] = ret['ID'].map(index_name_dict)
     return ret.set_index(['DateTime', 'ID'])
+
+
+class StockIndexFutureBasis(object):
+    FUTURE_INDEX_MAP = {'IH': '000016.SH', 'IF': '000300.SH', 'IC': '000905.SH'}
+
+    def __init__(self, date: dt.datetime = None, lookback_period: int = 5, db_interface: DBInterface = None):
+        super().__init__()
+        self.date = date if date else dt.datetime.combine(dt.date.today(), dt.time())
+        self.look_back_period = lookback_period
+        self.db_interface = db_interface if db_interface else get_db_interface()
+        self.data_reader = AShareDataReader(self.db_interface)
+        self.cal = SHSZTradingCalendar(self.db_interface)
+        self.stock_index_tickers = StockIndexFutureIndex(self.db_interface)
+
+    def compute(self) -> pd.DataFrame:
+        start_date = self.cal.offset(self.date, -self.look_back_period)
+        tickers = self.stock_index_tickers.ticker()
+        tickers_info = self.db_interface.read_table('期货合约', '最后交易日', ids=tickers).to_frame()
+        tickers_info['index_ticker'] = [self.FUTURE_INDEX_MAP[it[:2]] for it in tickers_info.index]
+        index_close = self.data_reader.index_close.get_data(start_date=start_date, end_date=self.date,
+                                                            ids=list(self.FUTURE_INDEX_MAP.values())).reset_index()
+        future_close = self.data_reader.future_close.get_data(start_date=start_date, end_date=self.date,
+                                                              ids=tickers).reset_index()
+        tmp = pd.merge(future_close, tickers_info, left_on='ID', right_index=True)
+        df = pd.merge(tmp, index_close, left_on=['DateTime', 'index_ticker'], right_on=['DateTime', 'ID']).rename(
+            {'ID_x': 'ID'}, axis=1)
+        df['合约时长'] = (pd.to_datetime(df['最后交易日']) - df['DateTime']).dt.days
+        df['年化贴水率'] = ((df['收盘价'] / df['收盘点位']) - 1) / df['合约时长'] * 365 * 100
+
+        res = df.loc[:, ['DateTime', 'ID', '年化贴水率']].set_index(['ID', 'DateTime']).unstack().loc[:, '年化贴水率']
+        return res

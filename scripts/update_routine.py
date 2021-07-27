@@ -36,7 +36,6 @@ def daily_routine(config_loc: str):
         wind_data.update_convertible_bond_daily_data()
         wind_data.update_cb_convertible_price()
         wind_data.update_future_daily_data()
-        wind_data.update_fund_extra_info()
         wind_data.update_fund_info()
         wind_data.update_stock_option_daily_data()
 

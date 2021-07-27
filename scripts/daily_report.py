@@ -10,6 +10,8 @@ if __name__ == '__main__':
     asd.IndexHighlighter().summary()
     print(asd.major_index_valuation())
 
+    print(asd.StockIndexFutureBasis().compute())
+
     data_reader = asd.AShareDataReader()
     model_factor_ret = data_reader.model_factor_return.bind_params(ids=['FF3_SMB_DD', 'FF3_HML_DD', 'Carhart_UMD_DD'])
     date = dt.datetime.combine(dt.date.today(), dt.time())

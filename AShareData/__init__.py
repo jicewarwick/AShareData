@@ -10,7 +10,7 @@ from .date_utils import SHSZTradingCalendar
 from .factor_compositor import ConstLimitStockFactorCompositor, IndexCompositor, IndexUpdater, \
     NegativeBookEquityListingCompositor
 from .model import FamaFrench3FactorModel, FamaFrenchCarhart4FactorModel
-from .tools import IndexHighlighter, major_index_valuation, MajorIndustryConstitutes
+from .tools import IndexHighlighter, major_index_valuation, MajorIndustryConstitutes, StockIndexFutureBasis
 
 ch = logging.StreamHandler()
 ch.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s'))
