@@ -57,9 +57,19 @@ class AShareDataReader(object):
         return ContinuousFactor('股票日行情', '收盘价', self.db_interface)
 
     @cached_property
-    def stock_volume(self) -> ContinuousFactor:
+    def stock_trading_volume(self) -> ContinuousFactor:
         """股票成交量"""
         return ContinuousFactor('股票日行情', '成交量', self.db_interface)
+
+    @cached_property
+    def stock_trading_amount(self) -> ContinuousFactor:
+        """股票成交额"""
+        return ContinuousFactor('股票日行情', '成交额', self.db_interface)
+
+    @cached_property
+    def stock_turnover_rate(self) -> ContinuousFactor:
+        """股票换手率"""
+        return (self.stock_trading_amount / (self.stock_close * self.free_floating_share)).set_factor_name('换手率')
 
     @cached_property
     def total_share(self) -> CompactFactor:
@@ -216,6 +226,16 @@ class AShareDataReader(object):
     def future_close(self) -> ContinuousFactor:
         """期货收盘价"""
         return ContinuousFactor('期货日行情', '收盘价', self.db_interface)
+
+    @cached_property
+    def fund_nav(self) -> ContinuousFactor:
+        """场外基金单位净值"""
+        return ContinuousFactor('场外基金净值', '单位净值', self.db_interface)
+
+    @cached_property
+    def hfq_fund_nav(self) -> BinaryFactor:
+        """场外基金后复权净值"""
+        return (self.fund_nav * self.adj_factor).set_factor_name('基金后复权净值')
 
     @cached_property
     def overnight_shibor(self) -> InterestRateFactor:

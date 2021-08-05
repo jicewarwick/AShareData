@@ -826,5 +826,15 @@
 		"DateTime": "date",
 		"ID": "varchar",
 		"收益率": "float"
+	},
+	"市场汇总": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"成交额": "double",
+		"总市值": "double",
+		"流通市值": "double",
+		"自由流通市值": "double",
+		"市盈率TTM": "float",
+		"市净率": "float"
 	}
 }

@@ -431,10 +431,11 @@ class CompactFactor(NonFinancialFactor):
         if dates:
             end_date = max(dates)
             start_date = min(dates)
-        if end_date is None:
-            end_date = dt.datetime.today()
+        end_date = dt.datetime.today() if end_date is None else self.calendar.offset(end_date, 0)
         if start_date is None:
             start_date = data.index.get_level_values('DateTime').min()
+        else:
+            start_date = self.calendar.offset(start_date, 0)
 
         previous_data = data.loc[data.index.get_level_values('DateTime') <= start_date].groupby('ID').tail(1)
         index = pd.MultiIndex.from_product([[start_date], previous_data.index.get_level_values('ID')])

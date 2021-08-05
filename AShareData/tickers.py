@@ -51,7 +51,7 @@ class TickersBase(object):
         """ return the list date of a ticker"""
         if isinstance(tickers, str):
             tickers = [tickers]
-        info = self.cache.loc[self.cache.ID.isin(tickers), :].set_index('ID')
+        info = self.cache.loc[self.cache.ID.isin(tickers) & self.cache['上市状态'] == 1, ].set_index('ID')
         ret = info.DateTime.iloc[0] if info.shape[0] == 1 else info.DateTime
         return ret
 
@@ -192,7 +192,18 @@ class OTCFundTickers(DiscreteTickers):
 
 
 class InvestmentStyleFundTicker(DiscreteTickers):
-    def __init__(self, investment_type, otc: bool = False, db_interface: DBInterface = None) -> None:
+    def __init__(self, investment_type: Sequence[str], otc: bool = False, db_interface: DBInterface = None) -> None:
+        """ 某些投资风格的基金
+
+        :param investment_type: [普通股票型基金, 灵活配置型基金, 偏股混合型基金, 平衡混合型基金, 被动指数型基金, 增强指数型基金, 股票多空,
+            短期纯债型基金, 中长期纯债型基金, 混合债券型一级基金, 混合债券型二级基金, 偏债混合型基金, 被动指数型债券基金, 增强指数型债券基金,
+            商品型基金,
+            货币市场型基金,
+            国际(QDII)股票型基金, 国际增强指数型基金, (QDII)混合型基金, 国际(QDII)债券型基金, 国际(QDII)另类投资基金,
+            REITs]
+        :param otc: 选择 OTC 基金代码 或 .SH / .SZ 的基金代码
+        :param db_interface: DBInterface
+        """
         type_name = '场外基金' if otc else '场内基金'
         super().__init__(type_name, db_interface)
         fund_info = FundInfo(db_interface)

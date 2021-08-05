@@ -3,7 +3,7 @@ import logging
 
 from .data_source import DataSource
 from .jq_data import JQData
-from .txd_data import TDXData
+from .tdx_data import TDXData
 from .tushare_data import TushareData
 from .web_data import WebDataCrawler
 

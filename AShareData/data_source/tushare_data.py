@@ -855,8 +855,7 @@ class TushareData(DataSource):
         start_date = self.db_interface.get_latest_timestamp(daily_table_name, START_DATE['fund_daily'])
         start_date = self.calendar.offset(start_date, -4)
         end_date = dt.date.today()
-        dates = self.calendar.select_dates(start_date, end_date)
-        dates = dates[1:]
+        dates = self.calendar.select_dates(start_date, end_date, (False, True))
         rate = self._factor_param[nav_table_name]['每分钟限速']
         rate_limiter = RateLimiter(rate, period=60)
         with tqdm(dates) as pbar:
@@ -885,6 +884,8 @@ class TushareData(DataSource):
                     db_data = daily_data.join(ex_nav_part, how='left').join(ex_share_data, how='left')
 
                     nav_data = self._pro.fund_nav(end_date=date_str, market='O', fields=list(nav_params.keys()))
+                    nav_data = nav_data.loc[~(pd.isna(nav_data['accum_nav']) & nav_data['unit_nav'] == 1), :].drop(
+                        'accum_nav', axis=1)
                     nav_part = self._standardize_df(nav_data.iloc[:, :3].copy(), nav_params)
                     asset_part = self._standardize_df(nav_data.iloc[:, [0, 1, 3, 4]].dropna(), nav_params)
 
@@ -902,7 +903,7 @@ class TushareData(DataSource):
         params = self._factor_param[table_name]['输出参数']
         rate = self._factor_param[table_name]['每分钟限速']
 
-        start_date = self.db_interface.get_latest_timestamp(table_name, dt.date(1998, 4, 6))
+        start_date = self.db_interface.get_latest_timestamp(table_name, dt.date(1999, 3, 31))
         start_date = self.calendar.offset(start_date, -5)
         end_date = dt.date.today()
         dates = self.calendar.select_dates(start_date, end_date)
@@ -912,7 +913,8 @@ class TushareData(DataSource):
                 with rate_limiter:
                     pbar.set_description(f'下载{date}的{table_name}')
                     df = self._pro.fund_div(ex_date=date_utils.date_type2str(date), fields=list(params.keys()))
-                    df = self._standardize_df(df, params).drop_duplicates()
+                    df = df.dropna().drop_duplicates()
+                    df = self._standardize_df(df, params)
                     self.db_interface.update_df(df, table_name)
                     pbar.update()
         logging.getLogger(__name__).info(f'{table_name} 更新完成.')

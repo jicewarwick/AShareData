@@ -7,7 +7,7 @@ from .config import generate_db_interface_from_config, get_db_interface, get_glo
 from .data_source import JQData, TDXData, TushareData, WebDataCrawler
 from .database_interface import MySQLInterface
 from .date_utils import SHSZTradingCalendar
-from .factor_compositor import ConstLimitStockFactorCompositor, IndexCompositor, IndexUpdater, \
+from .factor_compositor import ConstLimitStockFactorCompositor, IndexCompositor, IndexUpdater, MarketSummaryCompositor, \
     NegativeBookEquityListingCompositor
 from .model import FamaFrench3FactorModel, FamaFrenchCarhart4FactorModel
 from .tools import IndexHighlighter, major_index_valuation, MajorIndustryConstitutes, StockIndexFutureBasis

@@ -257,6 +257,7 @@
 			"ts_code": "ID",
 			"end_date": "DateTime",
 			"unit_nav": "单位净值",
+			"accum_nav": "累计净值",
 			"net_asset": "资产净值",
 			"total_netasset": "合计资产净值"
 		},
@@ -282,7 +283,7 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"record_date": "DateTime",
+			"net_ex_date": "DateTime",
 			"div_cash": "每股派息"
 		},
 		"每分钟限速": 60

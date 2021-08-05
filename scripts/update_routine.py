@@ -43,13 +43,14 @@ def daily_routine(config_loc: str):
         jq_data.update_stock_morning_auction_data()
 
     with asd.TDXData() as tdx_data:
-        tdx_data.update_stock_minute()
+        # tdx_data.update_stock_minute()
         tdx_data.update_convertible_bond_minute()
 
     # compute data
     asd.ConstLimitStockFactorCompositor().update()
     asd.NegativeBookEquityListingCompositor().update()
     asd.IndexUpdater().update()
+    asd.MarketSummaryCompositor().update()
 
     # model data
     asd.model.SMBandHMLCompositor().update()
