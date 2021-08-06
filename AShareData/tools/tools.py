@@ -18,7 +18,7 @@ class MajorIndustryConstitutes(object):
     def __init__(self, provider: str, level: int, cap: CompactFactor = None, db_interface: DBInterface = None):
         self.db_interface = db_interface if db_interface else get_db_interface()
         self.calendar = SHSZTradingCalendar(self.db_interface)
-        self.date = self.calendar.yesterday()
+        self.date = self.calendar.today()
         self.data_reader = AShareDataReader(self.db_interface)
         self.industry = self.data_reader.industry(provider=provider, level=level)
         self.cap = cap if cap else self.data_reader.stock_free_floating_market_cap

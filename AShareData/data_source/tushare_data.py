@@ -775,7 +775,7 @@ class TushareData(DataSource):
     def update_index_daily(self):
         table_name = '指数日行情'
         start_date = self.db_interface.get_latest_timestamp(table_name, START_DATE['index_daily'])
-        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, False))
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
         rate = self._factor_param[table_name]['每分钟限速']
         rate_limiter = RateLimiter(rate, period=60)
@@ -904,9 +904,8 @@ class TushareData(DataSource):
         rate = self._factor_param[table_name]['每分钟限速']
 
         start_date = self.db_interface.get_latest_timestamp(table_name, dt.date(1999, 3, 31))
-        start_date = self.calendar.offset(start_date, -5)
         end_date = dt.date.today()
-        dates = self.calendar.select_dates(start_date, end_date)
+        dates = self.calendar.select_dates(start_date, end_date, (False, True))
         with tqdm(dates) as pbar:
             rate_limiter = RateLimiter(rate - 1, period=60)
             for date in dates:
@@ -914,8 +913,11 @@ class TushareData(DataSource):
                     pbar.set_description(f'下载{date}的{table_name}')
                     df = self._pro.fund_div(ex_date=date_utils.date_type2str(date), fields=list(params.keys()))
                     df = df.dropna().drop_duplicates()
+                    shsz_df = df.loc[~df['ts_code'].str.endswith('.OF'), :].copy()
+                    shsz_df.loc[:, 'ts_code'] = shsz_df.loc[:, 'ts_code'].str.replace('SZ|SH', 'OF', regex=True)
+                    df = pd.concat([df, shsz_df])
                     df = self._standardize_df(df, params)
-                    self.db_interface.update_df(df, table_name)
+                    self.db_interface.insert_df(df, table_name)
                     pbar.update()
         logging.getLogger(__name__).info(f'{table_name} 更新完成.')
 

@@ -89,6 +89,12 @@ class DBInterface(object):
     def delete_id_records(self, table_name: str, tickers: str):
         raise NotImplementedError()
 
+    def update_cache_date(self, entry_name: str, date: dt.datetime):
+        raise NotImplementedError()
+
+    def get_cache_date(self, entry_name: str) -> Optional[dt.datetime]:
+        raise NotImplementedError()
+
 
 class MySQLInterface(DBInterface):
     _type_mapper = {
@@ -438,6 +444,20 @@ class MySQLInterface(DBInterface):
             stmt = t.delete().where(t.c.ID.in_(tickers))
         conn = self.engine.connect()
         conn.execute(stmt)
+
+    def update_cache_date(self, entry_name: str, date: dt.datetime):
+        table = self.meta.tables['cache']
+        insert_statement = insert(table).values(ID=entry_name, 更新时间=date)
+        statement = insert_statement.on_duplicate_key_update(ID=entry_name, 更新时间=date)
+        self.engine.execute(statement)
+
+    def get_cache_date(self, entry_name: str) -> Optional[dt.datetime]:
+        table = self.meta.tables['cache']
+        select_stmt = sa.select([table]).where(table.c.ID == entry_name)
+        res = self.engine.execute(select_stmt)
+        if res.rowcount > 0:
+            for _, date in res:
+                return date
 
 
 def compute_diff(input_data: pd.Series, db_data: pd.Series) -> Optional[pd.Series]:
