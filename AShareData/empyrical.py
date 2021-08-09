@@ -1,6 +1,7 @@
 import math
 
 import pandas as pd
+
 from AShareData.date_utils import SHSZTradingCalendar
 
 DAYS_IN_YEAR = 365

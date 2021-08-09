@@ -452,14 +452,24 @@ class WindData(DataSource):
                   '浮动管理费': 'fund_floatingmgntfeeornot', '浮动管理费说明': 'fund_floatingmgntfeedescrip',
                   '托管费率': 'fund_custodianfeeratio', '销售服务费率': 'fund_salefeeratio',
                   }
+        pre_fee_fields = {'前端申购费': 'fund_purchasefee', '最高申购费': 'fund_purchasefeeratio'}
+        after_fee_fields = {'后端申购费': 'fund_purchasefee', '赎回费': 'fund_redemptionfee'}
 
         if len(tickers) > 3000:
             storage = []
+            pre_fee_storage = []
+            after_fee_storage = []
             for it in algo.chunk_list(tickers, 3000):
                 storage.append(self.w.wss(it, ','.join(fields.values())))
+                pre_fee_storage.append(self.w.wss(it, ','.join(pre_fee_fields.values()), 'chargesType=0'))
+                after_fee_storage.append(self.w.wss(it, ','.join(after_fee_fields.values()), 'chargesType=1'))
             data = pd.concat(storage)
+            pre_fee_data = pd.concat(pre_fee_storage)
+            after_fee_data = pd.concat(after_fee_storage)
         else:
             data = self.w.wss(tickers, ','.join(fields.values()))
+            pre_fee_data = self.w.wss(tickers, ','.join(pre_fee_fields.values()), 'chargesType=0')
+            after_fee_data = self.w.wss(tickers, ','.join(after_fee_fields.values()), 'chargesType=1')
         data.columns = list(fields.keys())
         data.index.name = 'ID'
         data['封闭式'] = data['封闭式'].str.contains('封闭式')
@@ -470,6 +480,11 @@ class WindData(DataSource):
         data['债券型'] = data['投资类型'].str.contains('债')
         data['ETF'] = (data['全名'].str.contains('交易型开放式')) & (~data.index.str.endswith('OF'))
         data['封闭运作转LOF时长(月)'] = data['全名'].apply(algo.extract_close_operate_period)
+        pre_fee_data.columns = list(pre_fee_fields.keys())
+        pre_fee_data.index.name = 'ID'
+        after_fee_data.columns = list(after_fee_fields.keys())
+        after_fee_data.index.name = 'ID'
+        data = pd.concat([data, pre_fee_data, after_fee_data], axis=1)
         self.db_interface.insert_df(data, table_name)
 
     def get_fund_time_info(self, tickers: Sequence[str] = None):
