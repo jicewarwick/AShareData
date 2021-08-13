@@ -4,6 +4,7 @@ from itertools import product
 from typing import Dict, List, Sequence, Union
 
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 from singleton_decorator import singleton
 
 from . import date_utils
@@ -51,7 +52,7 @@ class TickersBase(object):
         """ return the list date of a ticker"""
         if isinstance(tickers, str):
             tickers = [tickers]
-        info = self.cache.loc[self.cache.ID.isin(tickers) & self.cache['上市状态'] == 1, ].set_index('ID')
+        info = self.cache.loc[self.cache.ID.isin(tickers) & self.cache['上市状态'] == 1, :].set_index('ID')
         ret = info.DateTime.iloc[0] if info.shape[0] == 1 else info.DateTime
         return ret
 
@@ -206,9 +207,28 @@ class InvestmentStyleFundTicker(DiscreteTickers):
         """
         type_name = '场外基金' if otc else '场内基金'
         super().__init__(type_name, db_interface)
-        fund_info = FundInfo(db_interface)
-        all_tickers = fund_info.data.loc[fund_info.data['投资类型'].isin(investment_type), :]
+        self.fund_info = FundInfo(db_interface)
+        all_tickers = self.fund_info.data.loc[self.fund_info.data['投资类型'].isin(investment_type), :]
         self.cache = self.cache.loc[self.cache.ID.isin(all_tickers.index.tolist()), :]
+
+    def get_next_open_day(self, ids: Union[Sequence[str], str], date: dt.datetime = None):
+        if date is None:
+            date = dt.datetime.combine(dt.date.today(), dt.time())
+        if isinstance(ids, str):
+            ids = [ids]
+        list_date = self.get_list_date(ids)
+        period = self.fund_info.data.loc[ids, '定开时长(月)']
+        df = pd.concat([list_date, period], axis=1)
+        storage = []
+        for ticker, row in df.iterrows():
+            if pd.isna(row['定开时长(月)']):
+                storage.append(pd.NaT)
+                continue
+            open_day = row.DateTime
+            while open_day < date:
+                open_day = open_day + relativedelta(months=row['定开时长(月)'])
+            storage.append(open_day)
+        return pd.Series(storage, index=df.index)
 
 
 class StockFundTickers(InvestmentStyleFundTicker):
