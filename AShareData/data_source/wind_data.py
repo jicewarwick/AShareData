@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 from functools import cached_property
 from typing import Dict, List, Sequence, Union
 
@@ -485,6 +486,7 @@ class WindData(DataSource):
         after_fee_data.columns = list(after_fee_fields.keys())
         after_fee_data.index.name = 'ID'
         data = pd.concat([data, pre_fee_data, after_fee_data], axis=1)
+        data['免赎回费持有期(日)'] = data['赎回费'].apply(self.extract_zero_redemption_fee_holding_period)
         self.db_interface.insert_df(data, table_name)
 
     def get_fund_time_info(self, tickers: Sequence[str] = None):
@@ -674,6 +676,34 @@ class WindData(DataSource):
         data.index.names = ['DateTime', 'ID']
         data.rename(replace_dict, axis=1, inplace=True)
         self.db_interface.insert_df(data, table_name)
+
+    @staticmethod
+    def extract_zero_redemption_fee_holding_period(entry: str) -> int:
+        if not entry:
+            return 0
+
+        def period2days(period: str) -> int:
+            num = int(period[:-1])
+            if period.endswith('年'):
+                num *= 365
+            elif period.endswith('月'):
+                num *= 30
+            elif not period.endswith('日'):
+                raise ValueError(f'{period} is not a valid period')
+            return num
+
+        line = entry.split('\r\n')
+        days_storage = []
+        days_reg = re.compile('\d+[日月年]')
+        for it in line:
+            t = days_reg.search(it)
+            if t is None:
+                continue
+            days_storage.append(period2days(t.group()))
+        if days_storage:
+            return max(days_storage)
+        else:
+            return 0
 
     @classmethod
     def from_config(cls, config_loc: str):
