@@ -1,5 +1,6 @@
 import math
 
+import empyrical
 import pandas as pd
 
 from AShareData.date_utils import SHSZTradingCalendar
@@ -56,3 +57,7 @@ def bond_fund_sharpe_ratio(prices: pd.Series):
     if prices.shape[0] < 20:
         return 0
     return bond_fund_annual_return(prices) / bond_fund_annual_volatility(prices)
+
+
+def max_drawdown(prices: pd.Series) -> float:
+    return empyrical.max_drawdown(prices.pct_change())
