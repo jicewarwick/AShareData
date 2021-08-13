@@ -137,6 +137,11 @@ class MyTestCase(unittest.TestCase):
     def test_diff(self):
         print(self.close.diff().get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids))
 
+    def test_latest_update_factor(self):
+        latest_update_factor = LatestUpdateFactor('场外基金规模', '资产净值', self.db_interface)
+        print(latest_update_factor.get_data(ids=['008864.OF', '000001.OF']))
+        print(latest_update_factor.get_data(ids='008864.OF'))
+
 
 if __name__ == '__main__':
     unittest.main()

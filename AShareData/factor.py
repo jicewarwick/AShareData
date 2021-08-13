@@ -399,6 +399,17 @@ class NonFinancialFactor(Factor):
         raise NotImplementedError()
 
 
+class LatestUpdateFactor(NonFinancialFactor):
+    def __init__(self, table_name: str, factor_name: str = None, db_interface: DBInterface = None):
+        super().__init__(table_name, factor_name, db_interface)
+        self.set_factor_name(f'最新{factor_name}')
+
+    def _get_data(self, ids: Union[Sequence[str], str]) -> pd.DataFrame:
+        data = self.db_interface.read_table(table_name=self.table_name, columns=self._factor_name, ids=ids)
+        latest = data.groupby('ID').tail(1)
+        return latest.reset_index('DateTime').rename({'DateTime': f'最新{self._factor_name}时间'}, axis=1)
+
+
 class CompactFactor(NonFinancialFactor):
     """
     数字变动很不平常的特性, 列如复权因子, 行业, 股本 等.
