@@ -897,6 +897,33 @@ class TushareData(DataSource):
                     pbar.update()
         logging.getLogger(__name__).info(f'{daily_table_name} 更新完成.')
 
+    def update_fund_asset(self, tickers: Sequence[str] = None):
+        if tickers is None:
+            tickers = FundTickers(self.db_interface).all_ticker()
+        tickers = [it for it in tickers if len(it) == 9]
+        asset_table_name = '场外基金份额'
+        share_params = self._factor_param[asset_table_name]['输出参数']
+        rate = self._factor_param[asset_table_name]['每分钟限速'] - 1
+        rate_limiter = RateLimiter(rate, period=60)
+        storage = []
+        with tqdm(tickers) as pbar:
+            for ticker in tickers:
+                with rate_limiter:
+                    pbar.set_description(f'更新 {ticker} 的份额')
+                    storage.append(self._pro.fund_share(ts_code=ticker))
+                    pbar.update()
+        share_data = pd.concat(storage)
+        share_data['fd_share'] = share_data['fd_share'] * 10000
+        ind = share_data['market'] == 'O'
+        share_data.drop(['fund_type', 'market'], axis=1, inplace=True)
+        share_data = self._standardize_df(share_data, share_params)
+        ex_share_data = share_data.loc[~ind, :]
+        ex_to_of_share_data = self.generate_of_data_from_exchange_data(ex_share_data)
+        of_share_data = pd.concat([share_data.loc[ind, :], ex_to_of_share_data])
+
+        self.db_interface.update_df(ex_share_data, '场内基金日行情')
+        self.db_interface.update_df(of_share_data, '场外基金份额')
+
     def update_fund_dividend(self):
         """更新基金分红信息"""
         table_name = '公募基金分红'
@@ -913,11 +940,16 @@ class TushareData(DataSource):
                     pbar.set_description(f'下载{date}的{table_name}')
                     df = self._pro.fund_div(ex_date=date_utils.date_type2str(date), fields=list(params.keys()))
                     df = df.dropna().drop_duplicates()
-                    shsz_df = df.loc[~df['ts_code'].str.endswith('.OF'), :].copy()
-                    shsz_df.loc[:, 'ts_code'] = shsz_df.loc[:, 'ts_code'].str.replace('SZ|SH', 'OF', regex=True)
-                    df = pd.concat([df, shsz_df])
-                    df = self._standardize_df(df, params)
-                    self.db_interface.insert_df(df, table_name)
+
+                    shsz_part = df.loc[~df['ts_code'].str.endswith('.OF'), ['ts_code', 'ex_date', 'div_cash']].copy()
+                    shsz_part = self._standardize_df(shsz_part, params)
+
+                    of_part = df.loc[:, ['ts_code', 'net_ex_date', 'div_cash']].copy()
+                    of_part['ts_code'] = of_part['ts_code'].str.replace('SZ|SH', 'OF', regex=True)
+                    of_part = self._standardize_df(of_part, params)
+
+                    data = pd.concat([of_part, shsz_part])
+                    self.db_interface.update_df(data, table_name)
                     pbar.update()
         logging.getLogger(__name__).info(f'{table_name} 更新完成.')
 
@@ -1093,3 +1125,11 @@ class TushareData(DataSource):
     @staticmethod
     def filter_valid_cn_equity_ticker(tickers: Sequence[str]) -> List[bool]:
         return [len(ticker) == 9 for ticker in tickers]
+
+    @staticmethod
+    def generate_of_data_from_exchange_data(exchange_data: Union[pd.Series, pd.DataFrame]):
+        new_id = exchange_data.index.get_level_values('ID').str.replace('SH|SZ', 'OF', regex=True)
+        new_index = pd.MultiIndex.from_arrays([exchange_data.index.get_level_values('DateTime'), new_id.values],
+                                              names=['DateTime', 'ID'])
+        exchange_data.index = new_index
+        return exchange_data

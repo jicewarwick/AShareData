@@ -272,7 +272,8 @@
 			"ts_code": "ID",
 			"trade_date": "DateTime",
 			"fd_share": "基金份额"
-		}
+		},
+		"每分钟限速": 400
 	},
 	"公募基金分红": {
 		"输入参数": {
@@ -284,6 +285,7 @@
 		"输出参数": {
 			"ts_code": "ID",
 			"net_ex_date": "DateTime",
+			"ex_date": "DateTime",
 			"div_cash": "每股派息"
 		},
 		"每分钟限速": 60
