@@ -479,7 +479,8 @@ class WindData(DataSource):
         data['浮动管理费'] = (data['浮动管理费'] == '是')
         data['定开'] = (data['定开'] == '是')
         data['债券型'] = data['投资类型'].str.contains('债')
-        data['ETF'] = (data['全名'].str.contains('交易型开放式')) & (~data.index.str.endswith('OF'))
+        data['ETF'] = (data['全名'].str.contains('交易型开放式')) & (~data.index.str.endswith('OF')) & (
+            ~data['全名'].str.contains('联接基金').fillna(False))
         data['封闭运作转LOF时长(月)'] = data['全名'].apply(algo.extract_close_operate_period)
         pre_fee_data.columns = list(pre_fee_fields.keys())
         pre_fee_data.index.name = 'ID'
