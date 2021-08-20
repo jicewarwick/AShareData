@@ -81,5 +81,9 @@
 		"NAV": "单位净值",
 		"UNIT_TOTAL": "基金份额",
 		"NAV_ADJ": "复权因子"
+	},
+	"股票ETF信息": {
+		"FUND_TRACKINDEXCODE": "跟踪指数",
+		"FUND_ETF_FEEDERCODE": "联接基金"
 	}
 }

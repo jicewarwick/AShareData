@@ -11,8 +11,8 @@ from tqdm import tqdm
 from .data_source import DataSource
 from .. import algo, config, constants, date_utils, utils
 from ..database_interface import DBInterface
-from ..tickers import ConvertibleBondTickers, ETFOptionTickers, FutureTickers, IndexOptionTickers, \
-    StockTickers
+from ..tickers import ConvertibleBondTickers, ETFOptionTickers, ExchangeStockETFTickers, FutureTickers, \
+    IndexOptionTickers, StockTickers
 
 
 class WindWrapper(object):
@@ -527,6 +527,32 @@ class WindData(DataSource):
         list_time_info['证券类型'] = ['场外基金' if it.endswith('.OF') else '场内基金' for it in list_time_info.ID.tolist()]
         list_time_info.set_index(['DateTime', 'ID'], inplace=True)
         self.db_interface.update_df(list_time_info, '证券代码')
+
+    def get_etf_info(self, ticker: Union[str, Sequence[str]] = None):
+        if ticker is None:
+            ticker = ExchangeStockETFTickers(self.db_interface).all_ticker()
+
+        table_name = '股票ETF信息'
+        df = self.w.wss(ticker, 'fund_trackindexcode,fund_etf_feedercode')
+        df.rename(self._factor_param[table_name], axis=1, inplace=True)
+        df.index.name = 'ID'
+        self.db_interface.insert_df(df, table_name)
+
+    def update_etf_benchmark(self):
+        table_name = '股票ETF跟踪指数行情'
+        start_date = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2004, 11, 29))
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
+        etf_tickers = ExchangeStockETFTickers(self.db_interface)
+        benchmark_ticker_df = self.db_interface.read_table('股票ETF信息', '跟踪指数')
+
+        with tqdm(dates) as pbar:
+            for date in dates:
+                benchmark_ticker = benchmark_ticker_df.loc[etf_tickers.ticker(date)].dropna().unique().tolist()
+                if benchmark_ticker:
+                    df = self.w.wss(benchmark_ticker, 'close', date=date)
+                    df.columns = ['收盘点位']
+                    self.db_interface.insert_df(df, table_name)
+                pbar.update()
 
     #######################################
     # option funcs

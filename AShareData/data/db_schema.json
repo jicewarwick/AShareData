@@ -841,5 +841,15 @@
 		"自由流通市值": "double",
 		"市盈率TTM": "float",
 		"市净率": "float"
+	},
+	"股票ETF信息": {
+		"ID": "varchar",
+		"跟踪指数": "varchar",
+		"联接基金": "str"
+	},
+	"股票ETF跟踪指数行情": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"收盘点位": "float"
 	}
 }
