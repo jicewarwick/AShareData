@@ -27,8 +27,9 @@ class MyTestCase(unittest.TestCase):
         print(self.db.stocks)
 
     def test_get_sec_name(self):
-        start_date = dt.date(2018, 5, 10)
+        start_date = dt.datetime(2018, 5, 10)
         print(self.db.sec_name.get_data(dates=start_date))
+        print(self.db.latest_sec_name.get_data(ids=self.ids))
 
     def test_industry(self):
         start_date = dt.date(2018, 5, 10)

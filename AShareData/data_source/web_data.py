@@ -1,5 +1,7 @@
 import datetime as dt
+import json
 import logging
+import re
 from io import StringIO
 from typing import Sequence, Union
 
@@ -11,7 +13,7 @@ from .data_source import DataSource
 from .. import date_utils, utils
 from ..config import get_db_interface
 from ..database_interface import DBInterface
-from ..tickers import StockTickers
+from ..tickers import StockTickers, TickerTranslator
 
 
 class WebDataCrawler(DataSource):
@@ -103,3 +105,46 @@ def get_current_cffex_contracts(products: Union[str, Sequence[str]]):
         products = [products]
     ret = [it for it in tickers if it[:2] in products]
     return ret
+
+
+class EastMoneyCrawler(DataSource):
+    def __init__(self, db_interface: DBInterface = None, db_schema_loc: str = None) -> None:
+        if db_interface is None:
+            db_interface = get_db_interface()
+        super().__init__(db_interface)
+        self._db_parameters = utils.load_param('db_schema.json', db_schema_loc)
+        self.url_template = 'http://fund.eastmoney.com/Data/funddataIndex_Interface.aspx?dt=9&page={page}&rank=FSRQ&sort=desc&gs=&ftype=&year={year}'
+        self.default_start_year = dt.datetime(2015, 1, 1)
+        self.table_name = '公募基金拆分'
+        self.ticker_translator = TickerTranslator(self.db_interface)
+
+    def update_open_fund_split(self):
+        latest_ts = self.db_interface.get_latest_timestamp(self.table_name, self.default_start_year)
+        storage = []
+        for year in range(latest_ts.year, dt.datetime.now().year + 1):
+            total_page, res = self._get_url_content(year, 1)
+            storage.append(res)
+
+            for page in range(2, total_page + 1):
+                _, res = self._get_url_content(year, page)
+                storage.append(res)
+
+        of_data = pd.concat(storage).loc[:, ['DateTime', 'ID', '拆分比例']]
+        of_data.ID = [f'{it}.OF' for it in of_data.ID.tolist()]
+        of_data = of_data.loc[~(of_data['拆分比例'] == '暂未披露'), :]
+
+        exchange_data = of_data.copy()
+        exchange_data.ID = [self.ticker_translator.of_ticker_to_exchange_ticker(it) for it in exchange_data.ID]
+        exchange_data = exchange_data.dropna()
+
+        df = pd.concat([of_data, exchange_data]).set_index(['DateTime', 'ID'])
+        self.db_interface.update_df(df, self.table_name)
+
+    def _get_url_content(self, year: int, page: int):
+        url = self.url_template.format(page=page, year=year)
+        rsp = requests.get(url)
+        values = re.findall(r'var.*?=\s*(.*?);', rsp.text, re.DOTALL | re.MULTILINE)
+        total_page = json.loads(values[0])[0]
+        j = json.loads(values[1])
+        res = pd.DataFrame(j, columns=['ID', 'name', 'DateTime', 'content', '拆分比例', 'can_buy'])
+        return total_page, res

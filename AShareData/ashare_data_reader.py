@@ -6,7 +6,8 @@ from . import date_utils
 from .config import generate_db_interface_from_config, get_db_interface
 from .database_interface import DBInterface
 from .factor import BetaFactor, BinaryFactor, CompactFactor, ContinuousFactor, FactorBase, IndexConstitute, \
-    IndustryFactor, InterestRateFactor, LatestAccountingFactor, OnTheRecordFactor, TTMAccountingFactor, UnaryFactor
+    IndustryFactor, InterestRateFactor, LatestAccountingFactor, LatestUpdateFactor, OnTheRecordFactor, \
+    TTMAccountingFactor, UnaryFactor
 from .tickers import StockTickers
 
 
@@ -30,6 +31,11 @@ class AShareDataReader(object):
     def sec_name(self) -> CompactFactor:
         """证券名称"""
         return CompactFactor('证券名称', self.db_interface)
+
+    @cached_property
+    def latest_sec_name(self) -> LatestUpdateFactor:
+        """证券名称"""
+        return LatestUpdateFactor('证券名称', '证券名称', self.db_interface)
 
     @cached_property
     def adj_factor(self) -> CompactFactor:
@@ -228,14 +234,24 @@ class AShareDataReader(object):
         return ContinuousFactor('期货日行情', '收盘价', self.db_interface)
 
     @cached_property
-    def fund_nav(self) -> ContinuousFactor:
+    def otc_fund_nav(self) -> ContinuousFactor:
         """场外基金单位净值"""
         return ContinuousFactor('场外基金净值', '单位净值', self.db_interface)
 
     @cached_property
-    def hfq_fund_nav(self) -> BinaryFactor:
+    def hfq_otc_fund_nav(self) -> BinaryFactor:
         """场外基金后复权净值"""
-        return (self.fund_nav * self.adj_factor).set_factor_name('基金后复权净值')
+        return (self.otc_fund_nav * self.adj_factor).set_factor_name('基金后复权净值')
+
+    @cached_property
+    def exchange_fund_nav(self) -> ContinuousFactor:
+        """场内基金单位净值"""
+        return ContinuousFactor('场内基金日行情', '单位净值', self.db_interface)
+
+    @cached_property
+    def hfq_exchange_fund_nav(self) -> BinaryFactor:
+        """场内基金后复权净值"""
+        return (self.exchange_fund_nav * self.adj_factor).set_factor_name('基金后复权净值')
 
     @cached_property
     def overnight_shibor(self) -> InterestRateFactor:

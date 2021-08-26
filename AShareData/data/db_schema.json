@@ -738,6 +738,11 @@
 		"ID": "varchar",
 		"每股派息": "float"
 	},
+	"公募基金拆分": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"拆分比例": "float"
+	},
 	"公募基金持仓": {
 		"DateTime": "date",
 		"ID": "varchar",

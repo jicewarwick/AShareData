@@ -158,31 +158,39 @@ class FundAdjFactorCompositor(FactorCompositor):
         self.cache_entry = '基金复权因子'
 
     def compute_adj_factor(self, ticker):
+        self.db_interface.delete_id_records(self.target_table_name, ticker)
         list_date = self.fund_tickers.get_list_date(ticker)
         index = pd.MultiIndex.from_tuples([(list_date, ticker)], names=('DateTime', 'ID'))
         list_date_adj_factor = pd.Series(1, index=index, name=self.target_table_name)
-        self.db_interface.update_df(list_date_adj_factor, self.target_table_name)
+        self.db_interface.insert_df(list_date_adj_factor, self.target_table_name)
 
         div_info = self.db_interface.read_table(self.div_table_name, ids=ticker)
         if div_info.empty:
-            return
-        div_dates = div_info.index.get_level_values('DateTime').tolist()
-        pre_date = [self.calendar.offset(it, -1) for it in div_dates]
+            adj_factor = None
+        else:
+            div_dates = div_info.index.get_level_values('DateTime').tolist()
+            pre_date = [self.calendar.offset(it, -1) for it in div_dates]
 
-        if ticker.endswith('.OF'):
-            price_table_name, col_name = '场外基金净值', '单位净值'
-        else:
-            price_table_name, col_name = '场内基金日行情', '收盘价'
-        pre_price_data = self.db_interface.read_table(price_table_name, col_name, dates=pre_date, ids=ticker)
-        if pre_price_data.shape[0] != div_info.shape[0]:
-            price_data = self.db_interface.read_table(price_table_name, col_name, ids=ticker)
-            tmp = pd.concat([price_data.shift(1), div_info], axis=1)
-            pre_price_data = tmp.dropna().iloc[:, 0]
-        else:
-            pre_price_data.index = div_info.index
-        adj_factor = (pre_price_data / (pre_price_data - div_info)).cumprod()
+            if ticker.endswith('.OF'):
+                price_table_name, col_name = '场外基金净值', '单位净值'
+            else:
+                price_table_name, col_name = '场内基金日行情', '收盘价'
+            pre_price_data = self.db_interface.read_table(price_table_name, col_name, dates=pre_date, ids=ticker)
+            if pre_price_data.shape[0] != div_info.shape[0]:
+                price_data = self.db_interface.read_table(price_table_name, col_name, ids=ticker)
+                tmp = pd.concat([price_data.shift(1), div_info], axis=1)
+                pre_price_data = tmp.dropna().iloc[:, 0]
+            else:
+                pre_price_data.index = div_info.index
+            adj_factor = (pre_price_data / (pre_price_data - div_info))
+
+        split_adj_factor = self.db_interface.read_table('公募基金拆分', ids=ticker)
+        split_adj_factor = split_adj_factor.loc[split_adj_factor.index.get_level_values('DateTime') > list_date, :]
+        if ~split_adj_factor.empty:
+            adj_factor = pd.concat([adj_factor, split_adj_factor]).sort_index()
+        adj_factor = adj_factor.cumprod()
         adj_factor.name = self.target_table_name
-        self.db_interface.update_df(adj_factor, self.target_table_name)
+        self.db_interface.insert_df(adj_factor, self.target_table_name)
 
     def update(self):
         update_time = self.db_interface.get_cache_date(self.cache_entry)
@@ -192,6 +200,8 @@ class FundAdjFactorCompositor(FactorCompositor):
             next_day = self.calendar.offset(update_time, 1)
             fund_div_table = self.db_interface.read_table(self.div_table_name, start_date=next_day)
             tickers = fund_div_table.index.get_level_values('ID').unique().tolist()
+            fund_split_table = self.db_interface.read_table('公募基金拆分', start_date=next_day)
+            tickers.extend(fund_split_table.index.get_level_values('ID').unique().tolist())
         with tqdm(tickers) as pbar:
             for ticker in tickers:
                 pbar.set_description(f'更新 {ticker} 的复权因子')

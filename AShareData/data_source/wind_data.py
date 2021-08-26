@@ -491,7 +491,7 @@ class WindData(DataSource):
         self.db_interface.insert_df(data, table_name)
 
     def get_fund_time_info(self, tickers: Sequence[str] = None):
-        init = True if tickers is None else False
+        init = tickers is None
         if tickers is None:
             tickers = self.db_interface.get_all_id('基金列表')
 
@@ -517,9 +517,14 @@ class WindData(DataSource):
         data.index.name = 'ID'
         data.loc[data['上市日期'] == dt.datetime(1899, 12, 30), '上市日期'] = pd.NaT
         data.loc[data['退市日期'] == dt.datetime(1899, 12, 30), '退市日期'] = pd.NaT
-        if not init:
+        if init:
             self.db_interface.delete_id_records('基金时间表', data.index.tolist())
         self.db_interface.insert_df(data, '基金时间表')
+
+        # 将转型基金的成立日期改为转型前的成立日期
+        true_ticker = data.index.str.replace('!1', '')
+        list_date = data.groupby(true_ticker)['上市日期'].min()
+        data['上市日期'].update(list_date)
 
         list_time_info = data.stack().reset_index()
         list_time_info.columns = ['ID', '上市状态', 'DateTime']

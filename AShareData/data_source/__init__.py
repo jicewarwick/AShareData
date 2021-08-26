@@ -5,7 +5,7 @@ from .data_source import DataSource
 from .jq_data import JQData
 from .tdx_data import TDXData
 from .tushare_data import TushareData
-from .web_data import WebDataCrawler
+from .web_data import EastMoneyCrawler, WebDataCrawler
 
 if importlib.util.find_spec('WindPy'):
     from .wind_data import WindData

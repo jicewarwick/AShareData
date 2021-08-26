@@ -42,15 +42,19 @@ def daily_routine(config_loc: str):
     with asd.JQData() as jq_data:
         jq_data.update_stock_morning_auction_data()
 
-    with asd.TDXData() as tdx_data:
-        # tdx_data.update_stock_minute()
-        tdx_data.update_convertible_bond_minute()
+    # with asd.TDXData() as tdx_data:
+    #     tdx_data.update_stock_minute()
+    #     tdx_data.update_convertible_bond_minute()
+
+    with asd.EastMoneyCrawler() as fund_split_crawler:
+        fund_split_crawler.update_open_fund_split()
 
     # compute data
     asd.ConstLimitStockFactorCompositor().update()
     asd.NegativeBookEquityListingCompositor().update()
     asd.IndexUpdater().update()
     asd.MarketSummaryCompositor().update()
+    asd.FundAdjFactorCompositor().update()
 
     # model data
     asd.model.SMBandHMLCompositor().update()

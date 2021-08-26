@@ -474,7 +474,8 @@ def clean_compact_table(table_name: str, db_interface: DBInterface):
     data = db_interface.read_table(table_name)
     storage = []
     for _, group in data.groupby('ID'):
-        storage.append(group.loc[group != group.shift()])
+        simplified = group.loc[np.any(group != group.shift(), axis=1), :]
+        storage.append(simplified)
     new_data = pd.concat(storage)
     db_interface.purge_table(table_name)
     db_interface.insert_df(new_data, table_name)
