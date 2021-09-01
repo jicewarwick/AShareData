@@ -17,6 +17,7 @@ from tqdm import tqdm
 from .data_source import DataSource
 from .. import config, constants, date_utils, utils
 from ..database_interface import DBInterface
+from ..ticker_utils import FutureTickerFormatter
 from ..tickers import FundTickers, FundWithStocksTickers, StockFundTickers, StockTickers
 
 START_DATE = {
@@ -1077,7 +1078,7 @@ class TushareData(DataSource):
     def _format_ticker(ticker: str) -> str:
         ticker = ticker.replace('.CFX', '.CFE').replace('.ZCE', '.CZC')
         if ticker.endswith('.CZC') and len(ticker) <= 10:
-            ticker = utils.format_czc_ticker(ticker)
+            ticker = FutureTickerFormatter().format_czc_ticker(ticker)
         return ticker
 
     @classmethod

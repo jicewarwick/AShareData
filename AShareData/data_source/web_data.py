@@ -13,7 +13,8 @@ from .data_source import DataSource
 from .. import date_utils, utils
 from ..config import get_db_interface
 from ..database_interface import DBInterface
-from ..tickers import StockTickers, TickerTranslator
+from ..ticker_utils import FundTickerFormatter, StockTickerFormatter
+from ..tickers import StockTickers
 
 
 class WebDataCrawler(DataSource):
@@ -53,7 +54,7 @@ class WebDataCrawler(DataSource):
             return ret
 
         raw_data['DateTime'] = raw_data['起始日期'].map(convert_dt)
-        raw_data['ID'] = raw_data['股票代码'].map(stock_code2ts_code)
+        raw_data['ID'] = raw_data['股票代码'].map(StockTickerFormatter().stock_num2ticker)
 
         raw_data.set_index(['DateTime', 'ID'], inplace=True)
         self.db_interface.update_df(raw_data[['行业名称']], '申万一级行业')
@@ -76,21 +77,12 @@ class WebDataCrawler(DataSource):
                 storage.append(res_table)
                 pbar.update(1)
         data = pd.concat(storage)
-        data['股票代码'] = data['股票代码'].map(stock_code2ts_code)
+        data['股票代码'] = data['股票代码'].map(StockTickerFormatter().stock_num2ticker)
         data['trade_date'] = date
         useful_data = data[['trade_date', '股票代码', '所属中证行业四级名称']]
         useful_data.columns = ['DateTime', 'ID', '行业名称']
         useful_data.set_index(['DateTime', 'ID'], inplace=True)
         self.db_interface.update_df(useful_data, '中证行业')
-
-
-def stock_code2ts_code(stock_code: Union[int, str]) -> str:
-    stock_code = int(stock_code)
-    return f'{stock_code:06}.SH' if stock_code >= 600000 else f'{stock_code:06}.SZ'
-
-
-def ts_code2stock_code(ts_code: str) -> str:
-    return ts_code.split()[0]
 
 
 def get_current_cffex_contracts(products: Union[str, Sequence[str]]):
@@ -113,10 +105,11 @@ class EastMoneyCrawler(DataSource):
             db_interface = get_db_interface()
         super().__init__(db_interface)
         self._db_parameters = utils.load_param('db_schema.json', db_schema_loc)
+        # referer page: http://fund.eastmoney.com/data/fundchaifen.html#FSRQ,desc,40,,,
         self.url_template = 'http://fund.eastmoney.com/Data/funddataIndex_Interface.aspx?dt=9&page={page}&rank=FSRQ&sort=desc&gs=&ftype=&year={year}'
         self.default_start_year = dt.datetime(2015, 1, 1)
         self.table_name = '公募基金拆分'
-        self.ticker_translator = TickerTranslator(self.db_interface)
+        self.ticker_translator = FundTickerFormatter(self.db_interface)
 
     def update_open_fund_split(self):
         latest_ts = self.db_interface.get_latest_timestamp(self.table_name, self.default_start_year)

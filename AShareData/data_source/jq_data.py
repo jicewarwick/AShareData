@@ -9,6 +9,7 @@ from tqdm import tqdm
 from .data_source import DataSource, MinutesDataFunctionMixin
 from .. import config, date_utils, utils
 from ..database_interface import DBInterface
+from ..ticker_utils import FutureTickerFormatter
 from ..tickers import ETFOptionTickers, FutureTickers, IndexOptionTickers, StockTickers
 
 with utils.NullPrinter():
@@ -276,7 +277,7 @@ class JQData(DataSource, MinutesDataFunctionMixin):
             ticker = ticker.replace('.XINE', '.INE')
             ticker = ticker.replace('.CCFX', '.CFE')
             if ticker.endswith('.CZC'):
-                ticker = utils.format_czc_ticker(ticker)
+                ticker = FutureTickerFormatter().format_czc_ticker(ticker)
             return ticker
 
     @staticmethod
@@ -287,7 +288,7 @@ class JQData(DataSource, MinutesDataFunctionMixin):
             ticker = ticker.replace('.INE', '.XINE')
             ticker = ticker.replace('.SH', '.XSHG').replace('.SZ', '.XSHE')
             if ticker.endswith('.XZCE') and len(ticker) <= 11:
-                ticker = utils.full_czc_ticker(ticker)
+                ticker = FutureTickerFormatter().full_czc_ticker(ticker)
             return ticker
 
     @classmethod

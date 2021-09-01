@@ -1,6 +1,7 @@
 import unittest
+
 from AShareData.algo import *
-from AShareData.utils import *
+from AShareData.ticker_utils import get_stock_board_name
 
 
 class MyTestCase(unittest.TestCase):

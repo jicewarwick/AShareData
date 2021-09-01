@@ -4,7 +4,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from importlib.resources import open_text, read_binary
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 
@@ -49,70 +49,6 @@ def load_excel(default_loc: str, param_json_loc: str = None) -> List[Dict[str, A
     for col in df.columns:
         df[col] = df[col].where(df[col].notnull(), other=None)
     return df.to_dict('records')
-
-
-def format_stock_ticker(ticker: Union[str, int]) -> str:
-    if isinstance(ticker, str):
-        ticker = int(ticker)
-    if ticker < 600000:
-        return f'{ticker:06d}.SZ'
-    else:
-        return f'{ticker:06d}.SH'
-
-
-def format_czc_ticker(ticker: str) -> str:
-    c = ticker[1] if ticker[1].isnumeric() else ticker[2]
-    ticker = ticker.replace(c, '', 1)
-    return ticker
-
-
-def full_czc_ticker(ticker: str) -> str:
-    c = 1 if ticker[1].isnumeric() else 2
-    ticker = ticker[:c] + '2' + ticker[c:]
-    return ticker
-
-
-def split_hs_ticker(ticker: str) -> Optional[Tuple[int, str]]:
-    try:
-        ticker_num, market = ticker.split('.')
-    except (ValueError, AttributeError):
-        return None
-    if market not in ['SH', 'SZ']:
-        return None
-    try:
-        ticker_num = int(ticker_num)
-    except ValueError:
-        return None
-    return ticker_num, market
-
-
-def is_main_board_stock(ticker: str) -> bool:
-    """判断是否为沪深主板股票
-
-    :param ticker: 股票代码, 如 `000001.SZ`
-    """
-    return get_stock_board_name(ticker) == '主板'
-
-
-def get_stock_board_name(ticker: str) -> str:
-    """获取股票所在版块(主板, 中小板, 创业板, 科创板), 其他返回 `非股票`
-
-        :param ticker: 股票代码, 如 `000001.SZ`
-    """
-    ret = split_hs_ticker(ticker)
-    if ret is None:
-        return '非股票'
-    ticker_num, market = ret
-    if (0 < ticker_num < 2000 and market == 'SZ') or (600000 <= ticker_num < 606000 and market == 'SH'):
-        return '主板'
-    elif 2000 < ticker_num < 4000 and market == 'SZ':
-        return '中小板'
-    elif 300000 < ticker_num < 301000 and market == 'SZ':
-        return '创业板'
-    elif 688000 < ticker_num < 690000 and market == 'SH':
-        return '科创板'
-    else:
-        return '非股票'
 
 
 class SecuritySelectionPolicy:

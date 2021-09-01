@@ -519,7 +519,7 @@ class WindData(DataSource):
         data.loc[data['退市日期'] == dt.datetime(1899, 12, 30), '退市日期'] = pd.NaT
         if init:
             self.db_interface.delete_id_records('基金时间表', data.index.tolist())
-        self.db_interface.insert_df(data, '基金时间表')
+        self.db_interface.update_df(data, '基金时间表')
 
         # 将转型基金的成立日期改为转型前的成立日期
         true_ticker = data.index.str.replace('!1', '')

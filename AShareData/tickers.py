@@ -375,31 +375,3 @@ class StockTickerSelector(TickerSelector):
             ids = self.ticker(date)
             storage.extend(list(product([date], ids)))
         return pd.MultiIndex.from_tuples(storage, names=['DateTime', 'ID'])
-
-
-class TickerTranslator(object):
-    exchange_fund_code_cache = {}
-
-    def __init__(self, db_interface: DBInterface = None):
-        if db_interface is None:
-            db_interface = get_db_interface()
-        self.db_interface = db_interface
-
-    @staticmethod
-    def exchange_ticker_to_of_ticker(ticker: str) -> str:
-        if not (ticker.endswith('.SH') | ticker.endswith('SZ')):
-            raise ValueError(f'Invalid exchange ticker: {ticker}')
-        return ticker[:-3] + '.OF'
-
-    def of_ticker_to_exchange_ticker(self, ticker: str):
-        if not ticker.endswith('.OF'):
-            raise ValueError(f'Invalid OTC fund ticker: {ticker}')
-        self._init_exchange_code_cache()
-        return self.exchange_fund_code_cache.get(ticker, None)
-
-    def _init_exchange_code_cache(self):
-        if len(self.exchange_fund_code_cache) == 0:
-            ids = self.db_interface.get_all_id('基金列表')
-            for ticker in ids:
-                if not ticker.endswith('OF'):
-                    self.exchange_fund_code_cache[ticker[:6] + '.OF'] = ticker

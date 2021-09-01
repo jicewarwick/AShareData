@@ -2,10 +2,10 @@ import datetime as dt
 
 import pandas as pd
 
-from .. import utils
 from ..ashare_data_reader import AShareDataReader
 from ..config import get_db_interface
 from ..database_interface import DBInterface
+from ..ticker_utils import StockTickerFormatter
 
 
 class IndustryComparison(object):
@@ -51,7 +51,7 @@ class IndustryComparison(object):
     @staticmethod
     def import_holding(holding_loc, date: dt.datetime):
         holding = pd.read_excel(holding_loc).rename({'证券代码': 'ID', '数量': 'quantity'}, axis=1)
-        holding['ID'] = holding.ID.apply(utils.format_stock_ticker)
+        holding['ID'] = holding.ID.apply(StockTickerFormatter().stock_num2ticker)
         holding['DateTime'] = date
         holding.set_index(['DateTime', 'ID'], inplace=True)
         return holding
