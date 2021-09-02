@@ -33,8 +33,8 @@ class UMDCompositor(ModelFactorCompositor):
         self.start_date = dt.datetime(2007, 1, 4)
         self.ticker_selector = StockTickerSelector(model.stock_selection_policy, self.db_interface)
 
-        self.cap = self.data_reader.stock_free_floating_market_cap
-        self.returns = self.data_reader.stock_return
+        self.cap = self.data_reader.free_floating_market_cap
+        self.returns = self.data_reader.returns
 
     def compute_factor_return(self, balance_date: dt.datetime, pre_date: dt.datetime, date: dt.datetime,
                               rebalance_marker: str, period_marker: str) -> pd.Series:

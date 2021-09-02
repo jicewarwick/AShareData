@@ -42,7 +42,7 @@ class FactorPortfolio(FactorCompositor):
         self.policy = factor_portfolio_policy
         self.stock_ticker_selector = StockTickerSelector(factor_portfolio_policy.stock_selection_policy, db_interface)
         self.factor_name = self.policy.factor.name
-        self.ret_name = self.data_reader.stock_return.name
+        self.ret_name = self.data_reader.returns.name
         self.industry_category = self.policy.industry.name
         self.cap_name = self.policy.weight.name
 
@@ -60,7 +60,7 @@ class FactorPortfolio(FactorCompositor):
                 pre_date = self.calendar.offset(date, -1)
                 ids = self.stock_ticker_selector.ticker(date)
 
-                pct_return = self.data_reader.stock_return.get_data(start_date=pre_date, end_date=date, ids=ids)
+                pct_return = self.data_reader.returns.get_data(start_date=pre_date, end_date=date, ids=ids)
                 factor_date = pre_date if self.policy.factor_need_shift else date
                 factor_data = self.policy.factor.get_data(dates=factor_date)
                 industry = self.policy.industry.get_data(dates=date)

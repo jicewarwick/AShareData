@@ -30,7 +30,7 @@ if __name__ == '__main__':
     print('股指贴水情况:')
     print(asd.StockIndexFutureBasis().compute())
 
-    data_reader = asd.AShareDataReader()
+    data_reader = asd.StockDataReader()
     model_factor_ret = data_reader.model_factor_return.bind_params(ids=['FF3_SMB_DD', 'FF3_HML_DD', 'Carhart_UMD_DD'])
     date = dt.datetime.combine(dt.date.today(), dt.time())
     print('')

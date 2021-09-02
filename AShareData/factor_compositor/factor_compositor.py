@@ -5,7 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from .. import utils
-from ..ashare_data_reader import AShareDataReader
+from ..ashare_data_reader import StockDataReader
 from ..data_source.data_source import DataSource
 from ..database_interface import DBInterface
 from ..factor import CompactFactor
@@ -22,7 +22,7 @@ class FactorCompositor(DataSource):
         :param db_interface: DBInterface
         """
         super().__init__(db_interface)
-        self.data_reader = AShareDataReader(db_interface)
+        self.data_reader = StockDataReader(db_interface)
 
     def update(self):
         """更新数据"""
@@ -38,7 +38,7 @@ class IndexCompositor(FactorCompositor):
         self.weight = None
         if index_composition_policy.unit_base:
             self.weight = (CompactFactor(index_composition_policy.unit_base, self.db_interface)
-                           * self.data_reader.stock_close).weight()
+                           * self.data_reader.close).weight()
         self.stock_ticker_selector = StockTickerSelector(self.policy.stock_selection_policy, self.db_interface)
 
     def update(self):
@@ -60,7 +60,7 @@ class IndexCompositor(FactorCompositor):
                     if self.weight:
                         rets = (self.data_reader.forward_return * self.weight).sum().get_data(dates=t_dates, ids=ids)
                     else:
-                        rets = self.data_reader.stock_return.mean(along='DateTime').get_data(dates=t_dates, ids=ids)
+                        rets = self.data_reader.returns.mean(along='DateTime').get_data(dates=t_dates, ids=ids)
                     index = pd.MultiIndex.from_tuples([(date, self.policy.ticker)], names=['DateTime', 'ID'])
                     ret = pd.Series(rets.values[0], index=index, name='收益率')
 

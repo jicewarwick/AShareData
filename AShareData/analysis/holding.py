@@ -2,7 +2,7 @@ import datetime as dt
 
 import pandas as pd
 
-from ..ashare_data_reader import AShareDataReader
+from ..ashare_data_reader import IndexDataReader, StockDataReader
 from ..config import get_db_interface
 from ..database_interface import DBInterface
 from ..ticker_utils import StockTickerFormatter
@@ -11,8 +11,9 @@ from ..ticker_utils import StockTickerFormatter
 class IndustryComparison(object):
     def __init__(self, index: str, industry_provider: str, industry_level: int, db_interface: DBInterface = None):
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.data_reader = AShareDataReader(self.db_interface)
-        self.industry_info = self.data_reader.industry(industry_provider, industry_level)
+        self.stock_data_reader = StockDataReader(self.db_interface)
+        self.index_data_reader = IndexDataReader(self.db_interface)
+        self.industry_info = self.stock_data_reader.industry(industry_provider, industry_level)
         self.index = index
 
     def holding_comparison(self, holding: pd.Series):
@@ -23,7 +24,7 @@ class IndustryComparison(object):
         date = holding_ratio.index.get_level_values('DateTime').unique()[0]
 
         industry_info = self.industry_info.get_data(dates=date)
-        index_comp = self.data_reader.index_constitute.get_data(index_ticker=self.index, date=date)
+        index_comp = self.index_data_reader.constitute.get_data(index_ticker=self.index, date=date)
 
         holding_industry = self._industry_ratio(holding_ratio, industry_info) * 100
         index_industry = self._industry_ratio(index_comp, industry_info)
@@ -35,7 +36,7 @@ class IndustryComparison(object):
     def portfolio_weight(self, holding: pd.Series):
         date = holding.index.get_level_values('DateTime').unique()[0]
 
-        price_info = self.data_reader.stock_close.get_data(dates=date)
+        price_info = self.stock_data_reader.close.get_data(dates=date)
         price_info.name = 'close'
         tmp = pd.concat([holding, price_info], axis=1).dropna()
         cap = tmp['quantity'] * tmp['close']
@@ -60,7 +61,7 @@ class IndustryComparison(object):
 class FundHolding(object):
     def __init__(self, db_interface: DBInterface = None):
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.data_reader = AShareDataReader(self.db_interface)
+        self.data_reader = StockDataReader(self.db_interface)
 
     def get_holding(self, date: dt.datetime, fund: str = None) -> pd.DataFrame:
         sql = None
@@ -75,7 +76,7 @@ class FundHolding(object):
     def portfolio_stock_weight(self, date: dt.datetime, fund: str = None):
         holding = self.get_holding(date, fund)
 
-        price_info = self.data_reader.stock_close.get_data(dates=date)
+        price_info = self.data_reader.close.get_data(dates=date)
         price_info.name = 'close'
         tmp = pd.concat([holding, price_info], axis=1).dropna()
         cap = tmp['quantity'] * tmp['close']

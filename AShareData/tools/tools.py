@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import pandas as pd
 
-from AShareData import AShareDataReader, constants, SHSZTradingCalendar, utils
+from AShareData import constants, FutureDataReader, IndexDataReader, SHSZTradingCalendar, StockDataReader, utils
 from AShareData.config import get_db_interface
 from AShareData.database_interface import DBInterface
 from AShareData.factor import CompactFactor, ContinuousFactor
@@ -19,9 +19,9 @@ class MajorIndustryConstitutes(object):
         self.db_interface = db_interface if db_interface else get_db_interface()
         self.calendar = SHSZTradingCalendar(self.db_interface)
         self.date = self.calendar.today()
-        self.data_reader = AShareDataReader(self.db_interface)
+        self.data_reader = StockDataReader(self.db_interface)
         self.industry = self.data_reader.industry(provider=provider, level=level)
-        self.cap = cap if cap else self.data_reader.stock_free_floating_market_cap
+        self.cap = cap if cap else self.data_reader.free_floating_market_cap
 
     def get_major_constitute(self, name: str, n: int = None):
         if name not in self.industry.all_industries:
@@ -116,7 +116,8 @@ class StockIndexFutureBasis(object):
         self.date = date if date else dt.datetime.combine(dt.date.today(), dt.time())
         self.look_back_period = lookback_period
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.data_reader = AShareDataReader(self.db_interface)
+        self.data_reader = IndexDataReader(self.db_interface)
+        self.future_data_reader = FutureDataReader(self.db_interface)
         self.cal = SHSZTradingCalendar(self.db_interface)
         self.stock_index_tickers = StockIndexFutureIndex(self.db_interface)
 
@@ -125,9 +126,9 @@ class StockIndexFutureBasis(object):
         tickers = self.stock_index_tickers.ticker()
         tickers_info = self.db_interface.read_table('期货合约', '最后交易日', ids=tickers).to_frame()
         tickers_info['index_ticker'] = [self.FUTURE_INDEX_MAP[it[:2]] for it in tickers_info.index]
-        index_close = self.data_reader.index_close.get_data(start_date=start_date, end_date=self.date,
-                                                            ids=list(self.FUTURE_INDEX_MAP.values())).reset_index()
-        future_close = self.data_reader.future_close.get_data(start_date=start_date, end_date=self.date,
+        index_close = self.data_reader.close.get_data(start_date=start_date, end_date=self.date,
+                                                      ids=list(self.FUTURE_INDEX_MAP.values())).reset_index()
+        future_close = self.future_data_reader.close.get_data(start_date=start_date, end_date=self.date,
                                                               ids=tickers).reset_index()
         tmp = pd.merge(future_close, tickers_info, left_on='ID', right_index=True)
         df = pd.merge(tmp, index_close, left_on=['DateTime', 'index_ticker'], right_on=['DateTime', 'ID']).rename(

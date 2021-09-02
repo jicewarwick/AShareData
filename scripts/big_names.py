@@ -6,12 +6,12 @@ if __name__ == '__main__':
     config_loc = './config.json'
     asd.set_global_config(config_loc)
 
-    data_reader = asd.AShareDataReader()
+    data_reader = asd.StockDataReader()
     calendar = asd.SHSZTradingCalendar()
     date = calendar.yesterday()
 
     industry = data_reader.industry('申万', 2).get_data(dates=date)
-    cap = data_reader.stock_market_cap.get_data(dates=date) / 1e8
+    cap = data_reader.total_market_cap.get_data(dates=date) / 1e8
     sec_name = data_reader.sec_name.get_data(dates=date)
 
     df = pd.concat([sec_name, industry, cap], axis=1).dropna()

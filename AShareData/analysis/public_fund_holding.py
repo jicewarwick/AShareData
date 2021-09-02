@@ -4,7 +4,7 @@ from typing import Dict
 import pandas as pd
 from functools import cached_property
 
-from ..ashare_data_reader import AShareDataReader
+from ..ashare_data_reader import StockDataReader
 from ..config import get_db_interface
 from ..database_interface import DBInterface
 
@@ -14,7 +14,7 @@ class PublicFundHoldingRecords(object):
         if db_interface is None:
             db_interface = get_db_interface()
         self.db_interface = db_interface
-        self.data_reader = AShareDataReader(db_interface)
+        self.data_reader = StockDataReader(db_interface)
         self.ticker = ticker
         self.date = date
 
@@ -24,7 +24,7 @@ class PublicFundHoldingRecords(object):
                                             report_period=self.date, constitute_ticker=self.ticker)
 
     def stock_holding_by_funds(self):
-        close = self.data_reader.stock_close.get_data(ids=self.ticker, dates=self.date).values[0]
+        close = self.data_reader.close.get_data(ids=self.ticker, dates=self.date).values[0]
 
         data = self.cache.loc[:, ['持有股票数量']].copy().droplevel(['DateTime', 'ConstituteTicker', '报告期'])
         data['市值'] = data['持有股票数量'] * close

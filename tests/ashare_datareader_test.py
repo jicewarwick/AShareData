@@ -1,14 +1,15 @@
 import datetime as dt
 import unittest
 
-from AShareData.ashare_data_reader import AShareDataReader
+from AShareData.ashare_data_reader import IndexDataReader, StockDataReader
 from AShareData.config import set_global_config
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         set_global_config('config.json')
-        self.db = AShareDataReader()
+        self.db = StockDataReader()
+        self.index_reader = IndexDataReader()
         self.start_date = dt.datetime(2018, 5, 10)
         self.end_date = dt.datetime(2018, 7, 10)
         self.ids = ['000001.SZ', '600000.SH', '000002.SZ']
@@ -37,11 +38,11 @@ class MyTestCase(unittest.TestCase):
         print(self.db.industry('中证', 3).get_data(dates=start_date))
 
     def test_index_constitute(self):
-        print(self.db.index_constitute.get_data('000300.SH', '20201130'))
+        print(self.index_reader.constitute.get_data('000300.SH', '20201130'))
 
     def test_ttm(self):
         print(self.db.earning_ttm.get_data(dates=self.dates, ids=self.ids))
-        print(self.db.stock_market_cap.get_data(dates=self.dates, ids=self.ids))
+        print(self.db.total_market_cap.get_data(dates=self.dates, ids=self.ids))
         print(self.db.pe_ttm.get_data(dates=self.dates, ids=self.ids))
         print(self.db.pb_after_close.get_data(dates=self.dates, ids=self.ids))
 

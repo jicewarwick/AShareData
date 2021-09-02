@@ -9,7 +9,7 @@ from scipy.stats.mstats import winsorize
 from statsmodels.api import OLS
 from statsmodels.tools.tools import add_constant
 
-from . import AShareDataReader
+from . import StockDataReader
 from .algo import human_sort
 from .config import get_db_interface
 from .database_interface import DBInterface
@@ -177,7 +177,7 @@ class ASharePortfolioExposure(object):
         self.factor_names = self.model.get_db_factor_names(rebalance_schedule, computing_schedule)
 
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.data_reader = AShareDataReader(self.db_interface)
+        self.data_reader = StockDataReader(self.db_interface)
         self.rf_rate = rf_rate if rf_rate else self.data_reader.three_month_shibor
         market_return = self.data_reader.market_return
         self.excess_market_return = (market_return - self.rf_rate).set_factor_name(f'{market_return}-Rf')
@@ -201,7 +201,7 @@ class ASharePortfolioExposure(object):
                            minimum_look_back_length: int = 40):
         date = date if date else dt.datetime.combine(dt.date.today(), dt.time())
         start_date = self.data_reader.calendar.offset(date, -lookback_period - 1)
-        returns = self.data_reader.stock_return.get_data(ids=[ticker], start_date=start_date, end_date=date)
+        returns = self.data_reader.returns.get_data(ids=[ticker], start_date=start_date, end_date=date)
         y = returns.droplevel('ID')
         rf_data, x = self.common_data(date, start_date)
         data = pd.concat([y - rf_data, x], axis=1).dropna()
