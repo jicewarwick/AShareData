@@ -2,7 +2,7 @@ import importlib.util
 import logging
 
 from .analysis import IndustryComparison, TradingAnalysis
-from .ashare_data_reader import ConvertibleBondDataReader, ExchangeFundDataReader, FutureDataReader, IndexDataReader, \
+from .data_reader import ConvertibleBondDataReader, ExchangeFundDataReader, FutureDataReader, IndexDataReader, \
     ModelDataReader, OTCFundDataReader, SHIBORDataReader, StockDataReader
 from .config import generate_db_interface_from_config, get_db_interface, get_global_config, set_global_config
 from .data_source import EastMoneyCrawler, JQData, TDXData, TushareData, WebDataCrawler

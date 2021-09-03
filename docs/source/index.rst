@@ -27,6 +27,7 @@ Components
     DateUtils
     DataReader
     Model
+    Barra
 
 Indices and tables
 ==================

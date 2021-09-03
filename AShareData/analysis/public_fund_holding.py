@@ -4,7 +4,7 @@ from typing import Dict
 import pandas as pd
 from functools import cached_property
 
-from ..ashare_data_reader import StockDataReader
+from ..data_reader import StockDataReader
 from ..config import get_db_interface
 from ..database_interface import DBInterface
 

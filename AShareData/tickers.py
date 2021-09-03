@@ -1,5 +1,5 @@
 import datetime as dt
-from functools import cached_property
+from functools import cached_property, reduce
 from itertools import product
 from typing import Dict, List, Sequence, Union
 
@@ -42,6 +42,11 @@ class TickersBase(object):
         stock_ticker_df = self.cache.loc[self.cache.DateTime <= date]
         tmp = stock_ticker_df.groupby('ID').tail(1)
         return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
+
+    def alive_tickers(self, dates: Sequence[date_utils.DateType]) -> List[str]:
+        """ return tickers that are alive in ALL dates in `dates`"""
+        ticker_set = reduce(lambda x, y: x & y, [set(self.ticker(date)) for date in dates])
+        return sorted(list(ticker_set))
 
     def list_date(self) -> Dict[str, dt.datetime]:
         """ return the list date of all tickers"""

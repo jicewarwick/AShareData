@@ -1,7 +1,7 @@
 import datetime as dt
 import unittest
 
-from AShareData.ashare_data_reader import IndexDataReader, StockDataReader
+from AShareData.data_reader import IndexDataReader, StockDataReader
 from AShareData.config import set_global_config
 
 

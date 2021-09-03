@@ -2,7 +2,7 @@ import datetime as dt
 
 import pandas as pd
 
-from ..ashare_data_reader import FundDataReader, IndexDataReader
+from ..data_reader import FundDataReader, IndexDataReader
 from ..config import get_db_interface
 from ..database_interface import DBInterface
 from ..factor import ContinuousFactor

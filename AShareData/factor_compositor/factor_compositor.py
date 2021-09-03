@@ -5,7 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from .. import utils
-from ..ashare_data_reader import StockDataReader
+from ..data_reader import StockDataReader
 from ..data_source.data_source import DataSource
 from ..database_interface import DBInterface
 from ..factor import CompactFactor

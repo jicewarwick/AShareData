@@ -26,6 +26,10 @@ class MyTestCase(unittest.TestCase):
         end_date = dt.datetime(2018, 12, 1)
         print(stock_ticker.new_ticker(start_date=start_date, end_date=end_date))
 
+        start_date = dt.datetime(2000, 1, 1)
+        end_date = dt.datetime(2018, 12, 1)
+        print(stock_ticker.alive_tickers([start_date, end_date]))
+
     def test_future_ticker(self):
         future_ticker = FutureTickers(self.db_interface)
         self.ticker_test(future_ticker)

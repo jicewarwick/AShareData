@@ -227,6 +227,11 @@ class FactorBase(object):
         def sub_get_data(self, **kwargs):
             if 'start_date' in kwargs:
                 kwargs['start_date'] = self.calendar.offset(kwargs['start_date'], -1)
+            if 'dates' in kwargs:
+                if isinstance(kwargs['dates'], dt.datetime):
+                    kwargs['dates'] = [kwargs['dates']]
+                if len(kwargs['dates']) == 1:
+                    kwargs['dates'].insert(0, self.calendar.offset(kwargs['dates'][0], -1))
             return self.f.get_data(**kwargs).unstack().pct_change().stack().dropna()
 
         Foo = type('', (UnaryFactor,), {'_get_data': sub_get_data})
