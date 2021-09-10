@@ -85,6 +85,12 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(self.calendar.pre_month_end(2021, 2), dt.datetime(2021, 1, 29))
         self.assertEqual(self.calendar.pre_month_end(2020, 2), dt.datetime(2020, 1, 23))
 
+    def test_fixed_date_sequence(self):
+        date = dt.datetime(2021, 8, 31)
+        print(self.calendar.fixed_duration_date_sequence(date, 2, 5))
+        print(self.calendar.fixed_duration_date_sequence(date, -2, 5))
+
+
     @staticmethod
     def test_format_dt():
         @dtlize_input_dates

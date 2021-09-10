@@ -4,10 +4,9 @@ import inspect
 from functools import wraps
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
-from singleton_decorator import singleton
-
 from .config import get_db_interface
 from .database_interface import DBInterface
+from .utils import Singleton
 
 DateType = Union[str, dt.datetime, dt.date]
 
@@ -230,6 +229,21 @@ class TradingCalendarBase(object):
         else:
             return self.calendar[i:j]
 
+    def fixed_duration_date_sequence(self, date, duration: int, n: int) -> Sequence[dt.datetime]:
+        """Generate a sequence of `n` dates that are each `duration` trading days apart
+
+        :param date: anchor date
+        :param duration: days difference between each entry. Negative `duration` generates dates backward in time start with `date`.
+        :param n: number of entries to generate(including `date`)
+        :return: a sequence of `n` dates that are each `duration` trading days apart
+        """
+        index = self.calendar.index(date)
+        if duration > 0:
+            return self.calendar[index:index + duration * n:duration]
+        elif duration < 0:
+            duration = -duration
+            return self.calendar[index - duration * (n - 1):index + 1:duration]
+
     def split_to_chunks(self, start_date: DateType, end_date: DateType, chunk_size: int) \
             -> List[Tuple[dt.datetime, dt.datetime]]:
         all_dates = self.select_dates(start_date, end_date)
@@ -240,19 +254,21 @@ class TradingCalendarBase(object):
         return res
 
 
-@singleton
-class SHSZTradingCalendar(TradingCalendarBase):
+class SHSZTradingCalendar(TradingCalendarBase, Singleton):
     """A Share Trading Calendar"""
 
     def __init__(self, db_interface: DBInterface = None):
+        """
+
+        :param db_interface: DBInterface
+        """
         super().__init__()
         self.db_interface = db_interface if db_interface else get_db_interface()
         calendar_df = self.db_interface.read_table('交易日历')
         self.calendar = sorted(calendar_df['交易日期'].dt.to_pydatetime().tolist())
 
 
-@singleton
-class HKTradingCalendar(TradingCalendarBase):
+class HKTradingCalendar(TradingCalendarBase, Singleton):
     """A Share Trading Calendar"""
 
     def __init__(self, db_interface: DBInterface = None):

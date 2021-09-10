@@ -5,17 +5,15 @@ from typing import Dict, List, Sequence, Union
 
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-from singleton_decorator import singleton
 
 from . import date_utils
 from .config import get_db_interface
 from .database_interface import DBInterface
 from .factor import CompactFactor, CompactRecordFactor, IndustryFactor, OnTheRecordFactor
-from .utils import StockSelectionPolicy, TickerSelector
+from .utils import Singleton, StockSelectionPolicy, TickerSelector
 
 
-@singleton
-class FundInfo(object):
+class FundInfo(Singleton):
     def __init__(self, db_interface: DBInterface = None):
         super().__init__()
         if db_interface is None:
@@ -44,7 +42,7 @@ class TickersBase(object):
         return sorted(tmp.loc[tmp['上市状态'] == 1, 'ID'].tolist())
 
     def alive_tickers(self, dates: Sequence[date_utils.DateType]) -> List[str]:
-        """ return tickers that are alive in ALL dates in `dates`"""
+        """ return tickers that are alive in ALL dates in `dates` """
         ticker_set = reduce(lambda x, y: x & y, [set(self.ticker(date)) for date in dates])
         return sorted(list(ticker_set))
 
