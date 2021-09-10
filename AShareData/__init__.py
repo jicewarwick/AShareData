@@ -2,14 +2,15 @@ import importlib.util
 import logging
 
 from .analysis import IndustryComparison, TradingAnalysis
-from .data_reader import ConvertibleBondDataReader, ExchangeFundDataReader, FutureDataReader, IndexDataReader, \
-    ModelDataReader, OTCFundDataReader, SHIBORDataReader, StockDataReader
 from .config import generate_db_interface_from_config, get_db_interface, get_global_config, set_global_config
+from .data_reader import ConvertibleBondDataReader, DataReader, ExchangeFundDataReader, FutureDataReader, \
+    IndexDataReader, ModelDataReader, OTCFundDataReader, SHIBORDataReader, StockDataReader
 from .data_source import EastMoneyCrawler, JQData, TDXData, TushareData, WebDataCrawler
-from .database_interface import MySQLInterface
+from .database_interface import DBInterface, MySQLInterface
 from .date_utils import SHSZTradingCalendar
 from .factor_compositor import ConstLimitStockFactorCompositor, FundAdjFactorCompositor, IndexCompositor, IndexUpdater, \
     MarketSummaryCompositor, NegativeBookEquityListingCompositor
+from .factor_portfolio import FactorPortfolio
 from .model import FamaFrench3FactorModel, FamaFrenchCarhart4FactorModel
 from .tools import IndexHighlighter, major_index_valuation, MajorIndustryConstitutes, StockIndexFutureBasis
 

@@ -22,7 +22,7 @@ class DataReader(object):
 
     @classmethod
     def from_config(cls, json_loc: str):
-        """根据 ``config_loc`` 的适配信息生成 ``AShareDataReader`` 实例"""
+        """根据 `config_loc` 的适配信息生成 :py:class:`.DataReader` 实例"""
         db_interface = generate_db_interface_from_config(json_loc)
         return cls(db_interface)
 
@@ -171,6 +171,16 @@ class StockDataReader(DataReaderWithAdjFactor):
         return LatestAccountingFactor('股东权益合计(不含少数股东权益)', self.db_interface).set_factor_name('股东权益')
 
     @cached_property
+    def total_debt(self) -> LatestAccountingFactor:
+        """Total Debt"""
+        return LatestAccountingFactor('负债合计', self.db_interface)
+
+    @cached_property
+    def total_asset(self) -> LatestAccountingFactor:
+        """Total Asset"""
+        return LatestAccountingFactor('资产总计', self.db_interface)
+
+    @cached_property
     def earning_ttm(self) -> TTMAccountingFactor:
         """Earning Trailing Twelve Month"""
         return TTMAccountingFactor('净利润(不含少数股东损益)', self.db_interface).set_factor_name('净利润TTM')
@@ -190,6 +200,11 @@ class StockDataReader(DataReaderWithAdjFactor):
         """Price to Book"""
         return (self.total_market_cap / self.book_val).set_factor_name('PB')
 
+    @cached_property
+    def bp(self) -> BinaryFactor:
+        """Book to Price"""
+        return (self.book_val / self.total_market_cap).set_factor_name('BP')
+
     # TODO
     @cached_property
     def pb_after_close(self) -> BinaryFactor:
@@ -200,6 +215,10 @@ class StockDataReader(DataReaderWithAdjFactor):
     def pe_ttm(self) -> BinaryFactor:
         """Price to Earning Trailing Twelve Month"""
         return (self.total_market_cap / self.earning_ttm).set_factor_name('PE_TTM')
+
+    @cached_property
+    def debt_to_asset(self) -> BinaryFactor:
+        return (self.total_debt / self.total_asset).set_factor_name('资产负债率')
 
 
 class ConvertibleBondDataReader(DataReader):

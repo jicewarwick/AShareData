@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from .. import utils
-from ..data_reader import StockDataReader
-from ..data_source.data_source import DataSource
-from ..database_interface import DBInterface
-from ..factor import CompactFactor
-from ..tickers import FundTickers, StockTickerSelector
+from . import utils
+from .data_reader import StockDataReader
+from .data_source.data_source import DataSource
+from .database_interface import DBInterface
+from .factor import CompactFactor
+from .tickers import FundTickers, StockTickerSelector
 
 
 class FactorCompositor(DataSource):

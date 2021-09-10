@@ -5,7 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from ..database_interface import DBInterface
-from ..factor_compositor.factor_compositor import FactorCompositor
+from ..factor_compositor import FactorCompositor
 
 
 class FinancialModel(object):

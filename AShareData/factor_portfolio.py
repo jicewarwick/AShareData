@@ -5,11 +5,11 @@ from typing import Sequence
 import pandas as pd
 from tqdm import tqdm
 
+from . import utils
+from .database_interface import DBInterface
+from .factor import Factor, FactorBase, IndustryFactor
 from .factor_compositor import FactorCompositor
-from .. import utils
-from ..database_interface import DBInterface
-from ..factor import Factor, FactorBase, IndustryFactor
-from ..tickers import StockTickerSelector
+from .tickers import StockTickerSelector
 
 
 @dataclass

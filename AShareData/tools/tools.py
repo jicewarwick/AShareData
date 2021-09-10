@@ -77,6 +77,7 @@ class IndexHighlighter(object):
         ax.set_xlim(left=plot_data.index[0], right=plot_data.index[-1])
         ax.grid(True)
         ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+        plt.show()
         return ax
 
     def summary(self):
