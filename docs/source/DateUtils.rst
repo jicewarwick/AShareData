@@ -1,6 +1,9 @@
 Dates Related Classes and Functions
 ===================================
 
-.. autoclass:: AShareData.TradingCalendar
+.. autoclass:: AShareData.SHSZTradingCalendar
     :members:
     :inherited-members:
+
+.. autoclass:: AShareData.date_utils.ReportingDate
+    :members:

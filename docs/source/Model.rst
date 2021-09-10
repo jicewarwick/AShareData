@@ -11,7 +11,7 @@ Models and their FactorCompositors
 -------------------------------------
 
 Capital Asset Pricing Model
-^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: AShareData.model.CAPM
     :members:
     :inherited-members:

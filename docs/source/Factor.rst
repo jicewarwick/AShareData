@@ -8,56 +8,56 @@ Factor class:
 
 基类
 -----
-.. autoclass:: AShareData.Factor.Factor
+.. autoclass:: AShareData.factor.Factor
     :members:
     :inherited-members:
 
 非财报数据
 -----------
-.. autoclass:: AShareData.Factor.IndexConstitute
+.. autoclass:: AShareData.factor.IndexConstitute
     :members:
 
-.. autoclass:: AShareData.Factor.IndustryFactor
+.. autoclass:: AShareData.factor.IndustryFactor
     :members:
 
 行情数据
 ^^^^^^^^
-.. autoclass:: AShareData.Factor.CompactFactor
+.. autoclass:: AShareData.factor.CompactFactor
     :members:
 
-.. autoclass:: AShareData.Factor.OnTheRecordFactor
+.. autoclass:: AShareData.factor.OnTheRecordFactor
     :members:
 
-.. autoclass:: AShareData.Factor.ContinuousFactor
+.. autoclass:: AShareData.factor.ContinuousFactor
     :members:
 
-.. autoclass:: AShareData.Factor.BetaFactor
+.. autoclass:: AShareData.factor.BetaFactor
     :members:
 
 
 财报数据
 ------------
-.. autoclass:: AShareData.Factor.QuarterlyFactor
+.. autoclass:: AShareData.factor.QuarterlyFactor
     :members:
 
-.. autoclass:: AShareData.Factor.LatestAccountingFactor
+.. autoclass:: AShareData.factor.LatestAccountingFactor
     :members:
 
-.. autoclass:: AShareData.Factor.LatestQuarterAccountingFactor
+.. autoclass:: AShareData.factor.LatestQuarterAccountingFactor
     :members:
 
-.. autoclass:: AShareData.Factor.YearlyReportAccountingFactor
+.. autoclass:: AShareData.factor.YearlyReportAccountingFactor
     :members:
 
-.. autoclass:: AShareData.Factor.QOQAccountingFactor
+.. autoclass:: AShareData.factor.QOQAccountingFactor
     :members:
 
-.. autoclass:: AShareData.Factor.YOYPeriodAccountingFactor
+.. autoclass:: AShareData.factor.YOYPeriodAccountingFactor
     :members:
 
-.. autoclass:: AShareData.Factor.YOYQuarterAccountingFactor
+.. autoclass:: AShareData.factor.YOYQuarterAccountingFactor
     :members:
 
-.. autoclass:: AShareData.Factor.TTMAccountingFactor
+.. autoclass:: AShareData.factor.TTMAccountingFactor
     :members:
 

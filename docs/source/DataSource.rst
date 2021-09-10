@@ -2,8 +2,8 @@ DataSources
 ===========
 DataSources writes data into database.
 
-Outside data source inherent from ``DateSource``.
-They can be used as a context manager. log ins and log outs should be handled in ``.__enter__()`` and ``.__exit__()``
+Outside data source inherent from :py:class:`~.DataSource`.
+They can be used as a context manager. log ins and log outs should be handled in :py:meth:`~.DataSource.__enter__` and :py:meth:`~.DataSource.__exit__`
 
 Base Class
 -----------
@@ -67,8 +67,8 @@ Index Compositor
 
 Factor Portfolio Return
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: AShareData.factor_compositor.FactorPortfolioPolicy
+.. autoclass:: AShareData.factor_portfolio.FactorPortfolioPolicy
     :members:
 
-.. autoclass:: AShareData.factor_compositor.FactorPortfolio
+.. autoclass:: AShareData.factor_portfolio.FactorPortfolio
     :members:

@@ -739,6 +739,6 @@ class WindData(DataSource):
 
     @classmethod
     def from_config(cls, config_loc: str):
-        """根据 ``config_loc`` 的适配信息生成 ``WindData`` 实例"""
+        """根据 ``config_loc`` 的适配信息生成 :py:class:`.WindData` 实例"""
         db_interface = config.generate_db_interface_from_config(config_loc)
         return cls(db_interface)
