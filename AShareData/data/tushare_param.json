@@ -255,7 +255,7 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"end_date": "DateTime",
+			"nav_date": "DateTime",
 			"unit_nav": "单位净值",
 			"accum_nav": "累计净值",
 			"net_asset": "资产净值",

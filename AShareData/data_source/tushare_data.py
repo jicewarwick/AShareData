@@ -870,8 +870,8 @@ class TushareData(DataSource):
                     daily_data['amount'] = daily_data['amount'] * 1000
                     daily_data = self._standardize_df(daily_data, daily_params)
 
-                    ex_nav_data = self._pro.fund_nav(end_date=date_str, market='E')
-                    ex_nav_part = ex_nav_data.loc[:, ['ts_code', 'end_date', 'unit_nav']]
+                    ex_nav_data = self._pro.fund_nav(nav_date=date_str, market='E')
+                    ex_nav_part = ex_nav_data.loc[:, ['ts_code', 'nav_date', 'unit_nav']]
                     ex_nav_part = self._standardize_df(ex_nav_part, nav_params)
 
                     share_data = self._pro.fund_share(trade_date=date_str)
@@ -884,7 +884,7 @@ class TushareData(DataSource):
 
                     db_data = daily_data.join(ex_nav_part, how='left').join(ex_share_data, how='left')
 
-                    nav_data = self._pro.fund_nav(end_date=date_str, market='O', fields=list(nav_params.keys()))
+                    nav_data = self._pro.fund_nav(nav_date=date_str, market='O', fields=list(nav_params.keys()))
                     nav_data = nav_data.loc[~(pd.isna(nav_data['accum_nav']) & nav_data['unit_nav'] == 1), :].drop(
                         'accum_nav', axis=1)
                     nav_part = self._standardize_df(nav_data.iloc[:, :3].copy(), nav_params)
