@@ -420,8 +420,10 @@ class WindData(DataSource):
         date_str = self.calendar.today().strftime('%Y-%m-%d')
 
         # otc funds
-        new_funds = self.w.wset('sectorconstituent', f'date={date_str};sectorid=1000007789000000;field=wind_code')
-        new_funds = new_funds.index.tolist()
+        all_funds = self.w.wset('sectorconstituent', f'date={date_str};sectorid=a201010700000000;field=wind_code')
+        db_funds = self.db_interface.get_all_id('基金列表')
+        new_funds = sorted(list(set(all_funds.index.tolist()) - set(db_funds)))
+        new_funds = [it for it in new_funds if it[0].isnumeric()]
         self.get_fund_base_info(new_funds)
         self.get_fund_time_info(new_funds)
 
