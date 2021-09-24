@@ -1,6 +1,7 @@
 import unittest
 
 from AShareData import set_global_config
+from AShareData.barra.common import GrowthRateFactor
 from AShareData.factor import *
 from AShareData.tickers import *
 from AShareData.utils import StockSelectionPolicy
@@ -141,6 +142,11 @@ class MyTestCase(unittest.TestCase):
         latest_update_factor = LatestUpdateFactor('场外基金规模', '资产净值', self.db_interface)
         print(latest_update_factor.get_data(ids=['008864.OF', '000001.OF']))
         print(latest_update_factor.get_data(ids='008864.OF'))
+
+    def test_growth_factor(self):
+        f = GrowthRateFactor('营业总收入', self.db_interface)
+        a = f.get_data(start_date=self.start_date, end_date=self.end_date, ids=self.ids)
+        print(a)
 
 
 if __name__ == '__main__':

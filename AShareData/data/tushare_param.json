@@ -1276,6 +1276,8 @@
 			"end_date": "报告期",
 			"report_type": "报表类型",
 			"comp_type": "公司类型",
+			"basic_eps": "基本每股收益",
+			"diluted_eps":  "稀释每股收益",
 			"total_revenue": "营业总收入",
 			"revenue": "营业收入",
 			"int_income": "利息收入",

@@ -18,7 +18,6 @@
 		"9个月": "float",
 		"1年": "float"
 	},
-
 	"上市公司基本信息": {
 		"ID": "varchar",
 		"交易所代码": "str",
@@ -160,7 +159,6 @@
 		"成交量": "float",
 		"成交额": "double"
 	},
-
 	"申万一级行业": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -186,7 +184,6 @@
 		"ID": "varchar",
 		"中证行业": "str"
 	},
-
 	"资产负债表": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -330,6 +327,7 @@
 		"y1": "date",
 		"y2": "date",
 		"y3": "date",
+		"y4": "date",
 		"y5": "date"
 	},
 	"利润表": {
@@ -404,6 +402,7 @@
 		"y1": "date",
 		"y2": "date",
 		"y3": "date",
+		"y4": "date",
 		"y5": "date"
 	},
 	"现金流量表": {
@@ -502,6 +501,7 @@
 		"y1": "date",
 		"y2": "date",
 		"y3": "date",
+		"y4": "date",
 		"y5": "date"
 	},
 	"财务指标": {
@@ -532,9 +532,9 @@
 		"y1": "date",
 		"y2": "date",
 		"y3": "date",
+		"y4": "date",
 		"y5": "date"
 	},
-
 	"沪深股通成份股": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -545,7 +545,6 @@
 		"ID": "varchar",
 		"持股数量": "int"
 	},
-
 	"指数日行情": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -570,7 +569,6 @@
 		"ConstituteTicker": "varchar",
 		"权重": "float"
 	},
-
 	"期货合约": {
 		"ID": "varchar",
 		"合约代码": "varchar",
@@ -595,7 +593,6 @@
 		"成交额": "double",
 		"持仓量": "double"
 	},
-
 	"期权合约": {
 		"ID": "varchar",
 		"证券名称": "str",
@@ -628,7 +625,6 @@
 		"Theta": "float",
 		"Rho": "float"
 	},
-
 	"可转债列表": {
 		"ID": "varchar",
 		"转债名称": "str",
@@ -674,25 +670,24 @@
 		"ID": "varchar",
 		"可转债转股价": "float"
 	},
-
 	"基金列表": {
 		"ID": "varchar",
 		"证券名称": "str",
 		"全名": "str",
-        "管理人": "varchar",
-        "封闭式": "boolean",
+		"管理人": "varchar",
+		"封闭式": "boolean",
 		"投资类型": "varchar",
 		"初始基金": "boolean",
-        "分级基金": "boolean",
+		"分级基金": "boolean",
 		"债券型": "boolean",
 		"ETF": "boolean",
 		"定开": "boolean",
-        "定开时长(月)": "int",
+		"定开时长(月)": "int",
 		"封闭运作转LOF时长(月)": "int",
 		"管理费率": "float",
-        "浮动管理费": "boolean",
+		"浮动管理费": "boolean",
 		"浮动管理费说明": "str",
-        "托管费率": "float",
+		"托管费率": "float",
 		"销售服务费率": "float",
 		"前端申购费": "str",
 		"后端申购费": "str",
@@ -753,7 +748,6 @@
 		"占股票市值比": "float",
 		"占流通股本比例": "float"
 	},
-
 	"港股交易日历": {
 		"index": "int",
 		"交易日期": "datetime"
@@ -768,7 +762,6 @@
 		"成交量": "float",
 		"成交额": "double"
 	},
-
 	"美股日行情": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -783,7 +776,6 @@
 		"PE": "float",
 		"PB": "float"
 	},
-
 	"持仓记录": {
 		"id": "int",
 		"accountName": "str",
@@ -816,7 +808,6 @@
 		"orderPrice": "float",
 		"orderStatus": "varchar"
 	},
-
 	"负净资产股票": {
 		"DateTime": "datetime",
 		"ID": "varchar",
@@ -856,5 +847,44 @@
 		"DateTime": "date",
 		"ID": "varchar",
 		"收盘点位": "float"
+	},
+	"BarraDescriptor": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"LNCAP": "float",
+		"BETA": "float",
+		"RSTR": "float",
+		"DASTD": "float",
+		"CMRA": "float",
+		"HSIGMA": "float",
+		"NLSIZE": "float",
+		"BTOP": "float",
+		"STOM": "float",
+		"STOQ": "float",
+		"STOA": "float",
+		"EPFWD": "float",
+		"CETOP": "float",
+		"ETOP": "float",
+		"EGRLF": "float",
+		"EGRSF": "float",
+		"SGRO": "float",
+		"EGRO": "float",
+		"MLEV": "float",
+		"DTOA": "float",
+		"BLEV": "float"
+	},
+	"BarraStyleFactor": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"Size": "float",
+		"Beta": "float",
+		"Momentum": "float",
+		"ResidualVolatility": "float",
+		"NonLinearSize": "float",
+		"BookToPrice": "float",
+		"Liquidity": "float",
+		"EarningsYield": "float",
+		"Growth": "float",
+		"Leverage": "float"
 	}
 }

@@ -20,8 +20,7 @@ class _Singleton(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(_Singleton, cls).__call__(*args,
-                                                                  **kwargs)
+            cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
 
@@ -129,6 +128,10 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
             self.industry_level = int(self.industry_level)
         if self.ignore_st & self.select_st:
             raise ValueError('不能同时选择ST股票和忽略ST股票')
+
+
+MARKET_STOCK_SELECTION = StockSelectionPolicy(ignore_new_stock_period=244, ignore_st=True, ignore_pause=True,
+                                              ignore_negative_book_value_stock=True)
 
 
 @dataclass

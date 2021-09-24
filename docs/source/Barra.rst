@@ -84,7 +84,7 @@ Style Factors
     :members:
 
 
-6. Earnings Yield
+7. Earnings Yield
 """"""""""""""""""""""""""""
 .. autoclass:: AShareData.barra.style_factors.EarningsYield
     :members:
@@ -99,7 +99,7 @@ Style Factors
     :members:
 
 
-6. Growth
+8. Growth
 """"""""""""""""""""""""""""
 .. autoclass:: AShareData.barra.style_factors.Growth
     :members:
@@ -117,7 +117,7 @@ Style Factors
     :members:
 
 
-6. Leverage
+9. Leverage
 """"""""""""""""""""""""""""
 .. autoclass:: AShareData.barra.style_factors.Leverage
     :members:
@@ -134,14 +134,28 @@ Style Factors
 
 Base Classes
 """"""""""""""""""""""""""
-.. autoclass:: AShareData.barra.descriptors.BarraComputer
+.. autoclass:: AShareData.barra.common.BarraComputer
     :members:
 
 .. autoclass:: AShareData.barra.descriptors.BarraDescriptorComputer
     :members:
 
-Helper Classes
-"""""""""""""""""""""""""""
-.. autoclass:: AShareData.barra.descriptors.BarraCAPMRegression
+.. autoclass:: AShareData.barra.descriptors.SimpleBarraDescriptorComputer
     :members:
 
+.. autoclass:: AShareData.barra.style_factors.BarraStyleFactorComputerBase
+    :members:
+
+.. autoclass:: AShareData.barra.style_factors.SimpleBarraStyleFactorComputer
+    :members:
+
+.. autoclass:: AShareData.barra.style_factors.CompositeBarraStyleFactorComputer
+    :members:
+
+Helper Classes
+"""""""""""""""""""""""""""
+.. autoclass:: AShareData.barra.descriptors.STOComputer
+    :members:
+
+.. autoclass:: AShareData.barra.descriptors.BarraCAPMRegression
+    :members:

@@ -602,6 +602,19 @@ class InterestRateFactor(ContinuousFactor):
         return data
 
 
+class CumulativeInterestRateFactor(InterestRateFactor):
+    def __init__(self, table_name: str, factor_name: str, db_interface: DBInterface = None):
+        super().__init__(table_name, factor_name, db_interface)
+
+    def _get_data(self, **kwargs) -> pd.Series:
+        if 'start_date' not in kwargs:
+            raise ValueError('累计收益率需有开始时间!')
+        data = super()._get_data(**kwargs)
+        rate = (data + 1).prod() - 1
+        ret = pd.Series(rate, index=pd.Index([data.index[-1]], name='DateTime'))
+        return ret
+
+
 # TODO
 class PriceFactor(FactorBase):
     def __init__(self, factor: FactorBase, db_interface: DBInterface = None):
@@ -697,7 +710,7 @@ class AccountingFactor(Factor):
         return ret
 
     @staticmethod
-    def func(data: pd.DataFrame) -> np.float:
+    def func(data: pd.DataFrame) -> pd.Series:
         raise NotImplementedError()
 
     def gather_data(self, ticker_data: pd.DataFrame, relevant_rec: pd.DataFrame,
@@ -732,15 +745,15 @@ class QuarterlyFactor(AccountingFactor):
         self.name = f'季度{self._factor_name}'
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame) -> np.float:
+    def balance_sheet_func(data: pd.DataFrame) -> pd.Series:
         raise NotImplementedError()
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
+    def cash_flow_or_profit_func(data: pd.DataFrame) -> pd.Series:
         raise NotImplementedError()
 
     @staticmethod
-    def func(data: pd.DataFrame) -> np.float:
+    def func(data: pd.DataFrame) -> pd.Series:
         pass
 
 
@@ -752,7 +765,7 @@ class LatestAccountingFactor(AccountingFactor):
         self.name = f'最新{self._factor_name}'
 
     @staticmethod
-    def func(data: pd.DataFrame) -> np.float:
+    def func(data: pd.DataFrame) -> pd.Series:
         return data.q0
 
 
@@ -765,12 +778,12 @@ class LatestQuarterAccountingFactor(QuarterlyFactor):
         self.name = f'最新季度{self._factor_name}'
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
+    def cash_flow_or_profit_func(data: pd.DataFrame) -> pd.Series:
         val = (data.q0 - data.q1) / (data.q4 - data.q5) - 1
         return val
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame) -> np.float:
+    def balance_sheet_func(data: pd.DataFrame) -> pd.Series:
         val = data.q0 / data.q1 - 1
         return val
 
@@ -787,7 +800,7 @@ class YearlyReportAccountingFactor(AccountingFactor):
         self.name = f'最新年报{self._factor_name}'
 
     @staticmethod
-    def func(data: pd.DataFrame) -> np.float:
+    def func(data: pd.DataFrame) -> pd.Series:
         return data.y1
 
 
@@ -800,12 +813,12 @@ class QOQAccountingFactor(QuarterlyFactor):
         self.name = f'{self._factor_name}环比'
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
+    def cash_flow_or_profit_func(data: pd.DataFrame) -> pd.Series:
         val = (data.q0 - data.q1) / (data.q1 - data.q2) - 1
         return val
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame) -> np.float:
+    def balance_sheet_func(data: pd.DataFrame) -> pd.Series:
         val = data.q0 / data.q1 - 1
         return val
 
@@ -819,7 +832,7 @@ class YOYPeriodAccountingFactor(AccountingFactor):
         self.name = f'{self._factor_name}同比'
 
     @staticmethod
-    def func(data: pd.DataFrame) -> np.float:
+    def func(data: pd.DataFrame) -> pd.Series:
         val = data.q0 / data.q4 - 1
         return val
 
@@ -833,12 +846,12 @@ class YOYQuarterAccountingFactor(QuarterlyFactor):
         self.name = f'年度{self._factor_name}增长率'
 
     @staticmethod
-    def cash_flow_or_profit_func(data: pd.DataFrame) -> np.float:
+    def cash_flow_or_profit_func(data: pd.DataFrame) -> pd.Series:
         val = (data.q0 - data.q1) / (data.q4 - data.q5) - 1
         return val
 
     @staticmethod
-    def balance_sheet_func(data: pd.DataFrame) -> np.float:
+    def balance_sheet_func(data: pd.DataFrame) -> pd.Series:
         val = data.q0 / data.q4 - 1
         return val
 
@@ -852,7 +865,7 @@ class TTMAccountingFactor(AccountingFactor):
         self.name = f'{self._factor_name}TTM'
 
     @staticmethod
-    def func(data: pd.DataFrame) -> np.float:
+    def func(data: pd.DataFrame) -> pd.Series:
         val = data.q0 - data.q4 + data.y1
         return val
 

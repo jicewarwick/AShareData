@@ -1,60 +1,16 @@
 import datetime as dt
-from functools import cached_property, lru_cache
-from typing import Optional, Tuple
+from functools import lru_cache
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+from .common import BarraComputer, BarraDataSourceReader, exponential_weight
 from ..config import get_db_interface
-from ..data_reader import StockDataReader
 from ..database_interface import DBInterface
-from ..factor import BinaryFactor, ContinuousFactor, InterestRateFactor, LatestAccountingFactor, TTMAccountingFactor, \
-    UnaryFactor
-from ..factor_compositor import FactorCompositor
-from ..utils import Singleton
-
-
-class BarraDataReader(StockDataReader):
-    def __init__(self, db_interface: DBInterface = None):
-        super().__init__(db_interface)
-
-    @cached_property
-    def risk_free_rate(self) -> ContinuousFactor:
-        """三月期shibor"""
-        return InterestRateFactor('shibor利率数据', '3个月', self.db_interface).set_factor_name('3个月shibor')
-
-    @cached_property
-    def log_risk_free_return(self) -> UnaryFactor:
-        return (self.risk_free_rate + 1).log()
-
-    @cached_property
-    def excess_return(self) -> BinaryFactor:
-        return (self.returns - self.risk_free_rate).set_factor_name('excess_stock_return')
-
-    @cached_property
-    def excess_log_return(self) -> BinaryFactor:
-        return (self.log_return - self.log_risk_free_return).set_factor_name('excess_lg_return')
-
-    @cached_property
-    def excess_market_return(self) -> BinaryFactor:
-        return (self.market_return - self.risk_free_rate).set_factor_name('excess_market_return')
-
-    @cached_property
-    def operation_cash_flow_ttm(self) -> TTMAccountingFactor:
-        return TTMAccountingFactor('经营活动产生的现金流量净额', self.db_interface)
-
-    @cached_property
-    def cep_ttm(self) -> BinaryFactor:
-        return (self.operation_cash_flow_ttm / self.total_market_cap).set_factor_name('CEP')
-
-    @cached_property
-    def long_term_debt(self) -> LatestAccountingFactor:
-        return LatestAccountingFactor('非流动负债合计')
-
-    @cached_property
-    def preferred_equity(self) -> LatestAccountingFactor:
-        return LatestAccountingFactor('优先股')
+from ..tickers import StockTickerSelector
+from ..utils import MARKET_STOCK_SELECTION, Singleton
 
 
 class BarraCAPMRegression(Singleton):
@@ -74,18 +30,26 @@ class BarraCAPMRegression(Singleton):
     """
 
     def __init__(self, window: int = 252, half_life: int = 63, db_interface: DBInterface = None):
+        """
+
+        :param window: look-back period
+        :param half_life: half life of weight
+        :param db_interface: DBInterface
+        """
         if db_interface is None:
             db_interface = get_db_interface()
         self.db_interface = db_interface
-        self.data_reader = BarraDataReader(self.db_interface)
+        self.universe = StockTickerSelector(MARKET_STOCK_SELECTION, self.db_interface)
+        self.data_reader = BarraDataSourceReader(self.db_interface)
         self.window = window
         self.half_life = half_life
 
     @lru_cache(2)
     def compute(self, date: dt.datetime) -> Tuple[pd.Series, pd.Series]:
         start_date = self.data_reader.calendar.offset(date, -(self.window - 1))
-        excess_market_return_df = self.data_reader.excess_market_return.get_data(start_date=start_date,
-                                                                                 end_date=date).unstack()
+        tickers = self.universe.ticker(date)
+        excess_market_return_df = self.data_reader.excess_market_return.get_data(start_date=start_date, end_date=date,
+                                                                                 ids=tickers).unstack()
         market_ret_name = excess_market_return_df.columns[0]
         X = sm.add_constant(excess_market_return_df)
         X['weight'] = exponential_weight(self.window, self.half_life)
@@ -107,91 +71,59 @@ class BarraCAPMRegression(Singleton):
         return pd.Series(beta, index=index), pd.Series(hsigma, index=index)
 
 
-class BarraComputer(object):
-    @staticmethod
-    def standardize(val: pd.Series, weight: pd.Series) -> pd.Series:
-        """ Standardize factors
-
-        USE4 Methodology, page 9:
-
-        Descriptors are standardized to have a mean of 0 and a standard deviation of 1.
-
-        In other words, if :math:`d_{nl}^{Raw}` is the raw value of stock `n` for descriptor `l` , then
-
-        the standardized descriptor value is given by
-
-        .. math:: d_{nl} = \\frac{d_{nl}^{Raw}-\\mu_l}{\\sigma_l}
-
-        where
-        :math:`\mu_l` is the cap-weighted mean of the descriptor (within the estimation universe), and
-        :math:`\sigma_l` is the equal-weighted standard deviation.
-
-        We adopt the convention of standardizing using the cap-weighted mean so that a well-diversified cap-weighted portfolio has approximately zero exposure to all style factors.
-
-        For the standard deviation, however, we use equal weights to prevent large-cap stocks from having an undue influence on the overall scale of the exposures.
-
-        :param val: raw factor value
-        :param weight: market cap
-        :return: standardized factor
-        """
-        mu = val.dot(weight)
-        sigma = val.std()
-        return (val - mu) / sigma
-
-    @staticmethod
-    def trim_extreme(val: pd.Series, limit: float = 3.0, inplace=False) -> Optional[pd.Series]:
-        """ Trim extreme values to `limit` standard deviation away from mean
-
-        USE4 Methodology, page 8:
-
-        The second group represents values that are regarded as legitimate, but nonetheless so large that their impact on the model must be limited.
-
-        We trim these observations to three standard deviations from the mean.
-
-        :param val: raw value
-        :param limit: ranges in multiples of std
-        :param inplace: Whether to perform the operation in place on the data.
-        :return: trimmed data
-        """
-        mu = val.mean()
-        sigma = val.std()
-        lower_bound = mu - limit * sigma
-        upper_bound = mu + limit * sigma
-        return val.clip(lower=lower_bound, upper=upper_bound, inplace=inplace)
-
-    @staticmethod
-    def weighted_std(val: pd.Series, weight: pd.Series) -> float:
-        pass
-
-
 class BarraDescriptorComputer(BarraComputer):
-    def __init__(self, db_interface: DBInterface):
-        self.db_interface = db_interface
-        self.data_reader = BarraDataReader(self.db_interface)
+    TABLE_NAME = 'BarraDescriptor'
+
+    def __init__(self, db_interface: DBInterface = None):
+        """ Base Class for Barra Descriptor Computing
+
+        :param db_interface: DBInterface
+        """
+        super().__init__(db_interface)
 
     def compute(self, date: dt.datetime):
+        """ Do transformations to the data from raw computation.
+
+        Trim observations to three standard deviations from the mean, then
+        Descriptors are standardized to have a mean of 0 and a standard deviation of 1.
+        """
         data = self.compute_raw(date)
-        weight = self.data_reader.total_market_cap.get_data(dates=date)
-        return self.standardize(data, weight)
+        data = self.standardize(self.trim_extreme(data))
+        data.name = self.name
+        self.db_interface.update_df(data, self.TABLE_NAME)
 
     def compute_raw(self, date: dt.datetime) -> pd.Series:
+        """ Compute raw data given by the formula in the methodology book"""
         raise NotImplementedError()
+
+
+class SimpleBarraDescriptorComputer(BarraDescriptorComputer):
+    def __init__(self, db_interface: DBInterface = None):
+        """ Base Class for Simple Barra Descriptor Computing, i.e. from single `factor`
+
+        :param db_interface: DBInterface
+        """
+        super().__init__(db_interface)
+        self.simple_factor = None
+
+    def compute_raw(self, date: dt.datetime) -> pd.Series:
+        """ Get raw raw data that can get from single `factor`"""
+        tickers = self.universe.ticker(date)
+        return self.simple_factor.get_data(dates=date, ids=tickers)
 
 
 #######################################
 # Size
 #######################################
-class LNCAP(BarraDescriptorComputer):
+class LNCAP(SimpleBarraDescriptorComputer):
     """Natural Log of Market Cap
 
     Given by the logarithm of the total market capitalization of the firm.
     """
 
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         super().__init__(db_interface)
-
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        return self.data_reader.log_cap.get_data(dates=date)
+        self.simple_factor = self.data_reader.log_cap
 
 
 #######################################
@@ -241,7 +173,7 @@ class RSTR(BarraDescriptorComputer):
         weight = pd.Series(self.weight, index=self.data_reader.calendar.select_dates(start_date, end_date),
                            name='weight')
 
-        tickers = self.data_reader.stocks.ticker(date)
+        tickers = self.universe.ticker(date)
         log_excess_stock_ret = self.data_reader.excess_log_return.get_data(start_date=start_date, end_date=end_date,
                                                                            ids=tickers)
         index = []
@@ -271,7 +203,7 @@ class DASTD(BarraDescriptorComputer):
 
     def compute_raw(self, date: dt.datetime) -> pd.Series:
         start_date = self.data_reader.calendar.offset(date, -self.window + 1)
-        tickers = self.data_reader.stocks.ticker(date)
+        tickers = self.universe.ticker(date)
         excess_return = self.data_reader.excess_return.get_data(start_date=start_date, end_date=date, ids=tickers)
         weight = pd.Series(self.weight, index=self.data_reader.calendar.select_dates(start_date, date), name='weight')
 
@@ -311,8 +243,26 @@ class CMRA(BarraDescriptorComputer):
 
     def compute_raw(self, date: dt.datetime) -> pd.Series:
         dates = self.data_reader.calendar.fixed_duration_date_sequence(date, -self.days_in_a_month, self.months + 1)
-        tickers = self.data_reader.stocks.alive_tickers()
-        self.data_reader.hfq_close.log().diff().get_data()
+        rf_storage = []
+        for i in range(0, self.months):
+            start_date = self.data_reader.calendar.offset(dates[i], 1)
+            rf_info = self.data_reader.cumulative_risk_free_rate.get_data(start_date=start_date, end_date=dates[i + 1])
+            rf_storage.append(np.log(1 + rf_info))
+        log_rf_info = pd.concat(rf_storage)
+
+        tickers = self.data_reader.stocks.ticker(dates[0])
+        tickers = sorted(list(set(tickers) & self.universe.ticker(date)))
+        ret_info = self.data_reader.hfq_close.log().diff().get_data(dates=dates, ids=tickers)
+
+        storage = []
+        for ticker, ret in ret_info.groupby('ID'):
+            tmp = pd.concat([ret.droplevel('ID'), log_rf_info], axis=1)
+            diff = tmp.iloc[:, 0] - tmp.iloc[:, 1]
+            z_t = diff.sort_index(ascending=False).cumsum()
+            cmra = np.log(1 + z_t.max()) - np.log(1 + z_t.min())
+            storage.append(pd.Series(cmra, index=pd.MultiIndex.from_tuples([(date, ticker)], names=('DateTime', 'ID'))))
+        res = pd.concat(storage)
+        return res
 
 
 class HSIGMA(BarraDescriptorComputer):
@@ -336,42 +286,63 @@ class HSIGMA(BarraDescriptorComputer):
 #######################################
 # Non-linear Size
 #######################################
-class NLSIZE(BarraDescriptorComputer):
+class NLSIZE(SimpleBarraDescriptorComputer):
     """Cube of Size
 
-    First, the standardized Size exposure (i.e., log of market cap) is cubed.
-    The resulting factor is then orthogonalized with respect to the Size factor on a regression-weighted basis.
-    Finally, the factor is winsorized and standardized.
-
+    Cube the standardized Size exposure (i.e., log of market cap)
     """
 
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         super().__init__(db_interface)
+        self.simple_factor = self.data_reader.log_cap
 
     def compute_raw(self, date: dt.datetime) -> pd.Series:
-        return self.data_reader.log_cap.get_data(dates=date)
+        raw = super().compute_raw(date)
+        return np.power(raw, 3)
 
 
 #######################################
 # Book-to-Price
 #######################################
-class BTOP(BarraDescriptorComputer):
+class BTOP(SimpleBarraDescriptorComputer):
     """Book to Price ratio
 
     Last reported book value of common equity divided by current market capitalization.
     """
 
-    def __init__(self, db_interface: DBInterface):
+    def __init__(self, db_interface: DBInterface = None):
         super().__init__(db_interface)
-
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        return self.data_reader.bp.get_data(date)
+        self.simple_factor = self.data_reader.bp
 
 
 #######################################
 # Liquidity
 #######################################
-class STOM(BarraDescriptorComputer, Singleton):
+class STOComputer(BarraDescriptorComputer):
+    """Share Turnover Computer
+
+    Computed as the log of the sum of daily turnover during the previous T months:
+
+    .. math:: STO = \\ln(\\frac{1}{T}\\sum^{21T}_{t=1}\\frac{V_t}{S_t})
+
+    where :math:`V_t` is the trading volume on day :math:`t`, and :math:`S_t` is the number of shares outstanding.
+    """
+
+    def __init__(self, months: int, db_interface: DBInterface = None):
+        super().__init__(db_interface)
+        self.months = months
+
+    @lru_cache(12)
+    def compute_raw(self, date: dt.datetime) -> pd.Series:
+        start_date = self.data_reader.calendar.offset(date, -self.months * 21)
+        tickers = self.universe.ticker(date)
+        data = self.data_reader.turnover_rate.get_data(start_date=start_date, end_date=date, ids=tickers)
+        ret = np.log(data.groupby('ID').sum())
+        ret.index = pd.MultiIndex.from_product([[date], ret.index.tolist()], names=('DateTime', 'ID'))
+        return ret
+
+
+class STOM(STOComputer):
     """Share Turnover, one month
 
     Computed as the log of the sum of daily turnover during the previous 21 trading days,
@@ -381,22 +352,11 @@ class STOM(BarraDescriptorComputer, Singleton):
     where :math:`V_t` is the trading volume on day :math:`t`, and :math:`S_t` is the number of shares outstanding.
     """
 
-    def __init__(self, window: int = 21, db_interface: DBInterface = None):
-        super().__init__(db_interface)
-        self.window = window
-
-    @lru_cache(12)
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        start_date = self.data_reader.calendar.offset(date, -self.window)
-        tickers = self.data_reader.stocks.ticker(date)
-        data = self.data_reader.turnover_rate.get_data(start_date=start_date, end_date=date, ids=tickers)
-        ret = np.log(data.groupby('ID').sum())
-        ret.index = pd.MultiIndex.from_product([[date], ret.index.tolist()], names=('DateTime', 'ID'))
-        return ret
+    def __init__(self, months: int = 1, db_interface: DBInterface = None):
+        super().__init__(months, db_interface)
 
 
-# TODO: refactor STOQ and STOA
-class STOQ(BarraDescriptorComputer):
+class STOQ(STOComputer):
     """Average Share Turnover, trailing 3 months
 
     Let :math:`STOM_{\\tau}` be the share turnover for month :math:`\\tau` ,
@@ -407,20 +367,11 @@ class STOQ(BarraDescriptorComputer):
     where :math:`T=3` months.
     """
 
-    def __init__(self, window: int = 21, db_interface: DBInterface = None):
-        super().__init__(db_interface)
-        self.window = window
-        self.stom_helper = STOM(window)
-
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        dates = self.data_reader.calendar.fixed_duration_date_sequence(date, -self.window, 3)
-        monthly_stom = [self.stom_helper.compute_raw(date).droplevel('DateTime') for date in dates]
-        data = np.log(np.exp(pd.concat(monthly_stom, axis=1).dropna()).sum(axis=1))
-        data.index = pd.MultiIndex.from_product([[date], data.index.tolist()], names=['DateTime', 'ID'])
-        return data
+    def __init__(self, months: int = 3, db_interface: DBInterface = None):
+        super().__init__(months, db_interface)
 
 
-class STOA(BarraDescriptorComputer):
+class STOA(STOComputer):
     """Average Share Turnover, trailing 12 months
 
     Let :math:`STOM_{\\tau}` be the share turnover for month :math:`\\tau` ,
@@ -428,22 +379,13 @@ class STOA(BarraDescriptorComputer):
 
     The quarterly share turnover is defined by
 
-    .. math:: STOQ = ln[\\frac{1}{T}\\sum^T_{\\tau = 1}\\exp(STOM_\\tau)]
+    .. math:: STOA = ln[\\frac{1}{T}\\sum^T_{\\tau = 1}\\exp(STOM_\\tau)]
 
     where :math:`T=12` months.
     """
 
-    def __init__(self, window: int = 21, db_interface: DBInterface = None):
-        super().__init__(db_interface)
-        self.window = window
-        self.stom_helper = STOM(window)
-
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        dates = self.data_reader.calendar.fixed_duration_date_sequence(date, -self.window, 12)
-        monthly_stom = [self.stom_helper.compute_raw(date).droplevel('DateTime') for date in dates]
-        data = np.log(np.exp(pd.concat(monthly_stom, axis=1).dropna()).sum(axis=1))
-        data.index = pd.MultiIndex.from_product([[date], data.index.tolist()], names=['DateTime', 'ID'])
-        return data
+    def __init__(self, months: int = 12, db_interface: DBInterface = None):
+        super().__init__(months, db_interface)
 
 
 #######################################
@@ -457,10 +399,15 @@ class EPFWD(BarraDescriptorComputer):
     Forward-looking earnings are defined as
     a weighted average between the average analyst-predicted earnings for the current and next fiscal years.
     """
-    pass
+
+    def __init__(self, db_interface: DBInterface = None):
+        super().__init__(db_interface)
+
+    def compute_raw(self, date: dt.datetime) -> pd.Series:
+        raise NotImplementedError()
 
 
-class CETOP(BarraDescriptorComputer):
+class CETOP(SimpleBarraDescriptorComputer):
     """Cash Earning to Price Ratio
 
     Given by the trailing 12-month cash earnings divided by current price.
@@ -471,11 +418,11 @@ class CETOP(BarraDescriptorComputer):
         self.window = window
 
     def compute_raw(self, date: dt.datetime) -> pd.Series:
-        ticker = self.data_reader.stocks.ticker(date)
+        ticker = self.universe.ticker(date)
         return self.data_reader.cep_ttm.get_data(dates=date, ids=ticker)
 
 
-class ETOP(BarraDescriptorComputer):
+class ETOP(SimpleBarraDescriptorComputer):
     """Trailing Earning to Price Ratio
 
     Given by the trailing 12-month earnings divided by the current market capitalization.
@@ -489,7 +436,7 @@ class ETOP(BarraDescriptorComputer):
         self.window = window
 
     def compute_raw(self, date: dt.datetime) -> pd.Series:
-        ticker = self.data_reader.stocks.ticker(date)
+        ticker = self.universe.ticker(date)
         return self.data_reader.earning_ttm.get_data(dates=date, ids=ticker)
 
 
@@ -502,12 +449,11 @@ class EGRLF(BarraDescriptorComputer):
     Long-term (3-5 years) earnings growth forecasted by analysts.
     """
 
-    def __init__(self, window: int = 12, db_interface: DBInterface = None):
+    def __init__(self, db_interface: DBInterface = None):
         super().__init__(db_interface)
-        self.window = window
 
     def compute_raw(self, date: dt.datetime) -> pd.Series:
-        pass
+        raise NotImplementedError()
 
 
 class EGRSF(BarraDescriptorComputer):
@@ -516,15 +462,14 @@ class EGRSF(BarraDescriptorComputer):
     Short-term (1 year) earnings growth forecasted by analysts.
     """
 
-    def __init__(self, window: int = 12, db_interface: DBInterface = None):
+    def __init__(self, db_interface: DBInterface = None):
         super().__init__(db_interface)
-        self.window = window
 
     def compute_raw(self, date: dt.datetime) -> pd.Series:
-        pass
+        raise NotImplementedError()
 
 
-class SGRO(BarraDescriptorComputer):
+class EGRO(SimpleBarraDescriptorComputer):
     """Earnings growth (trailing five years)
 
     Annual reported earnings per share are regressed against time over the past five fiscal years.
@@ -534,12 +479,10 @@ class SGRO(BarraDescriptorComputer):
     def __init__(self, window: int = 12, db_interface: DBInterface = None):
         super().__init__(db_interface)
         self.window = window
-
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        return self.data_reader.log_cap.get_data(dates=date)
+        self.simple_factor = self.data_reader.earning_growth
 
 
-class EGRO(BarraDescriptorComputer):
+class SGRO(SimpleBarraDescriptorComputer):
     """Sales growth (trailing five years)
 
     Annual reported sales per share are regressed against time over the past five fiscal years.
@@ -549,15 +492,13 @@ class EGRO(BarraDescriptorComputer):
     def __init__(self, window: int = 12, db_interface: DBInterface = None):
         super().__init__(db_interface)
         self.window = window
-
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        return self.data_reader.log_cap.get_data(dates=date)
+        self.simple_factor = self.data_reader.sales_growth
 
 
 #######################################
 # Leverage
 #######################################
-class MLEV(BarraDescriptorComputer):
+class MLEV(SimpleBarraDescriptorComputer):
     """Market leverage
 
     Computed as
@@ -574,15 +515,12 @@ class MLEV(BarraDescriptorComputer):
     def __init__(self, window: int = 12, db_interface: DBInterface = None):
         super().__init__(db_interface)
         self.window = window
-        self.mlev = (self.data_reader.total_market_cap + self.data_reader.preferred_equity +
-                     self.data_reader.long_term_debt) / self.data_reader.total_market_cap
-
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        tickers = self.data_reader.stocks.ticker(date)
-        return self.mlev.get_data(dates=date, ids=tickers)
+        mlev = (self.data_reader.total_market_cap + self.data_reader.preferred_equity +
+                self.data_reader.long_term_debt) / self.data_reader.total_market_cap
+        self.simple_factor = mlev
 
 
-class DTOA(BarraDescriptorComputer):
+class DTOA(SimpleBarraDescriptorComputer):
     """Debt-to-assets
 
     Computed as
@@ -596,13 +534,10 @@ class DTOA(BarraDescriptorComputer):
     def __init__(self, window: int = 12, db_interface: DBInterface = None):
         super().__init__(db_interface)
         self.window = window
-
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        tickers = self.data_reader.stocks.ticker(date)
-        return self.data_reader.debt_to_asset.get_data(dates=date, ids=tickers)
+        self.simple_factor = self.data_reader.debt_to_asset
 
 
-class BLEV(BarraDescriptorComputer):
+class BLEV(SimpleBarraDescriptorComputer):
     """Book leverage
 
     Computed as
@@ -617,22 +552,6 @@ class BLEV(BarraDescriptorComputer):
     def __init__(self, window: int = 12, db_interface: DBInterface = None):
         super().__init__(db_interface)
         self.window = window
-        self.blev = (self.data_reader.book_val + self.data_reader.preferred_equity +
-                     self.data_reader.long_term_debt) / self.data_reader.book_val
-
-    def compute_raw(self, date: dt.datetime) -> pd.Series:
-        tickers = self.data_reader.stocks.ticker(date)
-        return self.blev.get_data(dates=date, ids=tickers)
-
-
-class BarraDescriptorCompositor(FactorCompositor):
-    def update(self):
-        pass
-
-    def capm_regression(self, date: dt.datetime):
-        pass
-
-
-def exponential_weight(n: int, half_life: int):
-    series = range(-(n - 1), 1)
-    return np.exp(np.log(2) * series / half_life)
+        blev = (self.data_reader.book_val + self.data_reader.preferred_equity +
+                self.data_reader.long_term_debt) / self.data_reader.book_val
+        self.simple_factor = blev

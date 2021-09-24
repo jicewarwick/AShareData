@@ -20,19 +20,19 @@ from ..database_interface import DBInterface
 from ..ticker_utils import FutureTickerFormatter
 from ..tickers import FundTickers, FundWithStocksTickers, StockFundTickers, StockTickers
 
-START_DATE = {
-    'common': dt.datetime(1990, 1, 1),
-    'shibor': dt.datetime(2006, 10, 8),
-    'ggt': dt.datetime(2016, 6, 29),  # 港股通
-    'hk_cal': dt.datetime(1980, 1, 1),
-    'hk_daily': dt.datetime(1990, 1, 2),
-    'fund_daily': dt.datetime(1998, 4, 6),
-    'index_daily': dt.datetime(2008, 1, 1),
-    'index_weight': dt.datetime(2005, 1, 1)
-}
-
 
 class TushareData(DataSource):
+    START_DATE = {
+        'common': dt.datetime(1990, 1, 1),
+        'shibor': dt.datetime(2006, 10, 8),
+        'ggt': dt.datetime(2016, 6, 29),  # 港股通
+        'hk_cal': dt.datetime(1980, 1, 1),
+        'hk_daily': dt.datetime(1990, 1, 2),
+        'fund_daily': dt.datetime(1998, 4, 6),
+        'index_daily': dt.datetime(2008, 1, 1),
+        'index_weight': dt.datetime(2005, 1, 1)
+    }
+
     def __init__(self, tushare_token: str = None, db_interface: DBInterface = None, param_json_loc: str = None) -> None:
         """
         Tushare to Database. 将tushare下载的数据写入数据库中
@@ -698,7 +698,7 @@ class TushareData(DataSource):
     def update_hs_holding(self) -> None:
         """ 沪深港股通持股明细 """
         data_category = '沪深港股通持股明细'
-        start_date = self.db_interface.get_latest_timestamp(data_category, START_DATE['ggt'])
+        start_date = self.db_interface.get_latest_timestamp(data_category, self.START_DATE['ggt'])
         dates = self.calendar.select_dates(start_date, dt.date.today())
 
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
@@ -716,7 +716,7 @@ class TushareData(DataSource):
         table_name = '港股日行情'
 
         hk_cal = date_utils.HKTradingCalendar(self.db_interface)
-        start_date = self.db_interface.get_latest_timestamp(table_name, START_DATE['hk_daily'])
+        start_date = self.db_interface.get_latest_timestamp(table_name, self.START_DATE['hk_daily'])
         end_date = hk_cal.yesterday()
         dates = hk_cal.select_dates(start_date=start_date, end_date=end_date, inclusive=(False, True))
 
@@ -775,7 +775,7 @@ class TushareData(DataSource):
 
     def update_index_daily(self):
         table_name = '指数日行情'
-        start_date = self.db_interface.get_latest_timestamp(table_name, START_DATE['index_daily'])
+        start_date = self.db_interface.get_latest_timestamp(table_name, self.START_DATE['index_daily'])
         dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
 
         rate = self._factor_param[table_name]['每分钟限速']
@@ -853,7 +853,7 @@ class TushareData(DataSource):
         nav_params = self._factor_param[nav_table_name]['输出参数']
         share_params = self._factor_param[asset_table_name]['输出参数']
 
-        start_date = self.db_interface.get_latest_timestamp(daily_table_name, START_DATE['fund_daily'])
+        start_date = self.db_interface.get_latest_timestamp(daily_table_name, self.START_DATE['fund_daily'])
         start_date = self.calendar.offset(start_date, -4)
         end_date = dt.date.today()
         dates = self.calendar.select_dates(start_date, end_date, (False, True))
@@ -1114,10 +1114,11 @@ class TushareData(DataSource):
             y1 = deal_data(report_date, 'y1')
             y2 = deal_data(report_date, 'y2')
             y3 = deal_data(report_date, 'y3')
+            y4 = deal_data(report_date, 'y4')
             y5 = deal_data(report_date, 'y5')
 
-            res = pd.DataFrame([q1, q2, q4, q5, y1, y2, y3, y5]).T.set_index(newest_entry.index)
-            res.columns = ['q1', 'q2', 'q4', 'q5', 'y1', 'y2', 'y3', 'y5']
+            res = pd.DataFrame([q1, q2, q4, q5, y1, y2, y3, y4, y5]).T.set_index(newest_entry.index)
+            res.columns = ['q1', 'q2', 'q4', 'q5', 'y1', 'y2', 'y3', 'y4', 'y5']
             storage.append(res)
 
         cache = pd.concat(storage)
