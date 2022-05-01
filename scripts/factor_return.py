@@ -19,7 +19,7 @@ if __name__ == '__main__':
     policy.stock_selection_policy = stock_selection_policy
     policy.start_date = dt.datetime(2010, 1, 1)
     policy.industry = data_reader.industry('申万', 1)
-    policy.weight = data_reader.free_floating_market_cap
+    policy.cap = data_reader.free_floating_market_cap
 
     policy.name = data_reader.beta.name
     policy.factor = data_reader.beta
