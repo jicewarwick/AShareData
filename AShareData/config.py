@@ -47,7 +47,3 @@ def get_db_interface():
     if __db_interface__ is None:
         __db_interface__ = generate_db_interface_from_config(get_global_config())
     return __db_interface__
-
-
-def set_db_interface(db_interface: DBInterface):
-    __db_interface__ = db_interface

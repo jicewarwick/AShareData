@@ -11,8 +11,8 @@ def human_sort(l):
     """ Sort the given list in the way that humans expect.
     """
     l = l.copy()
-    convert = lambda text: int(text) if text.isdigit() else text
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    def convert(text): return int(text) if text.isdigit() else text
+    def alphanum_key(key): return [convert(c) for c in re.split('([0-9]+)', key)]
     l.sort(key=alphanum_key)
     return l
 

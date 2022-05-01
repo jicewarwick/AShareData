@@ -1,0 +1,81 @@
+[tool.autopep8]
+max_line_length = 120
+aggressive = 3
+
+[tool.isort]
+line_length = 120
+combine_star = true
+honor_noqa = true
+reverse_relative = true
+
+[tool.pyright]
+
+include =["src"]
+extraPaths =[]
+typeCheckingMode ="basic"
+
+enableTypeIgnoreComments = true
+reportAssertAlwaysTrue = "warning"
+reportCallInDefaultInitializer = "warning"
+reportConstantRedefinition = true
+reportDuplicateImport = true
+reportFunctionMemberAccess = false
+reportGeneralTypeIssues = false
+reportImplicitStringConcatenation = false
+reportImportCycles = true
+reportIncompatibleMethodOverride = "warning"
+reportIncompatibleVariableOverride = false
+reportIncompleteStub = true
+reportInconsistentConstructor = true
+reportInvalidStringEscapeSequence = true
+reportInvalidStubStatement = false
+reportInvalidTypeVarUse = true
+reportMatchNotExhaustive = "warning"
+reportMissingImports = true
+reportMissingModuleSource = true
+reportMissingParameterType = "warning"
+reportMissingSuperCall = true
+reportMissingTypeArgument = false
+reportMissingTypeStubs = false
+reportOptionalCall = true
+reportOptionalContextManager = true
+reportOptionalIterable = true
+reportOptionalMemberAccess = true
+reportOptionalOperand = true
+reportOptionalSubscript = false
+reportOverlappingOverload = true
+reportPrivateImportUsage = "warning"
+reportPrivateUsage = true
+reportPropertyTypeMismatch = true
+reportSelfClsParameterName = true
+reportTypedDictNotRequiredAccess = true
+reportUnboundVariable = "warning"
+reportUndefinedVariable = true
+reportUninitializedInstanceVariable = "warning"
+reportUnknownArgumentType = false
+reportUnknownLambdaType = false
+reportUnknownMemberType = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnnecessaryCast = true
+reportUnnecessaryComparison = true
+reportUnnecessaryIsInstance = true
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportUnsupportedDunderAll = "warning"
+reportUntypedBaseClass = false
+reportUntypedClassDecorator = false
+reportUntypedFunctionDecorator = false
+reportUntypedNamedTuple = true
+reportUnusedCallResult = "warning"
+reportUnusedClass = "warning"
+reportUnusedCoroutine = "warning"
+reportUnusedExpression = true
+reportUnusedFunction = "warning"
+reportUnusedImport = "warning"
+reportUnusedVariable = "warning"
+reportWildcardImportFromLibrary = true
+strictDictionaryInference = true
+strictListInference = true
+strictParameterNoneValue = true
+strictSetInference = true
+

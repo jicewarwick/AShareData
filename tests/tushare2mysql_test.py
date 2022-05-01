@@ -1,6 +1,6 @@
 import unittest
 
-from AShareData import set_global_config, TushareData
+from AShareData import TushareData, set_global_config
 
 
 class Tushare2MySQLTest(unittest.TestCase):

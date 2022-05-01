@@ -2,8 +2,8 @@ import datetime as dt
 
 import pandas as pd
 
-from ..data_reader import FundDataReader, IndexDataReader
 from ..config import get_db_interface
+from ..data_reader import FundDataReader, IndexDataReader
 from ..database_interface import DBInterface
 from ..factor import ContinuousFactor
 from ..model.model import FinancialModel

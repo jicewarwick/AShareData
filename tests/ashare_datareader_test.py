@@ -1,8 +1,8 @@
 import datetime as dt
 import unittest
 
-from AShareData.data_reader import IndexDataReader, StockDataReader
 from AShareData.config import set_global_config
+from AShareData.data_reader import IndexDataReader, StockDataReader
 
 
 class MyTestCase(unittest.TestCase):

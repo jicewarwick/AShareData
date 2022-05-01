@@ -3,9 +3,9 @@ from functools import cached_property, lru_cache
 from . import date_utils
 from .config import generate_db_interface_from_config, get_db_interface
 from .database_interface import DBInterface
-from .factor import BetaFactor, BinaryFactor, CompactFactor, ContinuousFactor, FactorBase, IndexConstitute, \
-    IndustryFactor, InterestRateFactor, LatestAccountingFactor, LatestUpdateFactor, OnTheRecordFactor, \
-    TTMAccountingFactor, UnaryFactor
+from .factor import (BetaFactor, BinaryFactor, CompactFactor, ContinuousFactor, FactorBase, IndexConstitute,
+                     IndustryFactor, InterestRateFactor, LatestAccountingFactor, LatestUpdateFactor, OnTheRecordFactor,
+                     TTMAccountingFactor, UnaryFactor)
 from .tickers import StockTickers
 
 
@@ -16,7 +16,7 @@ class DataReader(object):
 
         :param db_interface: DBInterface
         """
-
+        super().__init__()
         self.db_interface = db_interface if db_interface else get_db_interface()
         self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
 

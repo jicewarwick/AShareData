@@ -1,6 +1,6 @@
 import sys
 
-from AShareData import set_global_config, WindData
+from AShareData import WindData, set_global_config
 
 if __name__ == '__main__':
     config_loc = sys.argv[1]

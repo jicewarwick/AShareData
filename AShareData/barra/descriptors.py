@@ -9,8 +9,8 @@ import statsmodels.api as sm
 from ..config import get_db_interface
 from ..data_reader import StockDataReader
 from ..database_interface import DBInterface
-from ..factor import BinaryFactor, ContinuousFactor, InterestRateFactor, LatestAccountingFactor, TTMAccountingFactor, \
-    UnaryFactor
+from ..factor import (BinaryFactor, ContinuousFactor, InterestRateFactor, LatestAccountingFactor, TTMAccountingFactor,
+                      UnaryFactor)
 from ..factor_compositor import FactorCompositor
 from ..utils import Singleton
 
@@ -123,8 +123,8 @@ class BarraComputer(object):
         .. math:: d_{nl} = \\frac{d_{nl}^{Raw}-\\mu_l}{\\sigma_l}
 
         where
-        :math:`\mu_l` is the cap-weighted mean of the descriptor (within the estimation universe), and
-        :math:`\sigma_l` is the equal-weighted standard deviation.
+        :math:`\\mu_l` is the cap-weighted mean of the descriptor (within the estimation universe), and
+        :math:`\\sigma_l` is the equal-weighted standard deviation.
 
         We adopt the convention of standardizing using the cap-weighted mean so that a well-diversified cap-weighted portfolio has approximately zero exposure to all style factors.
 
@@ -310,8 +310,8 @@ class CMRA(BarraDescriptorComputer):
         self.months = months
 
     def compute_raw(self, date: dt.datetime) -> pd.Series:
-        dates = self.data_reader.calendar.fixed_duration_date_sequence(date, -self.days_in_a_month, self.months + 1)
-        tickers = self.data_reader.stocks.alive_tickers()
+        self.data_reader.calendar.fixed_duration_date_sequence(date, -self.days_in_a_month, self.months + 1)
+        self.data_reader.stocks.alive_tickers()
         self.data_reader.hfq_close.log().diff().get_data()
 
 
@@ -457,7 +457,6 @@ class EPFWD(BarraDescriptorComputer):
     Forward-looking earnings are defined as
     a weighted average between the average analyst-predicted earnings for the current and next fiscal years.
     """
-    pass
 
 
 class CETOP(BarraDescriptorComputer):

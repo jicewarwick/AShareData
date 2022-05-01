@@ -91,7 +91,7 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         first_minute_raw.time = real_first_minute
         first_minute_data = self._standardize_df(first_minute_raw, renaming_dict)
         tmp = first_minute_data.loc[:, diff_columns].droplevel('DateTime').fillna(0) - \
-              auction_db_data.loc[:, diff_columns].droplevel('DateTime').fillna(0)
+            auction_db_data.loc[:, diff_columns].droplevel('DateTime').fillna(0)
         tmp['DateTime'] = real_first_minute
         tmp.set_index('DateTime', append=True, inplace=True)
         tmp.index = tmp.index.swaplevel()

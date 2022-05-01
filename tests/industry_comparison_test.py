@@ -1,13 +1,12 @@
 import datetime as dt
 import unittest
 
-from AShareData import get_db_interface, IndustryComparison, set_global_config
+from AShareData import IndustryComparison, set_global_config
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         set_global_config('config.json')
-        db_interface = get_db_interface()
         self.industry_obj = IndustryComparison(index='000905.SH', industry_provider='中信', industry_level=2)
 
     def test_something(self):

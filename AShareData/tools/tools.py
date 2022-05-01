@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import pandas as pd
 
-from AShareData import constants, FutureDataReader, IndexDataReader, SHSZTradingCalendar, StockDataReader, utils
+from AShareData import FutureDataReader, IndexDataReader, SHSZTradingCalendar, StockDataReader, constants, utils
 from AShareData.config import get_db_interface
 from AShareData.database_interface import DBInterface
 from AShareData.factor import CompactFactor, ContinuousFactor

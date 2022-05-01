@@ -1,7 +1,8 @@
 import sys
 
-import AShareData as asd
 from update_routine import daily_routine
+
+import AShareData as asd
 
 if __name__ == '__main__':
     config_loc = sys.argv[1]

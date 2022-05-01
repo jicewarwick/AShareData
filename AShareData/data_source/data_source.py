@@ -20,7 +20,6 @@ class DataSource(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.logout()
-        pass
 
     def login(self):
         pass
@@ -52,7 +51,7 @@ class MinutesDataFunctionMixin(object):
         first_min_data = minute_data.loc[minute_data.index.get_level_values('DateTime') == t0931, :]
 
         tmp = first_min_data.loc[:, diff_columns].droplevel('DateTime').fillna(0) - \
-              auction_data.loc[:, diff_columns].droplevel('DateTime').fillna(0)
+            auction_data.loc[:, diff_columns].droplevel('DateTime').fillna(0)
         tmp['DateTime'] = t0930
         tmp.set_index('DateTime', append=True, inplace=True)
         tmp.index = tmp.index.swaplevel()

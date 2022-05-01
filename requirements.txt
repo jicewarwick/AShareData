@@ -1,11 +1,11 @@
 alphalens
-dateutil
 empyrical
 jqdatasdk
 matplotlib
 numpy
 pandas
 pytdx
+python-dateutil
 ratelimiter
 requests
 retrying

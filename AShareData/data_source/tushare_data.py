@@ -590,7 +590,7 @@ class TushareData(DataSource):
             self.db_interface.delete_id_records(table_name, ticker)
             try:
                 self.db_interface.insert_df(df, table_name)
-            except:
+            except BaseException:
                 logging.getLogger(__name__).error(f'{ticker} - {table_name} failed to get coherent data')
 
         loop_vars = [(self._pro.income, income_desc, income),
@@ -1017,7 +1017,7 @@ class TushareData(DataSource):
                         df = df.loc[df.index.get_level_values('报告期') == end_date, :]
                     try:
                         self.db_interface.insert_df(df, table_name)
-                    except:
+                    except BaseException:
                         pass
                     pbar.update()
         logging.getLogger(__name__).info(f'{table_name} 更新完成.')

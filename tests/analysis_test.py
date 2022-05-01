@@ -46,8 +46,7 @@ class MyTestCase(unittest.TestCase):
     def test_public_fund_holding(self):
         ticker = '000001.SZ'
         date = dt.datetime(2020, 12, 31)
-        rec = PublicFundHoldingRecords(ticker, date)
-        self = rec
+        PublicFundHoldingRecords(ticker, date)
 
 
 if __name__ == '__main__':

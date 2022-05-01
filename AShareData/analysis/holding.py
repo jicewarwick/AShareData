@@ -2,8 +2,8 @@ import datetime as dt
 
 import pandas as pd
 
-from ..data_reader import IndexDataReader, StockDataReader
 from ..config import get_db_interface
+from ..data_reader import IndexDataReader, StockDataReader
 from ..database_interface import DBInterface
 from ..ticker_utils import StockTickerFormatter
 

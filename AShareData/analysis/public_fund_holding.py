@@ -1,11 +1,11 @@
 import datetime as dt
+from functools import cached_property
 from typing import Dict
 
 import pandas as pd
-from functools import cached_property
 
-from ..data_reader import StockDataReader
 from ..config import get_db_interface
+from ..data_reader import StockDataReader
 from ..database_interface import DBInterface
 
 

@@ -127,7 +127,6 @@ class CrossSectionalPortfolioAnalysis(object):
         # time-series regression
 
         # test
-        pass
 
     def returns_results(self, cap_weighted: bool = False) -> pd.DataFrame:
         if cap_weighted and not self.market_cap:

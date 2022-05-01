@@ -135,7 +135,7 @@ class ExchangeStockETFTickers(DiscreteTickers):
     def __init__(self, db_interface: DBInterface = None) -> None:
         super().__init__('场内基金', db_interface)
         fund_info = FundInfo(db_interface)
-        all_tickers = fund_info.data.loc[(fund_info.data['ETF'] == True) & (fund_info.data['投资类型'] == '被动指数型基金'), :]
+        all_tickers = fund_info.data.loc[(fund_info.data['ETF']) & (fund_info.data['投资类型'] == '被动指数型基金'), :]
         self.cache = self.cache.loc[self.cache.ID.isin(all_tickers.index.tolist()), :]
 
 
@@ -145,7 +145,7 @@ class BondETFTickers(DiscreteTickers):
     def __init__(self, db_interface: DBInterface = None) -> None:
         super().__init__('场内基金', db_interface)
         fund_info = FundInfo(db_interface)
-        all_tickers = fund_info.data.loc[(fund_info.data['ETF'] == True) & (fund_info.data['投资类型'] == '被动指数型债券基金'), :]
+        all_tickers = fund_info.data.loc[(fund_info.data['ETF']) & (fund_info.data['投资类型'] == '被动指数型债券基金'), :]
         self.cache = self.cache.loc[self.cache.ID.isin(all_tickers.index.tolist()), :]
 
 
@@ -177,7 +177,7 @@ class ETFTickers(DiscreteTickers):
     def __init__(self, db_interface: DBInterface = None) -> None:
         super().__init__('场内基金', db_interface)
         fund_info = FundInfo(db_interface)
-        all_tickers = fund_info.data.loc[fund_info.data['ETF'] == True, :]
+        all_tickers = fund_info.data.loc[fund_info.data['ETF'], :]
         self.cache = self.cache.loc[self.cache.ID.isin(all_tickers.index.tolist()), :]
 
 
@@ -364,7 +364,7 @@ class StockTickerSelector(TickerSelector):
 
         if self.policy.ignore_negative_book_value_stock:
             data = self.negative_book_value_stock_selector.get_data(dates=date)
-            ids = ids - set(data.loc[data == True].index.get_level_values('ID').tolist())
+            ids = ids - set(data.loc[data].index.get_level_values('ID').tolist())
 
         ids = sorted(list(ids))
         return ids

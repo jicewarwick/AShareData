@@ -1,6 +1,6 @@
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1  # Use the ref you want to point at
+  - repo: https://gitee.com/ceji/pre-commit-hooks
+    rev: v4.2.0
     hooks:
     - id: trailing-whitespace
     - id: requirements-txt-fixer
@@ -8,5 +8,57 @@ repos:
     - id: check-docstring-first
     - id: double-quote-string-fixer
     - id: check-json
-    # - id: pretty-format-json
-      # args: ['--autofix', '--indent', '4', '--no-ensure-ascii', '--no-sort-keys', '--']
+    - id: check-toml
+    - id: check-yaml
+    - id: requirements-txt-fixer
+    - id: pretty-format-json
+      args: ['--autofix', '--indent', '4', '--no-ensure-ascii', '--no-sort-keys', '--']
+  - repo: local
+    hooks:
+    - id: autoflake
+      name: autoflake
+      description: remove redundant imports
+      entry: autoflake
+      require_serial: true
+      language: python
+      language_version: python3
+      types_or: [cython, python]
+      args: ['--in-place', '--remove-unused-variables', '--remove-all-unused-imports', '--remove-duplicate-keys', '--ignore-init-module-imports']
+    - id: isort
+      name: isort
+      description: sort python imports
+      entry: isort
+      require_serial: true
+      language: python
+      language_version: python3
+      types_or: [cython, python]
+      args: ['--filter-files']
+    - id: autopep8
+      name: autopep8
+      description: format python
+      entry: autopep8
+      require_serial: true
+      language: python
+      language_version: python3
+      types_or: [cython, python]
+      args: ['-i']
+    - id: cmake-format
+      name: cmake-format
+      description: cmake-format can format your listfiles nicely so that they don't look like crap.
+      entry: cmake-format
+      args: ['--in-place']
+      language: python
+      types: [cmake]
+    - id: cmake-lint
+      name: cmake-lint
+      description: cmake-lint will check your listfiles for style violations, common mistakes, and anti-patterns.
+      entry: cmake-lint
+      language: python
+      types: [cmake]
+    - id: clang-format
+      name: clang-format
+      description: Format files with ClangFormat.
+      entry: clang-format -i
+      language: system
+      files: \.(c|cc|cxx|cpp|frag|glsl|h|hpp|hxx|ih|ispc|ipp|java|js|m|mm|proto|textproto|vert)$
+      args: ['-fallback-style=none']

@@ -11,8 +11,8 @@ from tqdm import tqdm
 from .data_source import DataSource
 from .. import algo, config, constants, date_utils, utils
 from ..database_interface import DBInterface
-from ..tickers import ConvertibleBondTickers, ETFOptionTickers, ExchangeStockETFTickers, FutureTickers, \
-    IndexOptionTickers, StockTickers
+from ..tickers import (ConvertibleBondTickers, ETFOptionTickers, ExchangeStockETFTickers, FutureTickers,
+                       IndexOptionTickers, StockTickers)
 
 
 class WindWrapper(object):
@@ -334,8 +334,9 @@ class WindData(DataSource):
                 start_date_str = range_start.strftime('%Y%m%d')
                 end_date_str = range_end.strftime('%Y%m%d')
                 pbar.set_postfix_str(f'{start_date_str} - {end_date_str}')
-                data = self.w.wset('tradesuspend',
-                                   f'startdate={start_date_str};enddate={end_date_str};field=date,wind_code,suspend_type,suspend_reason')
+                data = self.w.wset(
+                    'tradesuspend',
+                    f'startdate={start_date_str};enddate={end_date_str};field=date,wind_code,suspend_type,suspend_reason')
                 data.rename(renaming_dict, axis=1, inplace=True)
                 ind1 = (data['停牌类型'] == '盘中停牌') & (data['停牌原因'].str.startswith('股票价格'))
                 ind2 = (data['停牌原因'].str.startswith('盘中'))
@@ -726,7 +727,7 @@ class WindData(DataSource):
 
         line = entry.split('\r\n')
         days_storage = []
-        days_reg = re.compile('\d+[日月年]')
+        days_reg = re.compile('\\d+[日月年]')
         for it in line:
             t = days_reg.search(it)
             if t is None:

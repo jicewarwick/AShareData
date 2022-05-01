@@ -613,7 +613,7 @@ class PriceFactor(FactorBase):
         return self.factor.get_data(*args, **kwargs)
 
     def get_return_data(self, *args, **kwargs):
-        data = self.factor._get_data(*args, **kwargs)
+        self.factor._get_data(*args, **kwargs)
 
 
 class AccountingFactor(Factor):

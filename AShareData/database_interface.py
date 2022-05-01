@@ -1,12 +1,12 @@
 import datetime as dt
 import logging
 import time
-from typing import List, Mapping, Optional, Sequence, Union
+from typing import List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Column, Date, DateTime, extract, Float, Integer, Table, Text, VARCHAR
+from sqlalchemy import VARCHAR, Boolean, Column, Date, DateTime, Float, Integer, Table, Text, extract
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func, text
@@ -45,7 +45,7 @@ class DBInterface(object):
         raise NotImplementedError()
 
     def get_latest_timestamp(self, table_name: str, default_ts: dt.datetime = None,
-                             column_condition: (str, str) = None) -> Optional[dt.datetime]:
+                             column_condition: Tuple[str, str] = None) -> Optional[dt.datetime]:
         """Get the latest timestamp from records in ``table_name``"""
         raise NotImplementedError()
 
@@ -241,7 +241,7 @@ class MySQLInterface(DBInterface):
             self.update_df(new_info, table_name)
 
     def get_latest_timestamp(self, table_name: str, default_ts: dt.datetime = None,
-                             column_condition: (str, str) = None) -> Optional[dt.datetime]:
+                             column_condition: Tuple[str, str] = None) -> Optional[dt.datetime]:
         """
         返回数据库表中最新的时间戳
 
@@ -337,9 +337,9 @@ class MySQLInterface(DBInterface):
         metadata.reflect()
         if table_name not in self.meta.tables.keys():
             raise ValueError(f'数据库中无名为 {table_name} 的表')
-        table = metadata.tables[table_name]
-        session = Session(self.engine)
-        data = self.read_table(table_name).unstack()
+        metadata.tables[table_name]
+        Session(self.engine)
+        self.read_table(table_name).unstack()
 
     @staticmethod
     def _date2str(date) -> Optional[str]:

@@ -18,5 +18,5 @@ if __name__ == '__main__':
             date = dt.date.today()
             jq_data.stock_open_auction_data(date)
             messenger.send_message(f'{date} 集合竞价数据已下载.')
-    except:
+    except BaseException:
         messenger.send_message(f'{date} 集合竞价数据下载失败.')

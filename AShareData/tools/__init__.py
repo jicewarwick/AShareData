@@ -1,1 +1,1 @@
-from .tools import IndexHighlighter, major_index_valuation, MajorIndustryConstitutes, StockIndexFutureBasis
+from .tools import IndexHighlighter, MajorIndustryConstitutes, StockIndexFutureBasis, major_index_valuation

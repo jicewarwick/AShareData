@@ -90,7 +90,6 @@ class MyTestCase(unittest.TestCase):
         print(self.calendar.fixed_duration_date_sequence(date, 2, 5))
         print(self.calendar.fixed_duration_date_sequence(date, -2, 5))
 
-
     @staticmethod
     def test_format_dt():
         @dtlize_input_dates

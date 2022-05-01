@@ -20,7 +20,7 @@ class FamaFrenchCarhart4FactorModel(FinancialModel):
         self.smb_threshold = [0, 0.5, 1]
         self.umd_threshold = [0, 0.3, 0.7, 1]
         self.offset_1 = 22
-        self.offset_2 = 22*12
+        self.offset_2 = 22 * 12
 
 
 class UMDCompositor(ModelFactorCompositor):
